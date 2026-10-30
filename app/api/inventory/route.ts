@@ -1,3 +1,31 @@
-import {getAuth,jsonError,permitted} from '@/lib/auth';import {db} from '@/lib/db';import {Role} from '@prisma/client';
-export async function GET(){const a=await getAuth();if(!a?.business)return jsonError('Sesion requerida',401);const v=await db.productVariant.findMany({where:{businessId:a.business.id},include:{product:true},orderBy:{stock:'asc'}});return Response.json(v.map(x=>({...x,stock:x.stock.toString(),cost:x.cost.toString(),price:x.price.toString()})));}
-export async function POST(req:Request){const a=await getAuth();if(!a?.business)return jsonError('Sesion requerida',401);if(!permitted(a.membership?.role,[Role.ADMIN,Role.INVENTORY_MANAGER]))return jsonError('No autorizado',403);const b=await req.json();if(!b.variantId||!b.quantity||!b.reason)return jsonError('Variante, cantidad y motivo son obligatorios');const qty=Number(b.quantity)*(b.type==='ADJUSTMENT_OUT'?-1:1);const result=await db.$transaction(async tx=>{const v=await tx.productVariant.findFirst({where:{id:b.variantId,businessId:a.business!.id}});if(!v||Number(v.stock)+qty<0)throw new Error('stock');const updated=await tx.productVariant.update({where:{id:v.id},data:{stock:{increment:qty}}});await tx.inventoryMovement.create({data:{businessId:a.business!.id,variantId:v.id,userId:a.user.id,type:b.type??'CORRECTION',quantity:qty,reason:b.reason}});return updated});return Response.json({stock:result.stock.toString()});}
+import { getAuth, jsonError, permitted } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { Role } from '@prisma/client';
+
+export async function GET() {
+  const auth = await getAuth();
+  if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const variants = await db.productVariant.findMany({ where: { businessId: auth.business.id }, include: { product: true }, orderBy: { stock: 'asc' } });
+  return Response.json(variants.map((variant) => ({ ...variant, stock: variant.stock.toString(), cost: variant.cost.toString(), price: variant.price.toString() })));
+}
+
+export async function POST(req: Request) {
+  const auth = await getAuth();
+  if (!auth?.business) return jsonError('Sesion requerida', 401);
+  if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const body = await req.json();
+  const amount = Number(body.quantity);
+  if (!body.variantId || !Number.isFinite(amount) || amount <= 0 || !body.reason?.trim()) return jsonError('Variante, cantidad y motivo son obligatorios');
+  if (!['PURCHASE', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'CORRECTION'].includes(body.type)) return jsonError('Tipo de movimiento invalido');
+  const quantity = body.type === 'ADJUSTMENT_OUT' ? -amount : amount;
+  try {
+    const updated = await db.$transaction(async (tx) => {
+      const changed = await tx.productVariant.updateMany({ where: { id: body.variantId, businessId: auth.business!.id, ...(quantity < 0 ? { stock: { gte: amount } } : {}) }, data: { stock: { increment: quantity } } });
+      if (changed.count !== 1) throw new Error('stock');
+      const variant = await tx.productVariant.findUniqueOrThrow({ where: { id: body.variantId } });
+      await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: body.variantId, userId: auth.user.id, type: body.type ?? 'CORRECTION', quantity, reason: body.reason.trim() } });
+      return variant;
+    });
+    return Response.json({ stock: updated.stock.toString() });
+  } catch { return jsonError('Existencia insuficiente o variante no encontrada', 409); }
+}

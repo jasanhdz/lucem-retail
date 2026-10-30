@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         const price = Number(variant.promoPrice ?? variant.price);
         subtotal += price * quantity;
         return { variant, quantity, price };
-      });
+     }, { isolationLevel: 'Serializable' });
       const previous = await tx.sale.findFirst({ where: { businessId: auth.business!.id }, orderBy: { folio: 'desc' } });
       const received = body.paymentMethod === 'CASH' ? Number(body.receivedAmount) : subtotal;
       if (body.paymentMethod === 'CASH' && received < subtotal) throw new Error('cash');

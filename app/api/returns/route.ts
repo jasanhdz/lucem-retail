@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       });
       const refund = Number(body.refundAmount);
       if (!Number.isFinite(refund) || refund < 0) throw new Error('refund');
+      if (refund > lines.reduce((sum, item) => sum + item.amount, 0)) throw new Error('refund');
       const created = await tx.return.create({ data: { businessId: auth.business!.id, saleId: sale.id, userId: auth.user.id, reason: body.reason.trim(), refundAmount: refund, lines: { create: lines.map(({ line, quantity, amount }) => ({ saleLineId: line!.id, quantity, amount })) } } });
       for (const { line, quantity } of lines) {
         await tx.productVariant.update({ where: { id: line!.variantId }, data: { stock: { increment: quantity } } });

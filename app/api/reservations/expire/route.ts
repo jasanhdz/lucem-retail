@@ -1,10 +1,12 @@
-import { getAuth, jsonError } from '@/lib/auth';
+import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
+import { Role } from '@prisma/client';
 
 export async function POST() {
   const auth = await getAuth();
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const expired = await db.$transaction(async (tx) => {
     const rows = await tx.reservation.findMany({ where: { businessId: auth.business!.id, status: 'ACTIVE', expiresAt: { lte: new Date() } } });
     for (const row of rows) {
