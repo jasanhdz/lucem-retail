@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         const price = Number(variant.promoPrice ?? variant.price);
         subtotal += price * quantity;
         return { variant, quantity, price };
-     }, { isolationLevel: 'Serializable' });
+       });
       const previous = await tx.sale.findFirst({ where: { businessId: auth.business!.id }, orderBy: { folio: 'desc' } });
       const received = body.paymentMethod === 'CASH' ? Number(body.receivedAmount) : subtotal;
       if (body.paymentMethod === 'CASH' && received < subtotal) throw new Error('cash');
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       }
       if (body.idempotencyKey) await tx.saleIdempotency.create({ data: { businessId: auth.business!.id, key: body.idempotencyKey, saleId: created.id, requestHash: JSON.stringify(body) } });
       return created;
-    });
+     }, { isolationLevel: 'Serializable' });
     await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Sale', entityId: sale.id });
     return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: 201 });
    } catch (error) {
