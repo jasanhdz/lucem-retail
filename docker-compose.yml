@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lucem
+      POSTGRES_PASSWORD: lucem_dev
+      POSTGRES_DB: lucem_retail
+    ports: ["5432:5432"]
+    volumes: ["lucem-postgres:/var/lib/postgresql/data"]
+volumes:
+  lucem-postgres:

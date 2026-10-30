@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  INVENTORY_MANAGER
+}
+
+enum MovementType {
+  INITIAL
+  PURCHASE
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  RESERVATION
+  RELEASE
+  SALE
+  SALE_CANCEL
+  RETURN
+  CORRECTION
+}
+
+enum ReservationStatus {
+  ACTIVE
+  RELEASED
+  CONVERTED
+  EXPIRED
+}
+
+enum SaleStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum HistoryField {
+  COST
+  PRICE
+  PROMO_PRICE
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  name         String
+  passwordHash String
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  memberships  Membership[]
+  sessions     Session[]
+  sales        Sale[]
+  movements    InventoryMovement[]
+  reservations Reservation[]
+  returns      Return[]
+  auditLogs    AuditLog[]
+  priceHistory PriceCostHistory[]
+}
+
+model Business {
+  id            String              @id @default(cuid())
+  name          String
+  timezone      String              @default("America/Mexico_City")
+  currency      String              @default("MXN")
+  createdAt     DateTime            @default(now())
+  memberships   Membership[]
+  categories    Category[]
+  products      Product[]
+  variants      ProductVariant[]
+  sessions      Session[]
+  sales         Sale[]
+  movements     InventoryMovement[]
+  reservations  Reservation[]
+  returns       Return[]
+  auditLogs     AuditLog[]
+  history       PriceCostHistory[]
+  idempotencies SaleIdempotency[]
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  businessId     String
+  role           Role
+  canCancelSales Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  activeBusinessId String?
+  tokenHash        String    @unique
+  expiresAt        DateTime
+  lastActivityAt   DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeBusiness   Business? @relation(fields: [activeBusinessId], references: [id])
+}
+
+model Category {
+  id         String    @id @default(cuid())
+  businessId String
+  name       String
+  active     Boolean   @default(true)
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@unique([businessId, name])
+}
+
+model Product {
+  id         String           @id @default(cuid())
+  businessId String
+  name       String
+  photoPath  String?
+  categoryId String
+  location   String
+  archived   Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category   Category         @relation(fields: [categoryId], references: [id])
+  variants   ProductVariant[]
+}
+
+model ProductVariant {
+  id                String              @id @default(cuid())
+  businessId        String
+  productId         String
+  sku               String
+  barcode           String?
+  size              String?
+  color             String?
+  cost              Decimal             @db.Decimal(12, 2)
+  price             Decimal             @db.Decimal(12, 2)
+  promoPrice        Decimal?            @db.Decimal(12, 2)
+  stock             Decimal             @default(0) @db.Decimal(12, 2)
+  lowStockThreshold Decimal             @default(1) @db.Decimal(12, 2)
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  business          Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product           Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  movements         InventoryMovement[]
+  saleLines         SaleLine[]
+  reservations      Reservation[]
+  history           PriceCostHistory[]
+
+  @@unique([businessId, sku])
+}
+
+model PriceCostHistory {
+  id         String         @id @default(cuid())
+  businessId String
+  variantId  String
+  userId     String
+  field      HistoryField
+  oldValue   Decimal?       @db.Decimal(12, 2)
+  newValue   Decimal?       @db.Decimal(12, 2)
+  reason     String
+  createdAt  DateTime       @default(now())
+  business   Business       @relation(fields: [businessId], references: [id])
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+}
+
+model InventoryMovement {
+  id            String         @id @default(cuid())
+  businessId    String
+  variantId     String
+  userId        String
+  type          MovementType
+  quantity      Decimal        @db.Decimal(12, 2)
+  reason        String?
+  referenceType String?
+  referenceId   String?
+  createdAt     DateTime       @default(now())
+  business      Business       @relation(fields: [businessId], references: [id])
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+}
+
+model Reservation {
+  id           String            @id @default(cuid())
+  businessId   String
+  variantId    String
+  userId       String
+  quantity     Decimal           @db.Decimal(12, 2)
+  customerName String?
+  expiresAt    DateTime
+  deposit      Decimal?          @db.Decimal(12, 2)
+  notes        String?
+  status       ReservationStatus @default(ACTIVE)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  business     Business          @relation(fields: [businessId], references: [id])
+  variant      ProductVariant    @relation(fields: [variantId], references: [id])
+  user         User              @relation(fields: [userId], references: [id])
+}
+
+model Sale {
+  id             String           @id @default(cuid())
+  businessId     String
+  userId         String
+  folio          Int
+  status         SaleStatus       @default(CONFIRMED)
+  paymentMethod  PaymentMethod
+  subtotal       Decimal          @db.Decimal(12, 2)
+  total          Decimal          @db.Decimal(12, 2)
+  receivedAmount Decimal?         @db.Decimal(12, 2)
+  changeAmount   Decimal          @db.Decimal(12, 2)
+  cancelReason   String?
+  cancelledAt    DateTime?
+  createdAt      DateTime         @default(now())
+  business       Business         @relation(fields: [businessId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
+  lines          SaleLine[]
+  returns        Return[]
+  idempotency    SaleIdempotency?
+
+  @@unique([businessId, folio])
+}
+
+model SaleLine {
+  id          String         @id @default(cuid())
+  saleId      String
+  variantId   String
+  quantity    Decimal        @db.Decimal(12, 2)
+  unitPrice   Decimal        @db.Decimal(12, 2)
+  unitCost    Decimal        @db.Decimal(12, 2)
+  lineTotal   Decimal        @db.Decimal(12, 2)
+  sale        Sale           @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  returnLines ReturnLine[]
+}
+
+model SaleIdempotency {
+  id          String   @id @default(cuid())
+  businessId  String
+  key         String
+  saleId      String   @unique
+  requestHash String
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id])
+  sale        Sale     @relation(fields: [saleId], references: [id])
+
+  @@unique([businessId, key])
+}
+
+model Return {
+  id           String       @id @default(cuid())
+  businessId   String
+  saleId       String
+  userId       String
+  reason       String
+  refundAmount Decimal      @db.Decimal(12, 2)
+  createdAt    DateTime     @default(now())
+  business     Business     @relation(fields: [businessId], references: [id])
+  sale         Sale         @relation(fields: [saleId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  lines        ReturnLine[]
+}
+
+model ReturnLine {
+  id         String   @id @default(cuid())
+  returnId   String
+  saleLineId String
+  quantity   Decimal  @db.Decimal(12, 2)
+  amount     Decimal  @db.Decimal(12, 2)
+  return     Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  saleLine   SaleLine @relation(fields: [saleLineId], references: [id])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  businessId String?
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json
+  createdAt  DateTime  @default(now())
+  business   Business? @relation(fields: [businessId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
+}

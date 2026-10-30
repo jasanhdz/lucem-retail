@@ -1,0 +1,4 @@
+import { getAuth, jsonError } from '@/lib/auth';
+import { db } from '@/lib/db';
+import ExcelJS from 'exceljs';
+export async function GET() { const auth=await getAuth(); if(!auth?.business)return jsonError('Sesion requerida',401); const sales=await db.sale.findMany({where:{businessId:auth.business.id},orderBy:{createdAt:'desc'}}); const workbook=new ExcelJS.Workbook(); const sheet=workbook.addWorksheet('Ventas'); sheet.addRow(['Folio','Fecha','Metodo','Estado','Total']); sales.forEach(s=>sheet.addRow([s.folio,s.createdAt.toISOString(),s.paymentMethod,s.status,Number(s.total).toFixed(2)])); const buffer=await workbook.xlsx.writeBuffer(); return new Response(buffer,{headers:{'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Content-Disposition':'attachment; filename="ventas.xlsx"'}}); }

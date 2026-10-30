@@ -1,0 +1,2 @@
+import { getAuth,jsonError } from '@/lib/auth'; import { db } from '@/lib/db';
+export async function POST(req:Request){const auth=await getAuth();if(!auth)return jsonError('Sesion requerida',401);const {businessId}=await req.json();if(!auth.user.memberships.some(m=>m.businessId===businessId))return jsonError('Negocio no disponible',403);await db.session.update({where:{id:auth.session.id},data:{activeBusinessId:businessId}});return Response.json({redirect:'/dashboard'});}

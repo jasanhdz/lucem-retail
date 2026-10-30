@@ -1,0 +1,3 @@
+import { getAuth, jsonError } from '@/lib/auth';
+import { db } from '@/lib/db';
+export async function GET() { const auth=await getAuth(); if(!auth?.business)return jsonError('Sesion requerida',401); const sales=await db.sale.findMany({where:{businessId:auth.business.id},orderBy:{createdAt:'desc'}}); const csv=['Folio,Fecha,Metodo,Estado,Total',...sales.map(s=>`${s.folio},${s.createdAt.toISOString()},${s.paymentMethod},${s.status},${Number(s.total).toFixed(2)}`)].join('\n'); return new Response('\ufeff'+csv,{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="ventas.csv"'}}); }

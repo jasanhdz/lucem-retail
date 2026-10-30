@@ -1,0 +1,1 @@
+import {Header} from '@/components/Screen';export default function Returns(){return <><Header title="Devoluciones" kicker="Reintegros ligados a venta"/><div className="card" style={{padding:26}}><h2>Historial de devoluciones</h2><p className="muted">Selecciona una venta para validar cantidades pendientes y reintegrar existencia.</p></div></>}
