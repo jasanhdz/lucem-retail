@@ -10,6 +10,7 @@ Entra:
 - Seleccion de negocio cuando el usuario pertenece a mas de uno, negocio activo aislado en servidor y roles administrador, vendedor y encargado de inventario.
 - Dashboard responsive con ventas del dia, unidades, costo de mercancia vendida, utilidad bruta, agotados, alertas y ventas recientes.
 - Catalogo y alta/edicion de productos, categorias, variantes, SKU unico por negocio, codigo de barras opcional, talla, color, foto local opcional, ubicacion, costo, precio normal/promocional y limite de stock bajo.
+- Rediseño de la interfaz de catálogo de productos: grilla de tarjetas con imagen y estado de inventario claramente visible, filtros por búsqueda/categoría/estado, alta y edición mediante modal accesible, y detalle de producto en modal o drawer adaptable. La presentación es una decisión de interfaz; no constituye ni modifica reglas de dominio o inventario.
 - Inventario con existencia entera o decimal de hasta dos posiciones, entradas, ajustes con motivo, kardex inmutable, apartados, liberaciones, vencimientos y devoluciones.
 - POS con busqueda por nombre/SKU, filtro por categoria, simulacion documentada de lector de codigo, carrito Zustand, cantidades limitadas al stock y metodos efectivo, tarjeta y transferencia.
 - Cobro atomico con folio consecutivo por negocio, captura de efectivo recibido, cambio, ticket imprimible/descargable, idempotencia, cancelacion con motivo y restitucion de stock.
@@ -25,6 +26,7 @@ Fuera:
 - Camara real: el boton de escaneo puede resolver un SKU demo AO-0001 y debe mostrar claramente que es una simulacion de primera version.
 - Pagos tarjeta/transferencia: se registran como pagos confirmados simulados, sin proveedor externo; la UI y README deben declararlo.
 - Fotos: almacenamiento local validado y ruta relativa; sin subir archivos binarios al repositorio.
+- El rediseño se limita a presentación e interacción del catálogo existente; conserva captura, validaciones, permisos y operaciones de productos, variantes, inventario e historial.
 
 ## User flows
 
@@ -41,10 +43,13 @@ Fuera:
 3. Las tarjetas y estados de carga, vacio y error se adaptan a celular, tableta y escritorio.
 
 ### Productos y variantes
-1. `/productos` llama `GET /api/products?q=&categoryId=&status=` y permite filtrar por texto/categoria/estado.
-2. El formulario modal de alta recibe nombre, categoria, ubicacion, foto opcional y una o mas variantes con SKU, barcode, talla, color, costo, precio, promo, stock inicial y minimo.
-3. `POST /api/products` crea producto, variantes, entrada inicial y auditoria en transaccion; `PUT /api/products/:id` edita datos y registra cambios de precio/costo; `DELETE` no borra historico y solo archiva si es necesario.
-4. `GET /api/products/:id/history` muestra cambios de costos/precios y auditoria. SKU duplicado en el mismo negocio responde `409`.
+1. `/productos` llama `GET /api/products?q=&categoryId=&status=` y permite filtrar por texto/categoria/estado. Presenta resultados en una grilla de tarjetas con imagen (o placeholder), nombre, SKU/variantes, categoría, ubicación, precio, costo y existencias con estado Disponible, Por agotarse o Agotado. En escritorio de 1440px aprovecha varias columnas y densidad adecuada; el layout es mobile-first y evita overflow horizontal accidental.
+2. La búsqueda por nombre, SKU/código y ubicación, las categorías y el filtro de estado se pueden combinar y actualizar la grilla; se muestran resultados, cantidad y estados vacíos/cargando/error. Los controles táctiles tienen al menos 44px y los filtros no fuerzan overflow de la página en móvil.
+3. Las acciones de alta y edición abren un modal accesible. En escritorio es modal centrado; en móvil se adapta al viewport (drawer/panel de pantalla completa con contenido desplazable y acciones alcanzables). Se puede cerrar con Escape y botón visible de cierre/cancelación; cerrar y volver a abrir sin guardar conserva los valores capturados durante la sesión del formulario.
+4. El formulario de alta/edición conserva toda la captura existente: nombre, categoría, ubicación, foto opcional, una o más variantes con SKU, barcode, talla, color, costo, precio, promo, stock inicial y mínimo. La imagen local opcional ofrece vista previa, alternativa de carga y placeholder/fallback si falta o falla la carga.
+5. `POST /api/products` crea producto, variantes, entrada inicial y auditoría en transacción; `PUT /api/products/:id` edita datos y registra cambios de precio/costo; `DELETE` no borra histórico y solo archiva si es necesario. Tras guardar, la lista se actualiza y refleja el producto/edición y su estado de inventario.
+6. Al seleccionar una tarjeta se abre detalle de producto en modal/drawer responsivo con foto, categoría, ubicación, precio/costo, variantes, existencias, umbral y badges de stock bajo/agotado; incluye historial de cambios de precio/costo y auditoría cuando esté disponible. Las mismas operaciones y datos siguen sujetos a permisos y reglas existentes.
+7. `GET /api/products/:id/history` muestra cambios de costos/precios y auditoria. SKU duplicado en el mismo negocio responde `409`.
 
 ### Inventario y apartados
 1. `/inventario` llama `GET /api/inventory?status=&q=` y muestra disponibles, bajos, agotados, apartados y movimientos recientes.
@@ -100,6 +105,8 @@ Usar Prisma y PostgreSQL. Todos los modelos de negocio incluyen `id`, `businessI
 
 - Next.js estable actual con TypeScript estricto, App Router y Route Handlers; version exacta queda fijada en `package.json`/lockfile al instalar.
 - Tailwind CSS con tokens del diseño local: slate profundo, emerald, amber y rose; superficies claras, tarjetas redondeadas, sombras suaves, chips y tipografias Inter/Plus Jakarta Sans con fallback local.
+- El catálogo de productos usa grilla responsiva de tarjetas: una o dos columnas compactas según anchura móvil y varias columnas en desktop (p. ej., 3–4 a 1440px, ajustadas al ancho útil); imagen con proporción consistente, estados de inventario con etiquetas/texto además de color y densidad que mantiene legibles SKU, precio y stock. Búsqueda, filtros por categoría/estado y botones de acción no provocan overflow horizontal.
+- Alta/edición y detalle usan modal accesible con semántica de diálogo, título y foco gestionado; Escape y botón explícito permiten cerrar, y el foco vuelve al control que lo abrió. En viewport mobile el diálogo ocupa el espacio disponible con scroll interno y acciones utilizables; en escritorio mantiene dimensiones acotadas. La presentación no define reglas de dominio.
 - Zustand para usuario, negocio activo y carrito; datos persistentes solo via API. React Server Components para lectura y Client Components para interacciones.
 - Prisma ORM tipado, PostgreSQL 16 en `docker-compose.yml`, migraciones en `prisma/migrations`, seed en `prisma/seed.ts`.
 - Zod para validar payloads y respuestas de dominio; bcrypt/argon2 para hashes; sesion propia httpOnly, same-site y expiracion por inactividad.
@@ -155,3 +162,12 @@ Cada criterio es binario: PASS solo con evidencia del comando o flujo indicado; 
 22. En Playwright, vendedor puede consultar y vender, no puede administrar usuarios/productos o ajustes restringidos; encargado puede productos/inventario/apartados/devoluciones, y administrador puede todo permitido.
 23. En Playwright a viewport movil y escritorio, POS, productos, inventario y reportes son utilizables sin overflow horizontal accidental, con controles tactiles y navegacion adaptada.
 24. README, `.env.example`, `docker-compose.yml`, `prisma/schema.prisma`, migraciones y comandos de arranque existen; README identifica explicitamente escaner, pagos e impresion simulados y no contiene secretos reales.
+25. En Playwright, `/productos` presenta el catálogo existente en grilla de tarjetas con imagen o placeholder, nombre, SKU, categoría, ubicación, precio y existencias; Disponible, Por agotarse y Agotado se distinguen con etiqueta legible y estado visual.
+26. En Playwright, buscar por nombre y SKU y combinar búsqueda con categoría y estado actualiza las tarjetas correctas, permite limpiar filtros y muestra estado vacío cuando no hay coincidencias.
+27. En Playwright, al abrir alta, ingresar valores, cerrar con Escape y volver a abrir, los valores escritos siguen presentes; el botón visible de cierre/cancelación también cierra sin descartar esos valores de la sesión del formulario.
+28. En Playwright, guardar un producto nuevo válido crea producto, variantes y stock inicial, cierra el formulario y la tarjeta recién creada aparece en la grilla con sus datos actuales; el producto persiste tras recargar.
+29. En Playwright, abrir una tarjeta muestra el detalle responsive con foto o placeholder, categoría, ubicación, precio/costo, variantes, existencias y badge bajo/agotado según corresponda; se muestra historial cuando hay registros disponibles.
+30. En Playwright a viewport 390px, catálogo, filtros, tarjetas, alta/edición y detalle son utilizables, sus acciones táctiles tienen al menos 44px y `document.documentElement.scrollWidth <= window.innerWidth` (sin overflow horizontal de página).
+31. En Playwright a viewport 1440px, el catálogo ocupa varias columnas de tarjetas sin estirarlas a ancho completo ni producir overflow, y búsqueda/filtros/acciones permanecen visibles y utilizables.
+32. En Playwright, cargar una imagen local válida la previsualiza en el formulario y aparece en la tarjeta/detalle tras guardar; una imagen ausente o fallida conserva placeholder/fallback y no rompe el flujo.
+33. En Playwright, los diálogos exponen rol y nombre accesibles, controles tienen etiquetas asociadas, botones de icono tienen nombre accesible, foco entra al abrir y vuelve al disparador al cerrar; Tab/Escape permiten operar y salir del diálogo por teclado.
