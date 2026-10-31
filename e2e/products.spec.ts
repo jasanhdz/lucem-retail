@@ -134,6 +134,7 @@ test('product create, edit, price history and reload are persisted', async ({ pa
   await openCatalog(page);
   const name = `Producto e2e ${Date.now()}`;
   const sku = `E2E-${Date.now()}`;
+  try {
   await page.getByRole('button', { name: 'Nuevo producto' }).click();
   let dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
   await dialog.getByLabel('Nombre del producto').fill(name);
@@ -160,11 +161,92 @@ test('product create, edit, price history and reload are persisted', async ({ pa
   await expect(page.getByText('Historial de costo y precio')).toBeVisible();
   await expect(page.locator('.detail-history')).toContainText('Precio');
   await expect(page.locator('.detail-history')).toContainText('Costo');
+  } finally {
   const cleanup = await page.evaluate(async (skuToFind) => {
     const variants = await (await fetch(`/api/products?q=${encodeURIComponent(skuToFind)}`)).json();
     if (!variants[0]) return 'not-found';
     const response = await fetch(`/api/products/${variants[0].product.id}`, { method: 'DELETE' });
     return response.status;
   }, sku);
-  expect(cleanup).toBe(200);
+  expect(['not-found', 200]).toContain(cleanup);
+  }
+});
+
+test('variant action stays in its legend and adds a complete editable variant', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await openCatalog(page);
+  await page.getByRole('button', { name: 'Nuevo producto' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
+  const first = dialog.locator('.catalog-variant').first();
+  const action = first.getByRole('button', { name: 'Agregar variante' });
+  await expect(action).toBeVisible();
+  await expect(action).toBeInViewport();
+  const rects = await action.evaluate(button => ({ button: button.getBoundingClientRect(), legend: button.closest('legend')!.getBoundingClientRect() }));
+  expect(rects.button.top).toBeGreaterThanOrEqual(rects.legend.top);
+  expect(rects.button.bottom).toBeLessThanOrEqual(rects.legend.bottom + 2);
+  await action.click();
+  await expect(dialog.locator('.catalog-variant')).toHaveCount(2);
+  const second = dialog.locator('.catalog-variant').nth(1);
+  for (const label of ['SKU', 'Código de barras', 'Talla', 'Color', 'Stock inicial', 'Costo', 'Precio normal', 'Precio promocional', 'Límite de stock bajo']) await expect(second.getByLabel(label, { exact: true })).toBeVisible();
+});
+
+test('desktop sidebar stays viewport-height and mobile navigation is two-column in flow', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await openCatalog(page);
+  await page.locator('.workspace-main').evaluate(el => { el.style.minHeight = '1800px'; });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const sidebar = page.locator('.sidebar');
+  await expect.poll(() => sidebar.evaluate(el => ({ top: Math.round(el.getBoundingClientRect().top), height: Math.round(el.getBoundingClientRect().height), position: getComputedStyle(el).position }))).toEqual({ top: 0, height: 800, position: 'sticky' });
+  await expect(sidebar.getByText('lucem')).toBeVisible();
+  await expect(sidebar.locator('nav a')).toHaveCount(8);
+  for (const label of ['Resumen', 'Punto de venta', 'Productos', 'Inventario', 'Apartados', 'Devoluciones', 'Reportes', 'Auditoria']) await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const nav = sidebar.locator('nav');
+  await expect(nav.locator('a')).toHaveCount(8);
+  const mobile = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, position: getComputedStyle(document.querySelector('.sidebar')!).position, columns: getComputedStyle(document.querySelector('.sidebar nav')!).gridTemplateColumns.split(' ').length }));
+  expect(mobile).toEqual({ width: 390, scrollWidth: 390, position: 'static', columns: 2 });
+  for (const link of await nav.locator('a').all()) await expect(link).toBeVisible();
+  await expect(sidebar.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+});
+
+test('POS mobile cart summary and checkout sheet stay usable; desktop uses sticky split cart', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCatalog(page);
+  await page.goto('/pos');
+  const products = page.locator('.pos-product');
+  await expect(products.first()).toBeVisible();
+  await expect.poll(() => products.count()).toBeGreaterThanOrEqual(4);
+  for (let index = 0; index < 4; index++) await products.nth(index).click();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const summary = page.locator('.pos-summary-mobile');
+  await expect(summary).toBeVisible();
+  await expect(summary).toContainText('4 unidades');
+  await expect(summary).toContainText(/Total\s+\$[\d,.]+/);
+  const summaryPosition = await summary.evaluate(el => getComputedStyle(el).position);
+  expect(summaryPosition).toBe('fixed');
+  await summary.getByRole('button').click();
+  const sheet = page.getByRole('dialog', { name: 'Carrito y cobro' });
+  await expect(sheet).toBeVisible();
+  await sheet.locator('button[aria-label^="Agregar una unidad"]:not([disabled])').first().click();
+  await expect(sheet.locator('.pos-sheet-header')).toContainText('5 unidades');
+  await sheet.getByLabel('Método de pago').selectOption('CASH');
+  await sheet.getByLabel('Efectivo recibido').fill('500');
+  await expect(sheet).toContainText('Cambio:');
+  await expect(sheet.locator('.pos-sheet-footer').getByRole('button', { name: 'Cobrar' })).toBeInViewport();
+  const scrollRegions = await sheet.evaluate(el => [...el.querySelectorAll<HTMLElement>('*')].filter(node => { const style = getComputedStyle(node); return /(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1; }).length);
+  expect(scrollRegions).toBe(1);
+  const beforeScroll = await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0);
+  await page.mouse.wheel(0, 600);
+  expect(await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)).toBe(beforeScroll);
+  await sheet.getByRole('button', { name: 'Cerrar carrito' }).click();
+  await expect(sheet).toBeHidden();
+  expect(await page.locator('.pos-sheet').evaluate(el => el.matches(':modal'))).toBe(false);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/pos');
+  await expect(page.locator('.pos-layout')).toHaveCSS('display', 'grid');
+  await expect(page.locator('.pos-cart-desktop')).toBeVisible();
+  expect(await page.locator('.pos-cart-desktop').evaluate(el => getComputedStyle(el).position)).toBe('sticky');
+  await expect(page.locator('.pos-summary-mobile')).toBeHidden();
 });
