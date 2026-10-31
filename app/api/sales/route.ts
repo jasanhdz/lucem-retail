@@ -22,7 +22,10 @@ export async function POST(req: Request) {
     const sale = await db.$transaction(async (tx) => {
       if (body.idempotencyKey) {
         const existing = await tx.saleIdempotency.findUnique({ where: { businessId_key: { businessId: auth.business!.id, key: body.idempotencyKey } }, include: { sale: true } });
-        if (existing) return existing.sale;
+        if (existing) {
+          if (existing.requestHash !== JSON.stringify(body)) throw new Error('idempotency');
+          return existing.sale;
+        }
       }
        const ids = body.items.map((item: { variantId: string }) => item.variantId);
        if (new Set(ids).size !== ids.length) throw new Error('items');
@@ -51,7 +54,8 @@ export async function POST(req: Request) {
      }, { isolationLevel: 'Serializable' });
     await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Sale', entityId: sale.id });
     return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: 201 });
-   } catch (error) {
-     return jsonError(error instanceof Error && error.message === 'stock' ? 'Existencia insuficiente' : 'No fue posible registrar la venta', error instanceof Error && error.message === 'stock' ? 409 : 400);
-   }
+    } catch (error) {
+      const conflict = error instanceof Error && (['stock', 'idempotency'].includes(error.message) || 'code' in error && error.code === 'P2034');
+      return jsonError(error instanceof Error && error.message === 'idempotency' ? 'La clave de idempotencia ya fue usada con otro contenido' : conflict ? 'Existencia insuficiente' : 'No fue posible registrar la venta', conflict ? 409 : 400);
+    }
 }
