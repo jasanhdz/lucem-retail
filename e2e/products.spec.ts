@@ -69,14 +69,49 @@ test('catalog search and accessible modal work at 390px without overflow', async
 });
 
 test('desktop catalog uses multiple card columns and detail dialog opens', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await openCatalog(page);
   const measurements = await page.locator('.catalog-grid').evaluate((grid) => ({ columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length, width: document.documentElement.scrollWidth }));
   expect(measurements.columns).toBeGreaterThanOrEqual(3);
   expect(measurements.width).toBeLessThanOrEqual(1440);
   await page.locator('.product-card-main').first().click();
-  await expect(page.locator('.detail-dialog')).toBeVisible();
+  const detail = page.locator('.detail-dialog');
+  await expect(detail).toBeVisible();
+  await expect.poll(() => detail.evaluate((element) => { const rect = element.getBoundingClientRect(); return { x: Math.abs(rect.left + rect.width / 2 - innerWidth / 2), y: Math.abs(rect.top + rect.height / 2 - innerHeight / 2) }; })).toEqual({ x: 0, y: 0 });
   await expect(page.getByText('Variantes y existencias')).toBeVisible();
+  await detail.getByRole('button', { name: 'Cerrar detalle' }).click();
+  await page.getByRole('button', { name: 'Nuevo producto' }).click();
+  const form = page.getByRole('dialog', { name: 'Nuevo producto' });
+  await expect.poll(() => form.evaluate((element) => { const rect = element.getBoundingClientRect(); return { x: Math.abs(rect.left + rect.width / 2 - innerWidth / 2), y: Math.abs(rect.top + rect.height / 2 - innerHeight / 2) }; })).toEqual({ x: 0, y: 0 });
+  for (const label of ['SKU', 'Código de barras', 'Talla', 'Color', 'Stock inicial', 'Costo', 'Precio normal', 'Precio promocional', 'Límite de stock bajo']) await expect(form.getByLabel(label, { exact: true })).toBeInViewport();
+  await expect(form.getByText('Foto del producto')).toBeInViewport();
+  await expect(form.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
+  expect(await form.locator('.catalog-dialog-body').evaluate((body) => body.scrollHeight <= body.clientHeight)).toBeTruthy();
+});
+
+test('mobile dialogs have one scroll region, lock the background, and sidebar stays in document flow', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCatalog(page);
+  await page.evaluate(() => window.scrollTo(0, 300));
+  const pageScroll = await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0);
+  const trigger = page.getByRole('button', { name: 'Nuevo producto' });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
+  await expect(dialog).toBeVisible();
+  const scrollRegions = await dialog.evaluate((element) => [...element.querySelectorAll<HTMLElement>('*')].filter((node) => { const style = getComputedStyle(node); return /(auto|scroll)/.test(`${style.overflowY} ${style.overflow}`) && node.scrollHeight > node.clientHeight + 1; }).length);
+  expect(scrollRegions).toBe(1);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)).toBe(pageScroll);
+  await dialog.getByLabel('Nombre del producto').fill('Mobile dialog scroll test');
+  await dialog.locator('.catalog-dialog-body').evaluate((element) => element.scrollTop = element.scrollHeight);
+  await expect(dialog.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
+  await dialog.getByRole('button', { name: 'Cerrar formulario' }).click();
+  const sidebar = page.locator('.sidebar');
+  expect(await sidebar.evaluate((element) => getComputedStyle(element).position)).toBe('static');
+  const before = await sidebar.evaluate((element) => element.getBoundingClientRect().top);
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect.poll(() => sidebar.evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(before);
+  await page.locator('.workspace-main').evaluate((element) => ({ sidebarBottom: element.previousElementSibling?.getBoundingClientRect().bottom, contentTop: element.getBoundingClientRect().top })).then(({ sidebarBottom, contentTop }) => expect(contentTop).toBeGreaterThanOrEqual(sidebarBottom ?? 0));
 });
 
 test('product create, edit, price history and reload are persisted', async ({ page }) => {
