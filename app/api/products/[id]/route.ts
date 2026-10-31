@@ -3,6 +3,15 @@ import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
 import { Role } from '@prisma/client';
 
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getAuth();
+  if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const { id } = await params;
+  const product = await db.product.findFirst({ where: { id, businessId: auth.business.id, archived: false }, include: { category: true, variants: { where: { active: true }, orderBy: { sku: 'asc' } } } });
+  if (!product) return jsonError('Producto no encontrado', 404);
+  return Response.json({ ...product, variants: product.variants.map((variant) => ({ ...variant, cost: variant.cost.toString(), price: variant.price.toString(), promoPrice: variant.promoPrice?.toString() ?? null, stock: variant.stock.toString(), lowStockThreshold: variant.lowStockThreshold.toString() })) });
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuth();
   if (!auth?.business) return jsonError('Sesion requerida', 401);
@@ -13,7 +22,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const result = await db.$transaction(async (tx) => {
       const product = await tx.product.findFirst({ where: { id, businessId: auth.business!.id }, include: { variants: true } });
       if (!product) throw new Error('not-found');
-      const updated = await tx.product.update({ where: { id }, data: { name: body.name?.trim() || product.name, categoryId: body.categoryId || product.categoryId, location: body.location?.trim() || product.location } });
+      const updated = await tx.product.update({ where: { id }, data: { name: body.name?.trim() || product.name, photoPath: body.photoPath === undefined ? product.photoPath : (body.photoPath || null), categoryId: body.categoryId || product.categoryId, location: body.location?.trim() || product.location } });
       for (const input of body.variants ?? []) {
         const current = product.variants.find((variant) => variant.id === input.id);
         if (!current) continue;
@@ -22,6 +31,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         for (const [field, oldValue, newValue] of [['COST', current.cost, data.cost], ['PRICE', current.price, data.price], ['PROMO_PRICE', current.promoPrice, data.promoPrice] ] as const) {
           if (String(oldValue ?? '') !== String(newValue ?? '')) await tx.priceCostHistory.create({ data: { businessId: auth.business!.id, variantId: current.id, userId: auth.user.id, field, oldValue, newValue, reason: body.reason?.trim() || 'Edicion de producto' } });
         }
+      }
+      for (const input of (body.variants ?? []).filter((variant: { id?: string }) => !variant.id)) {
+        const variant = await tx.productVariant.create({ data: { businessId: auth.business!.id, productId: id, sku: input.sku.trim(), barcode: input.barcode?.trim() || null, size: input.size || null, color: input.color || null, cost: input.cost, price: input.price, promoPrice: input.promoPrice || null, stock: input.stock || 0, lowStockThreshold: input.lowStockThreshold || 1 } });
+        if (Number(input.stock) > 0) await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, type: 'INITIAL', quantity: input.stock, reason: 'Alta de variante' } });
       }
       return updated;
     });
