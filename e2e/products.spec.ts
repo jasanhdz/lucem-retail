@@ -9,6 +9,34 @@ async function openCatalog(page: import('@playwright/test').Page) {
   await expect(page.getByRole('heading', { name: 'Catálogo de productos' })).toBeVisible();
 }
 
+test('catalog combines SKU, category and available filters and clears them', async ({ page }) => {
+  await openCatalog(page);
+  await expect(page.getByRole('status')).toBeHidden();
+  const cards = page.locator('.product-card');
+  await expect(cards.first()).toBeVisible();
+  const availableCard = cards.filter({ hasText: 'Disponible' }).first();
+  await expect(availableCard).toBeVisible();
+  const skuText = await availableCard.locator('.product-sku').innerText();
+  const sku = skuText.replace(/^SKU\s*/, '').split(' · ')[0];
+  const category = (await availableCard.locator('.product-category').innerText()).trim();
+
+  const filters = page.getByRole('region', { name: 'Filtros de productos' });
+  await filters.getByLabel('Buscar productos').fill(sku);
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toContainText(sku);
+
+  await filters.getByLabel('Filtrar por categoría').selectOption({ label: category });
+  await filters.getByLabel('Filtrar por estado').selectOption({ label: 'Disponible' });
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toContainText(sku);
+  await expect(cards.first().locator('.product-category')).toHaveText(category);
+  await expect(cards.first()).toContainText('Disponible');
+
+  await filters.getByRole('button', { name: 'Limpiar filtros' }).click();
+  await expect(cards.first()).toBeVisible();
+  await expect.poll(() => cards.count()).toBeGreaterThan(1);
+});
+
 test('catalog search and accessible modal work at 390px without overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openCatalog(page);
