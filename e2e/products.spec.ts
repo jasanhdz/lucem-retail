@@ -77,7 +77,22 @@ test('desktop catalog uses multiple card columns and detail dialog opens', async
   await page.locator('.product-card-main').first().click();
   const detail = page.locator('.detail-dialog');
   await expect(detail).toBeVisible();
+  await expect.poll(() => detail.evaluate((element) => element.getBoundingClientRect().width)).toBeLessThanOrEqual(640);
   await expect.poll(() => detail.evaluate((element) => { const rect = element.getBoundingClientRect(); return { x: Math.abs(rect.left + rect.width / 2 - innerWidth / 2), y: Math.abs(rect.top + rect.height / 2 - innerHeight / 2) }; })).toEqual({ x: 0, y: 0 });
+  const detailInsets = await detail.evaluate((element) => {
+    const panel = element.getBoundingClientRect();
+    return [...element.querySelectorAll<HTMLElement>('.detail-body > h3')].map((section) => {
+      const rect = section.getBoundingClientRect();
+      return { left: rect.left - panel.left, right: panel.right - rect.right };
+    });
+  });
+  expect(detailInsets.every(({ left, right }) => left >= 16 && right >= 16)).toBeTruthy();
+  const sectionInsets = await detail.locator('.detail-variants, .detail-history').evaluateAll((sections) => sections.map((section) => {
+    const style = getComputedStyle(section);
+    return { left: parseFloat(style.paddingLeft), right: parseFloat(style.paddingRight) };
+  }));
+  expect(sectionInsets.length).toBeGreaterThanOrEqual(1);
+  expect(sectionInsets.every(({ left, right }) => left >= 16 && right >= 16)).toBeTruthy();
   await expect(page.getByText('Variantes y existencias')).toBeVisible();
   await detail.getByRole('button', { name: 'Cerrar detalle' }).click();
   await page.getByRole('button', { name: 'Nuevo producto' }).click();
