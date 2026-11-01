@@ -16,28 +16,29 @@ export async function clearE2eData(db: PrismaClient) {
   const userRows = await db.user.findMany({ where: { email: { in: Object.values(emails) } }, select: { id: true } });
   const businesses = businessRows.map(row => row.id);
   const users = userRows.map(row => row.id);
-  if (!businesses.length && !users.length) return;
-  await db.$transaction(async tx => {
-    const sales = await tx.sale.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
-    const saleIds = sales.map(sale => sale.id);
-    const returns = await tx.return.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
-    await tx.returnLine.deleteMany({ where: { returnId: { in: returns.map(row => row.id) } } });
-    await tx.saleIdempotency.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.saleLine.deleteMany({ where: { saleId: { in: saleIds } } });
-    await tx.return.deleteMany({ where: { id: { in: returns.map(row => row.id) } } });
-    await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
-    await tx.reservation.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.auditLog.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.session.deleteMany({ where: { OR: [{ userId: { in: users } }, { activeBusinessId: { in: businesses } }] } });
-    await tx.productVariant.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.product.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.category.deleteMany({ where: { businessId: { in: businesses } } });
-    await tx.membership.deleteMany({ where: { OR: [{ userId: { in: users } }, { businessId: { in: businesses } }] } });
-    await tx.business.deleteMany({ where: { id: { in: businesses } } });
-    await tx.user.deleteMany({ where: { id: { in: users } } });
-  });
+  if (businesses.length || users.length) {
+    await db.$transaction(async tx => {
+      const sales = await tx.sale.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
+      const saleIds = sales.map(sale => sale.id);
+      const returns = await tx.return.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
+      await tx.returnLine.deleteMany({ where: { returnId: { in: returns.map(row => row.id) } } });
+      await tx.saleIdempotency.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.saleLine.deleteMany({ where: { saleId: { in: saleIds } } });
+      await tx.return.deleteMany({ where: { id: { in: returns.map(row => row.id) } } });
+      await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
+      await tx.reservation.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.auditLog.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.session.deleteMany({ where: { OR: [{ userId: { in: users } }, { activeBusinessId: { in: businesses } }] } });
+      await tx.productVariant.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.product.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.category.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.membership.deleteMany({ where: { OR: [{ userId: { in: users } }, { businessId: { in: businesses } }] } });
+      await tx.business.deleteMany({ where: { id: { in: businesses } } });
+      await tx.user.deleteMany({ where: { id: { in: users } } });
+    });
+  }
   const remaining = await Promise.all([
     db.business.count({ where: { id: { in: [ids.centro, ids.norte] }, name: { startsWith: 'DEV-TEST-01-' } } }),
     db.user.count({ where: { email: { in: Object.values(emails) } } }),
