@@ -6,7 +6,7 @@ Captured with the project's production server and Playwright Chromium at 1440×9
 
 ### Baseline observations
 
-The six baseline captures in `before/` were captured before the DEV-01B implementation. At desktop, login used a split dark brand panel and white form region; selector likewise used split composition and list-like business choices. At mobile, login/selector did not use the requested centered Stitch card composition. The workspace baseline displayed the placeholder without a persistent operational shell on desktop, and a drawer/placeholder presentation on mobile rather than the requested fixed five-item bottom navigation. The historical mobile mock contains a broken logo; it is not treated as a valid mark.
+The six baseline captures in `before/` were captured before the DEV-01B implementation. At desktop, login used a split dark brand panel and white form region; selector likewise used split composition and list-like business choices. At mobile, login/selector did not use the requested centered Stitch card composition. The desktop workspace already had a simplified persistent sidebar and header around the placeholder, but it lacked the fuller business switcher, operational CTA and user menu composition in the approved shell reference. On mobile it used a drawer/placeholder presentation rather than the requested fixed five-item bottom navigation. The historical mobile mock contains a broken logo; it is not treated as a valid mark.
 
 ## Before / after against screen references
 

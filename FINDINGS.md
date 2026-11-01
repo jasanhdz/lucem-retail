@@ -212,3 +212,64 @@ En pass2 se ejecutaron los cuatro comandos solicitados: el smoke terminó 4/4, `
 
 - [x] F-DEV01-02 · criterios #6–8, #12–13 — El E2E pasó los flujos de validación/request de login, error recuperable de servidor y rechazo de red con reintento, estados de carga/vacío/error recuperable de negocios, y confirmación de negocio existente. `CI=1 npm run test:e2e -- --reporter=list`: prueba de foco visible por teclado también pasó; 10 activas pasaron, 11 legacy quedaron omitidas. No se usaron credenciales reales ni se escribieron datos.
 - [x] DEV01-PASS3 · criterios #1–3, #6–10, #12–15 (12/15 PASS acumulados) — Conserva la evidencia histórica de pass 2 para los criterios no reejecutados. Este pass verificó E2E, lint, typecheck, unit tests y build. El build mostró la advertencia preexistente de plugin Next.js no detectado en ESLint. Sin servidor residual en `:3101`.
+
+# Findings — pass 1 (DEV-01B)
+
+## Resumen
+
+12/15 criterios PASS; el selector integrado con sesión real está BLOCKED por no disponer de sesión autorizada, y siguen abiertos dos hallazgos funcionales/operativos. Se ejecutaron secuencialmente `npm run lint`, `npm run typecheck`, `npm test` (4 suites/6 tests), `npm run build`, E2E completo (10 pasados, 11 legacy omitidos) y smoke (4/4); todos terminaron con código 0. Playwright inició el servidor de producción en `127.0.0.1:3101`; al finalizar `lsof -nP -iTCP:3101 -sTCP:LISTEN` no mostró listener. No se inició sesión, no se leyó ninguna credencial ni se hicieron llamadas de login o mutaciones a la API/DB. Las llamadas de selección/login del E2E usan mocks de navegador.
+
+## Abiertos
+
+- [ ] F-DEV01B-01 · minor · criterios #5 y #9 — En `src/components/WorkspaceShell.tsx:23,34,36,38`, `businessOpen` alimenta a la vez el menú del switcher de sidebar y el de header, y `userOpen` alimenta ambos menús de usuario. Al pulsar cualquiera de los dos controles correspondientes, el mismo booleano pasa a `true` y los dos menús se renderizan simultáneamente en desktop; no es un único menú que cambia de ubicación. Esto duplica opciones y puede superponer/mostrar dos overlays. La ruta de cambio/logout del shell no fue ejercitada por los E2E actuales; los tests de autenticación cubren la selección de negocio en la pantalla `/negocios`, no el switcher del shell ni el POST de logout.
+- [ ] F-DEV01B-02 · BLOCKED · criterio #4 — No existe sesión autorizada disponible. Los screenshots del selector están identificados como fixture no-auth y usan negocios de route fixture; no demuestran carga de membresías ni selección con sesión real. No se creó sesión ni se mutó la base de datos. Queda pendiente la verificación integrada de selección con ID real conforme al límite explícito del rubric.
+
+## Verificación rubric DEV-01B
+
+1. **PASS** — `SPEC.md` presenta las siete secciones en orden; `git diff --check` terminó con código 0. El alcance documentado conserva placeholders y excluye DEV-02.
+2. **PASS** — `docs/ui-redesign/DEV-01B-DESIGN-MAPPING.md` y `DEV-01B-VISUAL-AUDIT.md` enlazan ambas fuentes DESIGN y los HTML/PNG específicos. `git diff -- diseno/` vacío.
+3. **PASS** — `CI=1 npm run test:e2e -- --reporter=list`: login validó localmente, envió el contrato mock una vez, siguió redirect, mostró error recuperable/reintento y pasó la prueba de foco. E2E móvil/tablet para login y selector; no se usaron credenciales reales.
+4. **BLOCKED** — Flujos visuales/estados del selector y contrato de selección están cubiertos con fixtures/mocks por `e2e/dev-01-auth.spec.ts`; sin sesión autorizada no se verificó selector integrado con membresías reales ni ID real de negocio. Las capturas no cuentan como validación autenticada.
+5. **FAIL** — Captura visual fixture desktop 1440×900 muestra sidebar de 300px, grupos, header, CTA y menú de usuario. Sin embargo, al abrir switcher o usuario se montan simultáneamente sus dos instancias (F-DEV01B-01), incumpliendo el comportamiento de menú único. No hubo sesión real.
+6. **PASS** — Captura fixture móvil 390×844 muestra las cinco opciones requeridas; `MobileBottomNavigation` limita “Más” a `extraRoutes`, derivadas de destinos existentes permitidos. CSS define barra fixed con safe-area y el layout responsive; la captura no muestra overflow horizontal.
+7. **PASS** — `src/components/Brand.tsx` dibuja el SVG de capas apiladas; captura desktop confirma el mark y no usa Store genérico como marca.
+8. **PASS** — `tests/workspace-navigation.test.ts` cubre los tres roles reales; `visibleWorkspaceRoutes` excluye Auditoría excepto para ADMIN y `WorkspaceShell` deriva grupos y “Más” de ese filtro. No se inventan rutas.
+9. **FAIL** — El servicio existente `selectBusiness` se invoca desde el handler del switcher con el ID elegido y logout usa POST `/api/auth/logout`, pero esta pasada no pudo verificar ninguna de esas dos acciones interactivamente en el shell: el E2E activo prueba selección de `/negocios`, no del switcher ni logout. Además aplica el problema de menú duplicado descrito en F-DEV01B-01.
+10. **PASS** — Smoke `CI=1 npm run test:e2e -- e2e/dev-00-placeholder.spec.ts --reporter=list` pasó 4/4; confirmó redirects protegidos y 401 sin cookies para APIs listadas, incluido audit. Inspección de `app/api/audit/route.ts` confirma guard ADMIN. La protección server-side sigue siendo autoridad.
+11. **PASS** — Diff de archivos protegidos solicitado (diseños, API, auth/services, Prisma/migraciones, manifests/lock) vacío; no hubo cambios backend, de auth, DB, dependencias o infraestructura.
+12. **PASS** — Inspección de los módulos workspace y E2E de preservación confirman `PreparationPlaceholder`; no se implementó funcionalidad DEV-02.
+13. **PASS** — Evidencia before/after para login, selector y shell en desktop/móvil presente bajo `docs/ui-redesign/dev-01b-visual-evidence/`; revisé las capturas del shell 1440×900 y 390×844, con etiqueta visible de fixture no-auth y sin overflow horizontal visible. Auditoría consigna que no es pixel-perfect.
+14. **PASS** — Revisión visual de las capturas del shell no encontró credenciales, contraseñas o tokens. Se conserva el warning exactamente: `GET /api/audit exposes passwordHash`; el hallazgo histórico F-21 también documenta que filas auditadas incluyen `user.passwordHash`. No se declara producción lista.
+15. **PASS** — Secuencia reproducida: lint PASS, typecheck PASS, tests PASS (4 suites/6), build PASS, E2E PASS (10 activos; 11 legacy omitidos) y smoke PASS (4/4). Build mostró la advertencia preexistente de plugin Next.js no detectado en ESLint. No se ejecutaron acciones E2E mutantes.
+
+## Resueltos (verificados este pass)
+
+- [x] DEV01B-PASS1 · criterios #1–3, #6–8, #10–15. Validaciones ejecutadas contra el árbol actual; se verificaron visualmente las capturas fixture de workspace en ambos viewports. No eleva a PASS el criterio #4 pendiente de sesión autorizada ni oculta los fallos de shell de #5/#9.
+
+# Findings — pass 2 (DEV-01B)
+
+## Resumen
+
+13/15 criterios PASS; 1 BLOCKED por falta de sesión autenticada autorizada y 1 criterio conserva verificación parcial por la misma limitación. Evaluación del commit `8c3b71c` (`fix F-DEV01B-01: render a single shell menu`). Se usaron los resultados observados de esta pasada: lint, typecheck, tests y build pasaron; E2E completo: 10 pasaron y 11 legacy fueron omitidos; smoke: 4/4. El puerto `3101` no tenía listener al comprobarlo. No se autenticó ni se mutó la base de datos.
+
+## Abiertos
+
+- [ ] F-DEV01B-02 · BLOCKED · criterio #4 — Sigue sin haber una sesión válida autorizada para verificar selector integrado con membresías reales y el ID real del negocio. No se inició sesión ni se mutó la base de datos; fixtures/screenshots no sustituyen esa evidencia.
+- [ ] Criterio #9 · BLOCKED parcial — La inspección del shell confirma que la elección llama `chooseBusiness(business.id)` y logout llama `logout()`, pero el cambio de negocio y logout no se ejercitaron en sesión autenticada real. La selección de negocio integrada permanece sin validar; no se afirma integración completa.
+- [ ] F-21 / advertencia de seguridad — Se conserva la observación histórica: `GET /api/audit exposes passwordHash`. La exposición de `user.passwordHash` en los resultados de auditoría sigue siendo un impedimento para considerar el sistema listo para producción.
+
+## Resueltos (verificados este pass)
+
+- [x] F-DEV01B-01 · minor · criterios #5 y #9 — Resuelto en `8c3b71c`. `src/components/WorkspaceShell.tsx` ahora renderiza el menú del selector de negocio una sola vez, bajo el control del topbar, y el menú del usuario una sola vez, también bajo su control del topbar. La inspección del JSX confirma que ya no se renderizan instancias duplicadas en sidebar y header. Se mantiene la limitación de interacción real autenticada descrita arriba.
+- [x] DEV01B-PASS2 · criterio #15 — lint, typecheck, tests y build pasaron; E2E reportó 10 passed / 11 legacy skipped y smoke 4/4. `lsof -nP -iTCP:3101 -sTCP:LISTEN` no reportó listener, sin servidor residual.
+
+## Verificación rubric DEV-01B
+
+1–3, 6–8, 10–14. Se preservan los resultados y evidencias históricas de pass 1 y pass 3 de DEV-01; no se repitieron ni se alteran esos registros.
+
+4. **BLOCKED** — Sin sesión autorizada, no se pudo verificar selector con membresías reales/ID real. No hubo auth ni mutaciones.
+5. **PASS** — Inspección del JSX de `src/components/WorkspaceShell.tsx` confirma un solo menú de negocio y un solo menú de usuario; resuelve F-DEV01B-01.
+9. **BLOCKED parcial** — Los handlers apuntan al servicio `chooseBusiness(business.id)` y al logout existente, pero sin sesión real no se verificó el flujo autenticado del selector/logout de extremo a extremo.
+15. **PASS** — Checks comunicados: lint/typecheck/tests/build pasaron; E2E 10 pasaron, 11 legacy omitidos; smoke 4/4. Puerto 3101 sin listener al terminar.
+
+Se mantiene el estado **no listo para producción** mientras siga vigente la exposición `GET /api/audit exposes passwordHash`. Los resultados automatizados y la corrección del menú no constituyen evidencia de integración con una sesión autenticada real.
