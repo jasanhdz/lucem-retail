@@ -167,3 +167,48 @@ En pass2 se ejecutaron los cuatro comandos solicitados: el smoke terminó 4/4, `
 
 ## Resueltos (verificados este pass)
 - [x] DEV00-PASS3 · criterios #1–5, #8–20 y #23; #7/#22 tienen cobertura 401 de los 30 requests indicados pero siguen abiertos por falta de evidencia 403 con sesión. Esta es la pasada final 3/3.
+
+# Findings — pass 1 (DEV-01)
+
+## Resumen
+7/15 criterios del rubric pasan. La implementación evaluada es `f6d51e0`; el historial confirma referencias de diseño `2e23d1b` → SPEC Planner `9e43a8d` → Generator `f6d51e0`. `CI=1 npm run test:e2e -- --reporter=list` terminó con 4 fallos, 5 pasados y 11 omitidos. Los fallos observados son aserciones estrictas ambiguas; no se usó login real, credenciales, seed, migración ni escrituras a base de datos.
+
+## Abiertos
+- [ ] F-DEV01-01 · major · criterios #4–5 — No se verificó el shell desktop autenticado ni la navegación en sesión; el E2E móvil/tablet sólo recorre `/login` y `/negocios`, sin medir overflow ni operabilidad del shell a 768×1024/390×844. `docs/ui-redesign/DEV-01-IMPLEMENTATION.md` líneas 17–19 registra que no se generó sesión de prueba. El test actual `e2e/dev-00-placeholder.spec.ts` sólo comprueba redirects sin autenticación y estructura estática.
+- [ ] F-DEV01-02 · major · criterios #6–8, #12–13 — El E2E falla antes de completar los flujos: `dev-00-placeholder.spec.ts:12` y `dev-01-auth.spec.ts:15,41` usan `getByLabel('Contraseña')`, que resuelve tanto el input como el botón «Mostrar contraseña»; `dev-01-auth.spec.ts:56` usa `getByRole('alert')`, que resuelve el error de servicio y `#__next-route-announcer__`. Ejecución reproducible: `CI=1 npm run test:e2e -- --reporter=list` → fallan `public routes render the DEV-01 entry and login experiences`, `login validates locally, posts the existing contract once and follows the response`, `login shows recoverable server errors and permits retry` y `business selection supports loading, empty and recoverable error states without creation`. Así, no se demuestra validación/request único, respuestas y reintento de login, estados error/vacío/lista del selector ni errores de red recuperables en ambos servicios. La prueba `business confirmation posts the selected id exactly and follows the server redirect` sí pasa y observa `{ businessId: 'business-b'}`.
+- [ ] F-DEV01-03 · minor · criterio #11 — Hay foco visible y controles con nombre/labels en el código, pero acciones táctiles quedan por debajo de 44×44px: `.input-action` y `.mobile-close` son 40×40px y `.mobile-menu-button` 42×42px en `app/globals.css`. No se aporta evidencia de contraste WCAG AA de todos los colores ni E2E de navegación por teclado/foco para el shell; el criterio íntegro no pasa.
+
+## Resueltos (verificados este pass)
+- [x] DEV01-PASS1 · criterios #1–3, #9–10, #14–15. #1: `git diff --check -- SPEC.md` termina en 0; SPEC contiene las siete secciones en el orden rubricado y el historial registra Planner antes de Generator. #2: las rutas requeridas están presentes, `/tickets/[id]` permanece y los checks de lint/typecheck/test/build se reportaron pasados; no se añadieron rutas de alta/signup. #3: CSS usa Plus Jakarta Sans, primario `#102b2a` y superficies neutrales; `docs/ui-redesign/DEV-01-IMPLEMENTATION.md` documenta la propuesta POS mint/Inter como suplementaria y `git diff -- diseno/` está vacío. #9: diff vacío para API, auth/services, Prisma y lockfiles; `app/(workspace)/layout.tsx` conserva `getAuth()` y `redirect('/login')`. #10: el commit Generator sólo modifica shell/layout y las páginas workspace existentes siguen usando contenido DEV-00; no añade operaciones de DEV-02. #14: lint, typecheck y build fueron reportados reejecutados con éxito. #15: diff de infraestructura protegido vacío; sin dependencias ni cambios de infraestructura.
+
+# Findings — pass 2 (DEV-01)
+
+## Resumen
+
+10/15 criterios PASS con evidencia; criterios #4–5 permanecen BLOCKED por falta de UI de workspace autenticada verificable. El E2E solicitado ejecutó 21 casos: 9 pasaron, 1 falló y 11 legacy fueron omitidos. No se usó login real ni se mutó la base de datos. Los commits `74b3d43` y `1ff218f` están presentes, en ese orden, sobre `f6d51e0`.
+
+## Abiertos
+
+- [ ] F-DEV01-01 · major · criterios #4–5 — Sigue sin verificarse el shell desktop autenticado ni su navegación/táctil en sesión real o fixture. La prueba de redirección sin autenticación y los E2E de login/selección no establecen una sesión para renderizar las rutas protegidas; `docs/ui-redesign/DEV-01-IMPLEMENTATION.md` líneas 17–19 registra esta limitación. No se realizaron cambios backend ni escrituras de sesión para suplirla.
+- [ ] F-DEV01-02 · major · criterios #12–13 — El defecto de selectores ambiguos reportado en pass 1 está corregido: los flujos E2E de validación/request/login, error de servidor y retry, estados de negocios y confirmación con `{ businessId: 'business-b' }` pasaron. Sin embargo, no queda íntegramente verificado el criterio #12: el E2E no simula explícitamente rechazo de red en login y negocios; tampoco pasa íntegramente #13 porque falló la prueba de foco de teclado registrada en F-DEV01-03. Reproducción: `CI=1 npm run test:e2e -- --reporter=list`.
+- [ ] F-DEV01-03 · minor · criterio #11 — `app/globals.css` ahora establece `.input-action` en 44×44px y, en móvil, `.mobile-close` y `.mobile-menu-button` en 44×44px; los enlaces de navegación tienen altura mínima de 44px. Pero la prueba `e2e/dev-01-auth.spec.ts:103–110` falla: confirma foco en el campo Contraseña, y luego espera `boxShadow != none`, pero el estilo computado es `none` (la regla visible usa outline en `:focus-visible`). Además no hay evidencia de medición WCAG AA del contraste de todos los colores de texto. La condición íntegra de accesibilidad sigue sin probarse.
+
+## Resueltos (verificados este pass)
+
+- [x] DEV01-PASS2 · criterios #1–3, #6–10, #14–15; corrección del defecto selector de F-DEV01-02. `git show` confirma commits `74b3d43` (selectores/assercciones E2E) y `1ff218f` (objetivos táctiles); se conserva el orden Planner `9e43a8d` → Generator `f6d51e0`. `npm run lint`, `npm run typecheck`, `npm test` (3 suites, 5 tests) y `npm run build` terminaron con código 0 en el árbol actual. El build enumera las rutas requeridas y `/tickets/[id]`; conserva la advertencia de plugin Next.js no detectado en ESLint. `CI=1 npm run test:e2e -- --reporter=list`: 9 PASS, 1 FAIL (foco), 11 SKIP legacy. Los E2E probaron las páginas públicas, validación local sin request, request de login una vez y redirect solicitado, error 401/reintento, selector en error/vacío/lista, selección/envío del ID, responsive de `/login` y `/negocios` a 390px/768px, redirects protegidos sin sesión, módulos workspace estáticos y API sin cookies. El diff de infraestructura/API/dominio/rutas de ticket y diseños protegidos permanece conforme a la evidencia registrada en pass 1; no se usó la contraseña demostrativa del README como dato funcional ni se inició sesión real. No se declara evidencia de captura visual autenticada ni contraste WCAG integral.
+
+# Findings — pass 3 (DEV-01)
+
+## Resumen
+
+12/15 criterios PASS. Revisión del commit evaluado `6e4cf30` (`fix F-DEV01-02/03: verify recoverable auth and keyboard focus`). `CI=1 npm run test:e2e -- --reporter=list` terminó con 10 pruebas activas pasadas y 11 legacy omitidas. Se verificaron fallos de red y reintentos recuperables en login y selección de negocio, además del foco de teclado visible. `npm run lint`, `npm run typecheck`, `npm test` (3 suites/5 tests) y `npm run build` finalizaron correctamente. Ningún login real ni mutación a base de datos. El puerto 3101 estaba libre antes de Playwright y quedó sin listener tras la ejecución.
+
+## Abiertos
+
+- [ ] F-DEV01-01 · major · criterios #4–5 — No hay fixture autenticado de workspace; las pruebas existentes sólo confirman redirects sin sesión y los flujos de login/selección no establecen sesión para renderizar el shell. No se verificó shell ni navegación autenticada en desktop/tablet/móvil. Se conserva abierto; no se hicieron cambios de backend, no se autenticó ni se mutó la base de datos.
+- [ ] F-DEV01-03 · minor · criterio #11 — El E2E de foco de teclado pasa. CSS establece objetivos interactivos de 44×44px (incluidos `.input-action`, `.mobile-close`, `.mobile-menu-button` y enlaces de navegación). Sigue sin evidencia de auditoría WCAG AA completa del contraste de todos los colores y de teclado para el shell autenticado; el criterio integral permanece abierto.
+
+## Resueltos (verificados este pass)
+
+- [x] F-DEV01-02 · criterios #6–8, #12–13 — El E2E pasó los flujos de validación/request de login, error recuperable de servidor y rechazo de red con reintento, estados de carga/vacío/error recuperable de negocios, y confirmación de negocio existente. `CI=1 npm run test:e2e -- --reporter=list`: prueba de foco visible por teclado también pasó; 10 activas pasaron, 11 legacy quedaron omitidas. No se usaron credenciales reales ni se escribieron datos.
+- [x] DEV01-PASS3 · criterios #1–3, #6–10, #12–15 (12/15 PASS acumulados) — Conserva la evidencia histórica de pass 2 para los criterios no reejecutados. Este pass verificó E2E, lint, typecheck, unit tests y build. El build mostró la advertencia preexistente de plugin Next.js no detectado en ESLint. Sin servidor residual en `:3101`.
