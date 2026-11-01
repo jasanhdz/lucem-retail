@@ -73,7 +73,7 @@ Inventario de API existente que debe permanecer registrado y operativo: autentic
 Cada criterio es binario y se valida secuencialmente. PASS requiere evidencia verificable; ante FAIL se detiene la secuencia, se informa el criterio y no se afirma PASS global.
 
 1. `git branch --show-current` es `feature/lucem-ui-redesign-v1`; `git rev-parse HEAD` parte de `bf8c45f`; `backup/lucem-ui-legacy-20261101` y la rama feature apuntan al mismo commit base.
-2. El cambio de especificación está únicamente en `SPEC.md` durante esta fase de Planner; no se escribe código ni informe todavía.
+2. La secuencia es verificable en Git: el commit Planner `86c4ebb`, que registra `SPEC.md`, precede a los commits Generator `f11e70a` (implementación) y `2f8a42b` (smoke), en ese orden; los tres commits pertenecen a `feature/lucem-ui-redesign-v1`. El worktree puede contener commits Generator/Evaluator posteriores. `backup/lucem-ui-legacy-20261101` permanece intacta en `bf8c45f`.
 3. La especificación contiene exactamente las siete secciones Planner: `Objetivo`, `Scope`, `User flows`, `Modelo de datos`, `Stack y decisiones técnicas`, `Assumptions`, `Rubric de evaluación`.
 4. `git diff --check -- SPEC.md` termina con código 0.
 5. El placeholder compartido presenta heading exacto `Lucem Retail` y texto exacto `Estamos preparando la nueva interfaz.` en `/`, `/login`, `/negocios`, las ocho rutas workspace y `/tickets/[id]`; no añade navegación, login, dashboard o formularios.
