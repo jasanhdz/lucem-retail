@@ -1,97 +1,79 @@
-# Lucem Retail — DEV-00 Preparación de fundación
+# DEV-01 — Design System, Application Shell, Login y selección de negocio
 
 ## Objetivo
-Preparar de forma verificable la fundación del rediseño preservando íntegramente el dominio y sustituyendo únicamente la presentación visual existente por un placeholder común, sin construir una UI nueva.
+
+Implementar el design system de Lucem Retail y una experiencia responsive para el shell autenticado, login y selección de negocio conforme a las nuevas referencias Google Stitch, manteniendo intactos los servicios, rutas y dominio existentes.
 
 ## Scope
 
-Entra:
-- Trabajar sobre `feature/lucem-ui-redesign-v1`, basada en `bf8c45f`; conservar la rama de respaldo que ya existe desde ese mismo commit.
-- Reemplazar únicamente la presentación visual anterior en `/`, `/login`, `/negocios`, las ocho rutas workspace `/dashboard`, `/pos`, `/productos`, `/inventario`, `/apartados`, `/devoluciones`, `/reportes`, `/auditoria`, y `/tickets/[id]` por el mismo componente compartido, no visual.
-- El placeholder renderiza exactamente el heading `Lucem Retail` y el texto `Estamos preparando la nueva interfaz.`. No incorpora navegación, formularios, dashboard ni assets nuevos.
-- Mantener el layout protegido existente con `getAuth` y su redirect. La página de ticket conserva sesión y scoping por negocio y responde `notFound` para recursos no visibles/no existentes. Mantener todas las rutas existentes.
-- Extraer de `BusinessSelector` y de los formularios login/selección las llamadas API a servicios cliente reusable; mantener las operaciones existentes de iniciar sesión y seleccionar negocio.
-- Extraer a lógica reusable la mecánica client-side del carrito POS y conservar sus promociones, cantidades limitadas por stock y total; acompañarla con test significativo. No se cambia ninguna regla de dominio/API.
-- Mantener las respuestas y el contrato operativo existentes para login API aunque la UI de login sea placeholder; en DEV-00 no se añade UI de fallback de autenticación.
-- Crear `docs/ui-redesign/DEV-00-PREPARATION.md` como informe de clasificación completa de archivos/pantallas y pruebas: UI sustituida, visuales legacy conservados, servicios/lógica reusable, pruebas de dominio preservadas y E2E UI legacy.
-- Clasificar como legacy las pantallas visuales antiguas y los E2E de UI preexistentes. Preservar su fuente. Marcar los E2E legacy de productos fuera del run por defecto sin borrarlos. Añadir únicamente E2E smoke para placeholder y 401/auth/ruta protegida.
-- Conservar README y sus instrucciones originales.
+**Incluye**
+- Sustituir el placeholder DEV-00 por UI real únicamente en la página pública `/`, `/login`, `/negocios` y shell compartido de las rutas workspace existentes: `/dashboard`, `/pos`, `/productos`, `/inventario`, `/apartados`, `/devoluciones`, `/reportes` y `/auditoria`. El shell debe poder presentar el estado activo de navegación y el contenido actual/placeholder de cada módulo, sin implementar ni rediseñar los módulos funcionales que son DEV-02.
+- Crear tokens y componentes base coherentes con `diseno/retail_operational_clarity/DESIGN.md`: Plus Jakarta Sans, superficies blancas y neutrales, primario oscuro, acento verde, bordes sutiles, radios y espaciado definidos allí; estados de foco y objetivos táctiles de al menos 44px cuando aplique.
+- Usar esa referencia como autoridad visual para diseño system, shell, login y selección. Documentar en el resultado de implementación las diferencias frente a `diseno/retail_pos_inventory_system/DESIGN.md`: esa segunda propuesta está centrada en POS/inventario y presenta una composición alterna con base mint y tipografía Inter para texto denso; solo podrá aportar patrones puntuales compatibles (p. ej. controles accesibles), sin reemplazar paleta, tipografía ni composición primaria. No editar ninguna referencia, imagen, HTML o archivo bajo `diseno/`.
+- Shell de escritorio con navegación lateral estructurada por las secciones existentes, marca, contexto de negocio y área de usuario; adaptar a tablet/móvil con navegación compacta/drawer o equivalente utilizable, sin overflow horizontal. No agregar destinos que no tengan ruta existente.
+- Login visual conectado a `src/services/auth.ts` y al endpoint existente; campos etiquetados, mostrar/ocultar contraseña, validación, envío, indicador de carga, errores recuperables y feedback de autenticación. Usar solo la autenticación real existente; no crear credenciales funcionales, valores por defecto, secretos, ni sembrar/usar la cadena de contraseña de referencia como credencial, fixture o configuración.
+- Selección de negocio conectada a `src/services/businesses.ts`: cargar negocios mediante el servicio existente, renderizar estados de carga, vacío y error, seleccionar un negocio existente y confirmar usando la operación existente. Mostrar error recuperable; no ofrecer creación/alta de negocio.
+- Mantener rutas, guardas de sesión y dominio actuales. La ruta `/tickets/[id]` conserva su comportamiento DEV-00, fuera del alcance visual de este incremento.
+- Añadir pruebas realistas para los flujos cubiertos: unitarias/componentes para estados y contratos de interacción usando el stack actual, y Playwright para viewport desktop/móvil, login/errores y selección con respuestas controladas o fixture ya existente que no escriba en la base real. Ejecutar validaciones del proyecto.
 
-Fuera:
-- Cualquier UI nueva, flujo de navegación, login visual funcional, selector visual, dashboard, formularios, componentes Stitch o assets nuevos.
-- Cambios a endpoints o contratos API, reglas de negocio, autorización, permisos, sesiones, aislamiento multiempresa, operaciones, cálculos fuera del traslado reusable explícito del carrito, ni comportamiento persistente.
-- Cambios a cualquier `app/api/**`, Prisma/schema, migraciones o seed, Postgres/Docker, env example, package/lock/config/dependencias, fuentes/código de diseño, README, y `src/lib/auth`, `src/lib/db`, `src/lib/audit`, `src/lib/money`.
-- Cambios o eliminación de pruebas de dominio existentes. No desinstalar, subir ni bajar dependencias.
-- Incluir en Git blobs de `public/uploads` o `.env` locales, ni borrar esos archivos locales.
-
-Inventario de API existente que debe permanecer registrado y operativo: autenticación login/logout; selección de negocio; categorías; productos CRUD/historial/imagen; inventario/movimientos; apartados CRUD/liberar/convertir/vencer; ventas CRUD/cancelar; devoluciones; dashboard; reportes y exportación CSV/XLSX; auditoría. Preservar las rutas exactas actuales y su protección, sin crear ni retirar endpoints.
+**Fuera de alcance**
+- Signup/registro, completar perfil, recuperación de contraseña, creación de negocio, invitaciones/usuarios y configuración no existentes en el flujo actual.
+- Implementar o rediseñar POS, inventario, productos, apartados, devoluciones, reportes, auditoría o dashboard funcionales; pantallas y operaciones de esos módulos son DEV-02. El shell solo proporciona marco, navegación a rutas ya existentes y contenido presente sin ampliar su comportamiento.
+- Cambios a APIs/endpoints, contratos, autorización/sesión, reglas de negocio, modelo/schema/migraciones/seed, persistencia o aislamiento multiempresa; cambios a rutas existentes o creación de rutas nuevas.
+- Dependencias nuevas, cambios de versión, reescritura de servicios de auth/business, cambios a `src/lib/auth.ts`, u otros cambios backend.
+- Repetir DEV-00 (placeholder común, refactor de servicios/carrito o informe de preparación) como objetivo de implementación. Los servicios y rutas actuales se consumen tal como existen.
 
 ## User flows
 
-1. Un visitante solicita `/`: la ruta muestra el placeholder compartido con `Lucem Retail` y `Estamos preparando la nueva interfaz.`.
-2. Un visitante solicita `/login`: aparece el mismo placeholder. No se ofrece formulario de login en esta fase; los servicios cliente reusable extraídos conservan la llamada login y la API existente sigue aceptándola.
-3. Un usuario autenticado que requiere elegir negocio solicita `/negocios`: aparece el mismo placeholder. El servicio reusable de selección conserva la operación de selección de negocio y la API existente sigue validando membresía y actualizando la sesión.
-4. Una sesión ausente accede a una ruta protegida del workspace: el `getAuth` del layout conserva su redirect existente. Con sesión válida, cada una de `/dashboard`, `/pos`, `/productos`, `/inventario`, `/apartados`, `/devoluciones`, `/reportes` y `/auditoria` muestra el mismo placeholder.
-5. POS conserva en lógica reusable el estado/mecánica actual del carrito: agregar/quitar/actualizar, aplicación promocional existente, tope de cantidad según stock conocido y cálculo del total; el test verifica estos comportamientos. La pantalla visual POS anterior queda legacy y no se reconstruye.
-6. El acceso a `/tickets/[id]` conserva autenticación, sesión y restricción al negocio activo. Para ticket permitido muestra el placeholder común; para ticket inexistente o fuera del negocio devuelve `notFound`, sin filtrar datos de otro negocio.
-7. Las llamadas de auth y selección de negocio siguen yendo a sus endpoints existentes mediante servicios cliente reusable. Las rutas `app/api/**` preservan status y respuestas existentes; requests sin sesión reciben `401`, y autorización insuficiente recibe `403` donde aplique.
-8. E2E smoke verifica el texto exacto y la ruta del placeholder, así como la respuesta no autenticada y protección/redirect de rutas. E2E UI antiguo queda marcado legacy; el E2E de productos se conserva y excluye del run por defecto.
+1. **Visita a `/`**: el usuario no autenticado ve una página de entrada coherente con la identidad operativa y una acción visible que lleva a `/login`. Sin autenticación no aparecen datos privados ni se inicia una sesión automáticamente.
+2. **Login en `/login`**: el usuario introduce correo y contraseña en campos etiquetados. Vacíos/formato inválido generan validación legible sin request; envío válido deshabilita temporalmente el botón y muestra progreso. El cliente usa exclusivamente `src/services/auth.ts` y su endpoint/payload existente. Respuesta de error (incluidas credenciales inválidas o error de red) produce mensaje accesible y permite corregir/reintentar. Éxito respeta la respuesta/redirect existente: entrar al workspace si corresponde o ir a `/negocios` cuando la sesión requiere selección. No exponer detalles secretos ni rellenar credenciales de demostración.
+3. **Selección en `/negocios`**: solicitar lista mediante `src/services/businesses.ts`; mientras carga se presenta estado visible anunciado apropiadamente. Con negocios, mostrar nombre y datos ya devueltos por el servicio en tarjetas/lista accesibles. Elegir y confirmar invoca la operación existente con el id seleccionado, muestra progreso y evita envíos duplicados. Éxito sigue el destino que ya usa la aplicación; error de red/servidor conserva contexto y habilita reintento. Lista vacía explica que no hay negocios disponibles y no incluye CTA para crearlos.
+4. **Workspace protegido**: con sesión válida, visitar cualquiera de las ocho rutas enumeradas muestra el shell, navegación con selección actual, cabecera/contexto y el contenido ya existente de esa ruta. Activar cada enlace navega a su ruta real. Sin sesión, el `getAuth` del layout existente conserva el redirect a `/login`; no se sustituye ni debilita la protección.
+5. **Responsive y teclado**: en desktop la navegación lateral queda disponible junto al contenido; en tablet/móvil la adaptación permite abrir, cerrar y recorrer navegación con teclado/táctil, el contenido se refluye y no se requiere scroll horizontal. Foco visible, orden lógico, nombres accesibles y Escape/cierre cuando haya drawer/modal.
 
 ## Modelo de datos
 
-- No se modifica el modelo Prisma/PostgreSQL: tablas, campos, tipos, relaciones, índices, restricciones, migraciones y seed permanecen idénticos al commit base.
-- No se introduce persistencia, tablas, columnas ni migraciones para placeholder, servicios cliente o estado reusable del carrito.
-- Servicios cliente auth/business mantienen los payloads y respuestas de los endpoints actuales. La lógica reusable POS conserva las representaciones y reglas de promoción, cantidades y total que ya usa la aplicación; no cambia el modelo de venta.
+- No se modifica ni amplía Prisma/PostgreSQL: tablas, campos, tipos, relaciones, índices, migraciones y seed permanecen sin cambios.
+- Login conserva el contrato ya existente en `src/services/auth.ts` y `POST /api/auth/login`; la pantalla solo gestiona en memoria los valores introducidos y el estado de petición. No persistir contraseña en storage, URL o logs.
+- Selector conserva el tipo, respuesta y contrato existente de `src/services/businesses.ts`, `GET /api/businesses` y `POST /api/businesses/select`; el id seleccionado y el estado de UI son efímeros. No crear campos, negocios ni mutaciones distintas.
+- Datos de usuario/negocio que se muestren provienen únicamente de respuestas/estado ya existentes; no inventar propiedades ni cambiar la sesión.
 
 ## Stack y decisiones técnicas
 
-- Mantener exactamente versiones, dependencias, scripts y configuración existentes (Next.js/TypeScript/React, Prisma/PostgreSQL y herramientas de pruebas ya instaladas). Sin cambios a `package.json`, lockfiles o configuración.
-- Un único componente compartido sin responsabilidades visuales de navegación/formulario constituye el placeholder para todas las rutas indicadas; mantener texto y heading exactos.
-- Mantener el layout protegido, `getAuth`, redirects, sesión, scoping del ticket y manejo `notFound` existentes.
-- Extraer las llamadas de auth y selección de negocio en servicios cliente reutilizables desde los consumidores actuales, sin eliminar la capacidad operativa de login/selección ni alterar contratos.
-- Extraer mecánica POS reusable y conservar test unitario de promoción, límite por stock y total. Mantener intacto `src/lib/money`.
-- E2E smoke nuevo limitado a placeholder y 401/auth/protected route. Marcar y excluir del comando por defecto el E2E legacy de productos sin borrar o reescribir su fuente; conservar los demás E2E antiguos etiquetados legacy y todas las pruebas de dominio.
-- Informe de clasificación: `docs/ui-redesign/DEV-00-PREPARATION.md`, con clasificación completa, inventario de rutas API anterior, pruebas legacy/smoke, verificación de criterios y baseline observado.
-- Sin migraciones en DEV-00. Arranque y base de datos continúan usando los comandos, Docker Compose, `.env.example`, Postgres y seed documentados actualmente.
-- Validación secuencial: criterios numerados en orden, ejecutando los checks apropiados; `git diff --check -- SPEC.md`. Registrar lint, typecheck, test, build y E2E-smoke. Documentar baseline E2E legacy previo 10/11 y que el test de sidebar falla únicamente por comparar `-0` con `0`.
+- Mantener el stack y versiones instalados: Next.js 15, React 19, TypeScript, Tailwind CSS 4, Lucide React, Vitest 3 y Playwright 1.51 según `package.json`; no añadir dependencias ni editar lockfile/config para introducir herramientas.
+- Respetar App Router y las ubicaciones actuales: `app/layout.tsx`, `app/globals.css`, `app/page.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/negocios/page.tsx`, `app/(workspace)/layout.tsx` y sus ocho `page.tsx`; reutilizar/crear componentes visuales en `src/components/` y tokens en CSS global o estructura existente apropiada. Los servicios están en `src/services/auth.ts` y `src/services/businesses.ts`.
+- Usar fuentes ya instaladas/locales; la familia principal será Plus Jakarta Sans según la referencia primaria. Inter solo se admite donde un detalle utilitario existente lo justifique, no como composición tipográfica global alternativa.
+- Mantener navegación limitada a las rutas reales y labels en español. Evitar links a signup/crear negocio o módulos no implementados. Preservar los contenidos actuales de las páginas workspace sin implementar funcionalidades DEV-02.
+- Preferir elementos HTML semánticos, `label` asociado a cada campo, `button`/`a` nativos, `aria-live` para mensajes de petición y errores, indicador de foco perceptible, contraste WCAG AA y soporte de teclado/reduced motion. No depender solo de color para estados.
+- Mantener pruebas y comandos existentes: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`; Playwright debe ser no destructivo y no llamar APIs que escriban datos reales. No ejecutar seed/migraciones.
+- Secuencia de trabajo Forge: el Planner registra primero el reemplazo de `SPEC.md` en un commit SPEC Planner; únicamente después Generator implementa y registra sus cambios en commit(s) Generator. El commit Planner debe preceder al primero de Generator en el historial.
 
 ## Assumptions
 
-- El fallback visual/autenticación no existe hasta una fase posterior; login API permanece funcional pese a que `/login` sea placeholder.
-- Placeholder significa el mismo componente y exactamente heading `Lucem Retail` y texto `Estamos preparando la nueva interfaz.` en las once ubicaciones declaradas (root, login, negocios, ocho rutas workspace y ticket), sin interfaz adicional.
-- Las rutas de aplicación y APIs existentes se identifican desde el commit base; no se renombran rutas ni se altera su protección.
-- Las llamadas de `BusinessSelector` y formularios de login/selección contienen comportamiento que debe sobrevivir en servicios cliente reutilizables, aunque desaparezca su UI.
-- Las promociones, cantidades límite por stock y total POS son mecánica existente que debe portarse junto con prueba; no se redefinen promociones ni operaciones de negocio.
-- `TicketActions`, `Screen`, `Skeleton` y `WorkspaceNavigation` son presentación puramente visual. Los cálculos monetarios permanecen en `src/lib/money`.
-- Las pruebas E2E UI anteriores, incluidas las de productos, son legacy, pero su fuente queda preservada; E2E products se excluye del run por defecto. Ninguna prueba de dominio se clasifica para eliminación.
-- La rama `backup/lucem-ui-legacy-20261101` existe y apunta al mismo commit base que la rama feature.
-- Los blobs de `public/uploads` y `.env` locales no se versionan ni se borran.
-- El baseline legado conocido es 10/11 E2E; el fallo restante de sidebar se debe solamente a comparación de `-0` con `0`. Se documenta como baseline, sin modificar reglas de negocio para ocultarlo.
+- DEV-01 reemplaza el estado visual de preparación de DEV-00, pero no reabre el alcance de placeholder ni repite los servicios ya extraídos.
+- La lista exhaustiva de rutas workspace es la registrada hoy bajo `app/(workspace)/`; grupos de rutas entre paréntesis no forman parte de la URL. La página de ticket no se convierte en parte del shell ni cambia su scoping.
+- La referencia primaria contiene la composición, paleta, espaciado y jerarquía de la experiencia pedida. No se copian las composiciones POS ni signup aunque existan otras pantallas Stitch en `diseno/`.
+- El sistema actual determina redirects al autenticar/seleccionar negocio; la UI los conserva y no inventa destinos ni reglas de roles.
+- Si la API de negocios devuelve una colección vacía, no se infiere permiso para crear un negocio. Se presenta solo un estado vacío informativo.
+- Las pruebas E2E usan mocks de red, sesión de prueba o fixture aislada ya disponible; no autentican contra ni mutan una base local/compartida con credenciales reales.
+- Si una pantalla workspace actual sigue siendo el placeholder DEV-00, el shell la envuelve y mantiene ese contenido temporal; su implementación funcional y rediseño individual esperan DEV-02.
 
 ## Rubric de evaluación
 
-Cada criterio es binario y se valida secuencialmente. PASS requiere evidencia verificable; ante FAIL se detiene la secuencia, se informa el criterio y no se afirma PASS global.
+Cada criterio es binario: PASS únicamente si la evidencia/comando indicado cumple íntegramente; si falla, registrar FAIL con criterio y evidencia observada. Evaluar en orden y no declarar PASS global con algún FAIL.
 
-1. `git branch --show-current` es `feature/lucem-ui-redesign-v1`; `git rev-parse HEAD` parte de `bf8c45f`; `backup/lucem-ui-legacy-20261101` y la rama feature apuntan al mismo commit base.
-2. La secuencia es verificable en Git: el commit Planner `86c4ebb`, que registra `SPEC.md`, precede a los commits Generator `f11e70a` (implementación) y `2f8a42b` (smoke), en ese orden; los tres commits pertenecen a `feature/lucem-ui-redesign-v1`. El worktree puede contener commits Generator/Evaluator posteriores. `backup/lucem-ui-legacy-20261101` permanece intacta en `bf8c45f`.
-3. La especificación contiene exactamente las siete secciones Planner: `Objetivo`, `Scope`, `User flows`, `Modelo de datos`, `Stack y decisiones técnicas`, `Assumptions`, `Rubric de evaluación`.
-4. `git diff --check -- SPEC.md` termina con código 0.
-5. El placeholder compartido presenta heading exacto `Lucem Retail` y texto exacto `Estamos preparando la nueva interfaz.` en `/`, `/login`, `/negocios`, las ocho rutas workspace y `/tickets/[id]`; no añade navegación, login, dashboard o formularios.
-6. Layout protegido conserva `getAuth` y redirect; ticket conserva sesión, scoping de negocio y `notFound` para id inexistente o ajeno; las rutas existentes siguen registradas.
-7. Todas las rutas `app/api/**` siguen registradas/protegidas y el inventario cubre auth login/logout, businesses/select, categories, products CRUD/history/image, inventory/movements, reservations CRUD/release/convert/expire, sales CRUD/cancel, returns, dashboard/reports/export CSV/XLSX y audit. Requests no autenticados devuelven `401` y los casos de autorización insuficiente `403` donde proceda.
-8. Diff de implementación no modifica `app/api/**`, `prisma/schema.prisma`, migraciones, package/lock/config; tampoco cambia esquema/datos, Docker/env example, dependencias, fuente/código de diseño ni `src/lib/auth|db|audit|money`.
-9. Reglas de negocio y documentación originales permanecen intactas; README existente sigue presente. No se eliminan pruebas de dominio.
-10. Servicios cliente reutilizables de auth y selección de negocio conservan requests y operaciones existentes; iniciar sesión y seleccionar negocio siguen soportados por sus APIs.
-11. La lógica reutilizable POS conserva promoción, límite por stock y total, con test que verifica esos tres resultados y sin alterar API/reglas de dominio.
-12. `TicketActions`, `Screen`, `Skeleton` y `WorkspaceNavigation` se clasifican como visuales; pantallas antiguas y E2E UI se etiquetan legacy, sus fuentes se conservan y E2E products queda fuera del run por defecto.
-13. `.env` local no está stageado y no se elimina ningún blob local de `public/uploads`.
-14. `docs/ui-redesign/DEV-00-PREPARATION.md` enumera la clasificación completa de pantallas, componentes, servicios, lógica/test y pruebas legacy/smoke, además del inventario API.
-15. Solo se agregan E2E smoke para placeholder y 401/auth/ruta protegida; smoke comprueba las rutas y el texto exactos sin depender de las pantallas legacy.
-16. `npm run lint` termina con código 0.
-17. El comando de typecheck definido por el proyecto (actualmente `npm run typecheck`) termina con código 0.
-18. `npm run test` termina con código 0, incluyendo la prueba reusable POS.
-19. `npm run build` termina con código 0.
-20. El comando E2E-smoke del proyecto termina con código 0; informe registra el baseline E2E legacy anterior 10/11 y explica que el único fallo del test de sidebar compara `-0` con `0`.
-21. La aplicación arranca con comandos/provisión existentes y las rutas de UI declaradas responden conforme a sesión, placeholder y notFound.
-22. La enumeración/verificación de rutas API confirma que las rutas del inventario siguen accesibles y protegidas con status `401`/`403` apropiados; no se alteran contratos ni endpoints.
-23. No hay migraciones nuevas y Prisma/PostgreSQL/Docker/seed permanecen como en el commit base.
+1. **SPEC y secuencia Forge** — `git diff --check -- SPEC.md` retorna 0 y `SPEC.md` contiene exactamente estas siete secciones, una vez cada una y en este orden: Objetivo, Scope, User flows, Modelo de datos, Stack y decisiones técnicas, Assumptions, Rubric de evaluación. `git log --oneline` demuestra que el commit que registra el SPEC Planner precede al primer commit Generator.
+2. **Rutas y alcance** — `app` registra UI para `/`, `/login`, `/negocios` y las ocho rutas workspace listadas en Scope; build exitoso. `/tickets/[id]` mantiene su ruta y protección/comportamiento preexistente. No se agrega signup, crear negocio, ni nueva ruta.
+3. **Sistema visual primario** — inspección de tokens/componentes confirma Plus Jakarta Sans como tipografía principal, paleta/superficies y lenguaje visual derivados de `diseno/retail_operational_clarity/DESIGN.md`. `diseno/retail_pos_inventory_system/DESIGN.md` figura en la documentación de implementación como referencia POS/inventario suplementaria con sus diferencias mint/Inter/composición descritas. `git diff -- diseno/` está vacío.
+4. **Shell desktop** — Playwright a 1440×900 abre una ruta workspace autenticada con fixture/mocking de sesión, encuentra navegación accesible con enlaces a las ocho rutas reales, identifica la sección activa según URL y ve cabecera/contexto y contenido; cada enlace navega a la ruta correspondiente sin 404.
+5. **Adaptación responsive** — Playwright en 768×1024 y 390×844 verifica shell y login/negocios sin `document.documentElement.scrollWidth > window.innerWidth`; navegación permanece operable y contenido visible/refluido. No hay elementos esenciales inaccesibles por recorte horizontal.
+6. **Login interacción** — Playwright verifica labels accesibles, validación local de campos vacíos/formato inválido sin request, alternancia de visibilidad de contraseña con nombre accesible y control de envío; mock de request demuestra que usa el endpoint/payload existente una vez, presenta estado de carga y evita doble envío.
+7. **Login respuesta y seguridad** — Playwright con mocks verifica respuesta de autenticación fallida y error de red con mensaje accesible/reintento, y respuesta exitosa con destino conforme al contrato existente. En código/bundle no hay contraseña predeterminada ni secreta en UI, fixture o storage; ningún valor de contraseña de referencia se usa funcionalmente.
+8. **Selector de negocio** — Playwright con mocks de servicio verifica estados loading, vacío sin CTA de alta, error recuperable, lista con negocios existentes y selección/confirmación que envía exactamente el id elegido por el método/payload existente; durante envío hay progreso y no se permite doble submit; éxito sigue redirect existente.
+9. **Auth y dominio preservados** — `git diff -- app/api src/lib/auth.ts src/services/auth.ts src/services/businesses.ts prisma/schema.prisma prisma/migrations package.json package-lock.json` no contiene cambios; inspección confirma el layout sigue usando `getAuth` y redirect sin sesión, y los servicios conservan rutas, métodos y payloads previos.
+10. **Sin módulos DEV-02** — diff de implementación no altera páginas funcionales/API/reglas de POS, inventario, productos, apartados, devoluciones, reportes, auditoría o dashboard; en las ocho rutas el shell envuelve el contenido existente y ningún control nuevo afirma ejecutar operaciones de esos módulos.
+11. **Accesibilidad y estados** — pruebas de componente/E2E confirman navegación por teclado, foco visible, activación de links/botones, labels, nombre de controles, mensajes anunciados de error/carga, contraste WCAG AA de colores de texto y objetivos táctiles de al menos 44×44px para acciones primarias/interactivas táctiles.
+12. **Errores de carga** — prueba de UI del servicio de negocios y login falla de forma controlada con red rechazada y status de error: no hay crash, contenido engañoso ni pérdida irreversible de navegación/entrada; recuperación/reintento vuelve a estado operable.
+13. **Pruebas** — `npm test` y `npm run test:e2e` terminan en código 0; los E2E son deterministas, aislados por fixture/mock y no escriben ni dependen de cambios en base de datos.
+14. **Checks de proyecto** — `npm run lint`, `npm run typecheck` y `npm run build` terminan todos en código 0.
+15. **Sin cambios de infraestructura** — `git diff -- package.json package-lock.json prisma/schema.prisma prisma/migrations app/api src/lib/auth.ts src/lib/db.ts src/lib/audit.ts src/lib/money.ts diseno/` está vacío; no aparecen dependencias, endpoints, tablas, migraciones, archivos de diseño alterados ni secretos/credenciales de demostración incorporados.
