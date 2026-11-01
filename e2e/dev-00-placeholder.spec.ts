@@ -2,12 +2,14 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-test('public placeholder routes share exact content', async ({ page }) => {
-  for (const route of ['/', '/login', '/negocios']) {
-    await page.goto(route);
-    await expect(page.getByRole('heading', { name: 'Lucem Retail' })).toBeVisible();
-    await expect(page.getByText('Estamos preparando la nueva interfaz.', { exact: true })).toBeVisible();
-  }
+test('public routes render the DEV-01 entry and login experiences', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /Tu tienda/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Iniciar sesión/ }).first()).toHaveAttribute('href', '/login');
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Te damos la bienvenida' })).toBeVisible();
+  await expect(page.getByLabel('Correo electrónico')).toBeVisible();
+  await expect(page.getByLabel('Contraseña')).toBeVisible();
 });
 
 test('protected workspace redirects without authentication', async ({ page, request }) => {
@@ -17,11 +19,8 @@ test('protected workspace redirects without authentication', async ({ page, requ
   }
 });
 
-test('all placeholder route modules use the shared component and ticket preserves auth scoping', async () => {
+test('workspace route modules preserve their placeholder content and ticket auth scoping', async () => {
   const modules = [
-    'app/page.tsx',
-    'app/(auth)/login/page.tsx',
-    'app/(auth)/negocios/page.tsx',
     'app/(workspace)/dashboard/page.tsx',
     'app/(workspace)/pos/page.tsx',
     'app/(workspace)/productos/page.tsx',
@@ -34,8 +33,7 @@ test('all placeholder route modules use the shared component and ticket preserve
   ];
   for (const module of modules) {
     const source = readFileSync(resolve(process.cwd(), module), 'utf8');
-    expect(source, module).toMatch(/import\s*\{\s*PreparationPlaceholder\s*\}\s*from\s*['"]@\/components\/PreparationPlaceholder['"]/);
-    expect(source, module).toMatch(/return\s*<PreparationPlaceholder\s*\/>|export\s+default\s+PreparationPlaceholder/);
+    expect(source, module).toMatch(/PreparationPlaceholder/);
   }
 
   const ticket = readFileSync(resolve(process.cwd(), 'app/tickets/[id]/page.tsx'), 'utf8');

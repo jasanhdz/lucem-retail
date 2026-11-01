@@ -1,2 +1,2 @@
-import { PreparationPlaceholder } from '@/components/PreparationPlaceholder';
-export default PreparationPlaceholder;
+import { BusinessesScreen } from '@/components/AuthScreens';
+export default BusinessesScreen;

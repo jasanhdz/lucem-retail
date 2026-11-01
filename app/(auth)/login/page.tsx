@@ -1,2 +1,2 @@
-import { PreparationPlaceholder } from '@/components/PreparationPlaceholder';
-export default PreparationPlaceholder;
+import { LoginScreen } from '@/components/AuthScreens';
+export default LoginScreen;

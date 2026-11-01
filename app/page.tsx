@@ -1,2 +1,10 @@
-import { PreparationPlaceholder } from '@/components/PreparationPlaceholder';
-export default PreparationPlaceholder;
+import { ArrowRight, PackageCheck, ShieldCheck, Store } from 'lucide-react';
+import Link from 'next/link';
+import { Brand } from '@/components/Brand';
+
+export default function HomePage() {
+  return <main className="auth-page">
+    <section className="auth-brand-panel" aria-label="Lucem Retail"><Brand /><div className="auth-story"><span className="eyebrow">Operación retail, con claridad</span><h1>Tu tienda,<br />en buenas manos.</h1><p>Las herramientas que necesitas para operar con confianza, desde el mostrador hasta tu inventario.</p><div className="home-actions"><Link className="button" href="/login">Ingresar a mi cuenta <ArrowRight size={17} aria-hidden="true" /></Link></div></div><span className="auth-foot">Simple, confiable y diseñado para el día a día.</span></section>
+    <section className="auth-main"><div className="auth-content"><Brand className="auth-mobile-brand"/><span className="eyebrow" style={{ color: 'var(--accent)' }}>Lucem Retail</span><h2 style={{ marginTop: 18 }}>Operación simple.<br/>Decisiones claras.</h2><p className="auth-subtitle">Una plataforma pensada para ayudarte a llevar el ritmo de tu tienda, con orden y claridad en cada paso.</p><div style={{ display: 'grid', gap: 15, marginTop: 30 }}><div style={{ display: 'flex', alignItems: 'center', gap: 13 }}><span className="business-avatar"><PackageCheck size={19} aria-hidden="true"/></span><div><strong style={{ fontSize: 14 }}>Tu operación, organizada</strong><div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Un espacio claro para el trabajo de cada día.</div></div></div><div style={{ display: 'flex', alignItems: 'center', gap: 13 }}><span className="business-avatar"><ShieldCheck size={19} aria-hidden="true"/></span><div><strong style={{ fontSize: 14 }}>Acceso para tu equipo</strong><div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Entra con la cuenta que te asignó tu negocio.</div></div></div><div style={{ display: 'flex', alignItems: 'center', gap: 13 }}><span className="business-avatar"><Store size={19} aria-hidden="true"/></span><div><strong style={{ fontSize: 14 }}>Elige tu espacio</strong><div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Si tienes varios negocios, selecciona dónde trabajar.</div></div></div></div><div style={{ marginTop: 34 }}><Link className="button button-full" href="/login">Iniciar sesión <ArrowRight size={17} aria-hidden="true" /></Link></div></div></section>
+  </main>;
+}
