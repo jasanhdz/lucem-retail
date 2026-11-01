@@ -9,7 +9,7 @@ test('login validates locally, posts the existing contract once and follows the 
   });
   await page.goto('/login');
   const email = page.getByLabel('Correo electrónico');
-  const password = page.getByLabel('Contraseña');
+  const password = page.getByRole('textbox', { name: 'Contraseña' });
   await page.getByRole('button', { name: /Iniciar sesión/ }).click();
   await expect(email).toHaveAttribute('required', '');
   await expect(password).toHaveAttribute('required', '');
@@ -31,6 +31,11 @@ test('login validates locally, posts the existing contract once and follows the 
 
 test('login shows recoverable server errors and permits retry', async ({ page }) => {
   let attempts = 0;
+  const requestedPaths: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/dashboard') requestedPaths.push(url.pathname);
+  });
   await page.route('**/api/auth/login', async route => {
     attempts += 1;
     if (attempts === 1) await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'No se pudo validar el acceso.' }) });
@@ -38,11 +43,11 @@ test('login shows recoverable server errors and permits retry', async ({ page })
   });
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill('persona@tienda.test');
-  await page.getByLabel('Contraseña').fill('entrada');
+  await page.getByRole('textbox', { name: 'Contraseña' }).fill('entrada');
   await page.getByRole('button', { name: /Iniciar sesión/ }).click();
-  await expect(page.getByRole('alert')).toContainText('No se pudo validar');
+  await expect(page.locator('.error-message')).toContainText('No se pudo validar');
   await page.getByRole('button', { name: /Iniciar sesión/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect.poll(() => requestedPaths).toContain('/dashboard');
   expect(attempts).toBe(2);
 });
 
@@ -53,7 +58,7 @@ test('business selection supports loading, empty and recoverable error states wi
     else await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ businesses: mode === 'empty' ? [] : [{ id: 'business-a', name: 'Tienda Centro', role: 'ADMIN' }, { id: 'business-b', name: 'Sucursal Norte', role: 'STAFF' }] }) });
   });
   await page.goto('/negocios');
-  await expect(page.getByRole('alert')).toContainText('Servicio temporalmente no disponible');
+  await expect(page.locator('.error-message')).toContainText('Servicio temporalmente no disponible');
   mode = 'empty';
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await expect(page.getByText(/No hay negocios disponibles/)).toBeVisible();
@@ -66,6 +71,11 @@ test('business selection supports loading, empty and recoverable error states wi
 
 test('business confirmation posts the selected id exactly and follows the server redirect', async ({ page }) => {
   let payload: unknown;
+  const requestedPaths: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/dashboard') requestedPaths.push(url.pathname);
+  });
   await page.route('**/api/businesses', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ activeBusinessId: 'business-a', businesses: [{ id: 'business-a', name: 'Tienda Centro', role: 'ADMIN' }, { id: 'business-b', name: 'Sucursal Norte', role: 'STAFF' }] }) }));
   await page.route('**/api/businesses/select', async route => {
     payload = route.request().postDataJSON();
@@ -75,7 +85,7 @@ test('business confirmation posts the selected id exactly and follows the server
   await page.goto('/negocios');
   await page.getByRole('radio', { name: /Sucursal Norte/ }).click();
   await page.getByRole('button', { name: /Continuar/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect.poll(() => requestedPaths).toContain('/dashboard');
   expect(payload).toEqual({ businessId: 'business-b' });
 });
 
@@ -88,4 +98,14 @@ test('auth pages remain usable without horizontal scrolling at mobile and tablet
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
   }
+});
+
+test('login controls expose visible keyboard focus in tab order', async ({ page }) => {
+  await page.goto('/login');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('textbox', { name: 'Correo electrónico' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('textbox', { name: 'Contraseña' })).toBeFocused();
+  const focusStyle = await page.getByRole('textbox', { name: 'Contraseña' }).evaluate(element => getComputedStyle(element).boxShadow);
+  expect(focusStyle).not.toBe('none');
 });

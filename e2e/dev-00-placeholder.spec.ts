@@ -9,7 +9,7 @@ test('public routes render the DEV-01 entry and login experiences', async ({ pag
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Te damos la bienvenida' })).toBeVisible();
   await expect(page.getByLabel('Correo electrónico')).toBeVisible();
-  await expect(page.getByLabel('Contraseña')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Contraseña' })).toBeVisible();
 });
 
 test('protected workspace redirects without authentication', async ({ page, request }) => {
