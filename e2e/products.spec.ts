@@ -102,17 +102,27 @@ test('desktop catalog uses multiple card columns and detail dialog opens', async
   await expect(form.getByText('Foto del producto')).toBeInViewport();
   await expect(form.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
   expect(await form.locator('.catalog-dialog-body').evaluate((body) => body.scrollHeight <= body.clientHeight)).toBeTruthy();
+
+  await page.setViewportSize({ width: 1280, height: 650 });
+  const dialogBox = await form.boundingBox();
+  const footerBox = await form.locator('.catalog-dialog-actions').boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(footerBox).not.toBeNull();
+  expect(footerBox!.y).toBeGreaterThanOrEqual(dialogBox!.y);
+  expect(footerBox!.y + footerBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
+  await expect(form.getByRole('button', { name: 'Cancelar' })).toBeInViewport();
+  await expect(form.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
 });
 
 test('mobile dialogs have one scroll region, lock the background, and sidebar stays in document flow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openCatalog(page);
   await page.evaluate(() => window.scrollTo(0, 300));
-  const pageScroll = await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0);
   const trigger = page.getByRole('button', { name: 'Nuevo producto' });
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
   await expect(dialog).toBeVisible();
+  const pageScroll = await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0);
   const scrollRegions = await dialog.evaluate((element) => [...element.querySelectorAll<HTMLElement>('*')].filter((node) => { const style = getComputedStyle(node); return /(auto|scroll)/.test(`${style.overflowY} ${style.overflow}`) && node.scrollHeight > node.clientHeight + 1; }).length);
   expect(scrollRegions).toBe(1);
   await page.mouse.wheel(0, 500);
@@ -121,12 +131,15 @@ test('mobile dialogs have one scroll region, lock the background, and sidebar st
   await dialog.locator('.catalog-dialog-body').evaluate((element) => element.scrollTop = element.scrollHeight);
   await expect(dialog.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
   await dialog.getByRole('button', { name: 'Cerrar formulario' }).click();
-  const sidebar = page.locator('.sidebar');
-  expect(await sidebar.evaluate((element) => getComputedStyle(element).position)).toBe('static');
-  const before = await sidebar.evaluate((element) => element.getBoundingClientRect().top);
-  await page.evaluate(() => window.scrollTo(0, 500));
-  await expect.poll(() => sidebar.evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(before);
-  await page.locator('.workspace-main').evaluate((element) => ({ sidebarBottom: element.previousElementSibling?.getBoundingClientRect().bottom, contentTop: element.getBoundingClientRect().top })).then(({ sidebarBottom, contentTop }) => expect(contentTop).toBeGreaterThanOrEqual(sidebarBottom ?? 0));
+  const sidebar = page.locator('.desktop-sidebar');
+  await expect(sidebar).toBeHidden();
+  await expect(page.locator('.mobile-app-header')).toBeVisible();
+  const bottomNav = page.locator('.mobile-bottom-navigation');
+  await expect(bottomNav).toBeVisible();
+  await bottomNav.getByRole('button', { name: 'Más' }).click();
+  const more = page.getByRole('menu', { name: 'Más secciones' });
+  for (const label of ['Resumen', 'Apartados', 'Devoluciones', 'Auditoría']) await expect(more.getByRole('menuitem', { name: label })).toBeVisible();
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector('.mobile-bottom-navigation')!).position)).toBe('fixed');
 });
 
 test('product create, edit, price history and reload are persisted', async ({ page }) => {
@@ -190,24 +203,49 @@ test('variant action stays in its legend and adds a complete editable variant', 
   for (const label of ['SKU', 'Código de barras', 'Talla', 'Color', 'Stock inicial', 'Costo', 'Precio normal', 'Precio promocional', 'Límite de stock bajo']) await expect(second.getByLabel(label, { exact: true })).toBeVisible();
 });
 
+test('reopening product form resets inner scroll without losing the draft', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCatalog(page);
+  const trigger = page.getByRole('button', { name: 'Nuevo producto' });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
+  const name = dialog.getByLabel('Nombre del producto');
+  await name.fill('Borrador que conserva el formulario');
+  const addVariant = dialog.locator('.catalog-variant').first().getByRole('button', { name: 'Agregar variante' });
+  for (let index = 0; index < 3; index += 1) await addVariant.click();
+  const body = dialog.locator('.catalog-dialog-body');
+  await expect.poll(() => body.evaluate(element => element.scrollHeight > element.clientHeight)).toBeTruthy();
+  await body.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  await expect.poll(() => body.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await trigger.click();
+  await expect.poll(() => body.evaluate(element => element.scrollTop)).toBe(0);
+  await expect(name).toHaveValue('Borrador que conserva el formulario');
+  await expect(name).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: 'Crear producto' })).toBeInViewport();
+});
+
 test('desktop sidebar stays viewport-height and mobile navigation is two-column in flow', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 800 });
   await openCatalog(page);
   await page.locator('.workspace-main').evaluate(el => { el.style.minHeight = '1800px'; });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  const sidebar = page.locator('.sidebar');
+  const sidebar = page.locator('.desktop-sidebar');
   await expect.poll(() => sidebar.evaluate(el => ({ top: Math.round(el.getBoundingClientRect().top), height: Math.round(el.getBoundingClientRect().height), position: getComputedStyle(el).position }))).toEqual({ top: 0, height: 800, position: 'sticky' });
   await expect(sidebar.getByText('lucem')).toBeVisible();
   await expect(sidebar.locator('nav a')).toHaveCount(8);
-  for (const label of ['Resumen', 'Punto de venta', 'Productos', 'Inventario', 'Apartados', 'Devoluciones', 'Reportes', 'Auditoria']) await expect(sidebar.getByRole('link', { name: label })).toBeVisible();
+  for (const label of ['Resumen', 'Punto de venta', 'Productos', 'Inventario', 'Apartados', 'Devoluciones', 'Reportes', 'Auditoría']) await expect(sidebar.getByRole('link', { name: label, exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
-  const nav = sidebar.locator('nav');
-  await expect(nav.locator('a')).toHaveCount(8);
-  const mobile = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, position: getComputedStyle(document.querySelector('.sidebar')!).position, columns: getComputedStyle(document.querySelector('.sidebar nav')!).gridTemplateColumns.split(' ').length }));
-  expect(mobile).toEqual({ width: 390, scrollWidth: 390, position: 'static', columns: 2 });
-  for (const link of await nav.locator('a').all()) await expect(link).toBeVisible();
-  await expect(sidebar.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+  await expect(sidebar).toBeHidden();
+  await expect(page.locator('.mobile-app-header')).toBeVisible();
+  const mobileNav = page.locator('.mobile-bottom-navigation');
+  for (const label of ['POS', 'Productos', 'Inventario', 'Reportes']) await expect(mobileNav.getByRole('link', { name: label })).toBeVisible();
+  await mobileNav.getByRole('button', { name: 'Más' }).click();
+  const more = page.getByRole('menu', { name: 'Más secciones' });
+  for (const label of ['Resumen', 'Apartados', 'Devoluciones', 'Auditoría']) await expect(more.getByRole('menuitem', { name: label })).toBeVisible();
+  const mobile = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, navPosition: getComputedStyle(document.querySelector('.mobile-bottom-navigation')!).position }));
+  expect(mobile).toEqual({ width: 390, scrollWidth: 390, navPosition: 'fixed' });
 });
 
 test('POS mobile cart summary and checkout sheet stay usable; desktop uses sticky split cart', async ({ page }) => {
@@ -249,4 +287,54 @@ test('POS mobile cart summary and checkout sheet stay usable; desktop uses stick
   await expect(page.locator('.pos-cart-desktop')).toBeVisible();
   expect(await page.locator('.pos-cart-desktop').evaluate(el => getComputedStyle(el).position)).toBe('sticky');
   await expect(page.locator('.pos-summary-mobile')).toBeHidden();
+});
+
+test('design-system shell fits all primary routes on mobile and desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openCatalog(page);
+  for (const route of ['/dashboard', '/pos', '/productos', '/inventario', '/apartados', '/devoluciones', '/reportes', '/auditoria']) {
+    await page.goto(route);
+    await expect(page.locator('.mobile-app-header')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-navigation')).toBeVisible();
+    await expect(page.locator('.page-header h1')).toBeVisible();
+    if (route === '/productos') {
+      await expect(page.locator('.product-card').first()).toBeVisible();
+      const columns = await page.locator('.catalog-grid').evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
+      expect(columns).toBe(1);
+    }
+    const mobileWidth = await page.evaluate(() => ({ inner: innerWidth, scroll: document.documentElement.scrollWidth, offenders: [...document.querySelectorAll<HTMLElement>('*')].map((element) => ({ tag: element.tagName, className: typeof element.className === 'string' ? element.className : '', rect: element.getBoundingClientRect().toJSON(), scrollWidth: element.scrollWidth })).filter((element) => element.rect.right > innerWidth + 1).sort((a, b) => b.rect.right - a.rect.right).slice(0, 8) }));
+    expect(mobileWidth.scroll, `mobile overflow at ${route}: ${JSON.stringify(mobileWidth)}`).toBeLessThanOrEqual(mobileWidth.inner);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const route of ['/dashboard', '/pos', '/productos', '/inventario', '/apartados', '/devoluciones', '/reportes', '/auditoria']) {
+    await page.goto(route);
+    await expect(page.locator('.desktop-sidebar')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-navigation')).toBeHidden();
+    await expect(page.locator('.page-header h1')).toBeVisible();
+    const desktopWidth = await page.evaluate(() => ({ inner: innerWidth, scroll: document.documentElement.scrollWidth }));
+    expect(desktopWidth.scroll, `desktop overflow at ${route}: ${JSON.stringify(desktopWidth)}`).toBeLessThanOrEqual(desktopWidth.inner);
+  }
+});
+
+test('primary data routes show layout-matched skeletons while loading', async ({ page }) => {
+  await openCatalog(page);
+  await page.route('**/api/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    await route.continue();
+  });
+  const loadingStates: Array<[string, string]> = [
+    ['/dashboard', '.metric-card .skeleton-metric'],
+    ['/pos', '.skeleton-pos-grid'],
+    ['/productos', '.skeleton-product-list'],
+    ['/inventario', '.inventory-skeleton-list'],
+    ['/reportes', '.report-skeleton-list'],
+    ['/apartados', '.reservation-list-section .skeleton-stack'],
+    ['/devoluciones', '.returns-section .skeleton-stack'],
+    ['/auditoria', '.skeleton-stack'],
+  ];
+  for (const [route, selector] of loadingStates) {
+    await page.goto(route);
+    await expect(page.locator(selector).first(), `skeleton while loading ${route}`).toBeVisible();
+    await page.waitForTimeout(500);
+  }
 });

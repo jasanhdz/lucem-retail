@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Header, money } from '@/components/Screen';
+import { SkeletonGrid } from '@/components/Skeleton';
+import { ImageOff, MapPin, PackageSearch, Plus, Search, Shirt, TrendingUp, X } from 'lucide-react';
 
 type Variant = { id?: string; sku: string; barcode: string; size: string; color: string; cost: string; price: string; promoPrice: string; stock: string; lowStockThreshold: string };
 type Product = { id: string; name: string; photoPath: string | null; location: string; category: { id: string; name: string } | null; variants: any[] };
@@ -15,7 +17,7 @@ function StockBadge({ stock, threshold }: { stock: number; threshold: number }) 
 
 function ProductImage({ src, name, className = '' }: { src?: string | null; name: string; className?: string }) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) return <div className={`catalog-placeholder ${className}`} role="img" aria-label={`Sin imagen para ${name}`}>◇<small>Sin imagen</small></div>;
+  if (!src || failed) return <div className={`catalog-placeholder ${className}`} role="img" aria-label={`Sin imagen para ${name}`}><ImageOff size={26} strokeWidth={1.7}/><small>Sin imagen</small></div>;
   return <img className={className} src={src} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
 }
 
@@ -79,6 +81,12 @@ export default function Products() {
     }
     return [...grouped.values()];
   }, [items, status]);
+  const catalogTotals = useMemo(() => {
+    const variants = products.flatMap((product) => product.variants);
+    const units = variants.reduce((sum, variant) => sum + Number(variant.stock), 0);
+    const margins = variants.map((variant) => { const price = Number(variant.promoPrice ?? variant.price); return price > 0 ? ((price - Number(variant.cost)) / price) * 100 : 0; });
+    return { units, margin: margins.length ? margins.reduce((sum, value) => sum + value, 0) / margins.length : 0 };
+  }, [products]);
 
   function openForm(trigger: HTMLElement, product?: Product) {
     openerRef.current = trigger;
@@ -90,7 +98,11 @@ export default function Products() {
     setDialogOpen(true);
   }
   useEffect(() => {
-    if (dialogOpen && dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
+    if (dialogOpen && dialogRef.current && !dialogRef.current.open) {
+      dialogRef.current.showModal();
+      const body = dialogRef.current.querySelector<HTMLElement>('.catalog-dialog-body');
+      if (body) body.scrollTop = 0;
+    }
     if (!dialogOpen && dialogRef.current?.open) dialogRef.current.close();
   }, [dialogOpen]);
   useEffect(() => {
@@ -145,26 +157,33 @@ export default function Products() {
   return <>
     <Header title="Productos" kicker="Catálogo y variantes" />
     <main className="catalog-page">
-      <section className="catalog-heading"><div><p className="catalog-eyebrow">Inventario de tienda</p><h2>Catálogo de productos</h2><p className="muted">{products.length} productos en el catálogo</p></div><button className="btn btn-primary catalog-add" onClick={(event) => openForm(event.currentTarget)} type="button">＋ <span>Nuevo producto</span></button></section>
+      <section className="catalog-heading"><div><p className="catalog-eyebrow">Inventario de tienda</p><h2>Catálogo de productos</h2><p className="muted">{products.length} productos en el catálogo</p></div><button className="btn btn-primary catalog-add" onClick={(event) => openForm(event.currentTarget)} type="button"><Plus size={18}/><span>Nuevo producto</span></button></section>
+      {items !== null && <section className="catalog-metrics" aria-label="Resumen del catálogo"><article><span aria-hidden="true"><Shirt size={20}/></span><div><small>En existencia</small><strong>{catalogTotals.units.toLocaleString('es-MX')} pzas</strong></div></article><article><span className="margin-icon" aria-hidden="true"><TrendingUp size={20}/></span><div><small>Margen promedio</small><strong>{catalogTotals.margin.toFixed(1)}%</strong></div></article></section>}
       <section className="catalog-filters" aria-label="Filtros de productos">
-        <label className="catalog-search"><span aria-hidden="true">⌕</span><input className="field" aria-label="Buscar productos" placeholder="Buscar por nombre, SKU o ubicación" value={query} onChange={(event) => setQuery(event.target.value)} /><button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}>×</button></label>
+        <label className="catalog-search"><Search size={19} aria-hidden="true"/><input className="field" aria-label="Buscar productos" placeholder="Buscar por nombre, SKU o ubicación" value={query} onChange={(event) => setQuery(event.target.value)} /><button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><X size={17}/></button></label>
         <label className="catalog-filter-label">Categoría<select className="field" aria-label="Filtrar por categoría" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Todas las categorías</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
         <label className="catalog-filter-label">Estado<select className="field" aria-label="Filtrar por estado" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">Todos los estados</option><option value="available">Disponible</option><option value="low">Por agotarse</option><option value="out">Agotado</option></select></label>
         {(query || categoryId || status) && <button className="catalog-clear" onClick={() => { setQuery(''); setCategoryId(''); setStatus(''); }} type="button">Limpiar filtros</button>}
       </section>
-      {items === null ? <p className="catalog-state" role="status">Cargando productos…</p> : error ? <div className="catalog-state catalog-error" role="alert">{error} <button className="btn btn-light" onClick={() => setRefresh((value) => value + 1)} type="button">Reintentar</button></div> : products.length === 0 ? <div className="catalog-state"><span aria-hidden="true">⌕</span><strong>No encontramos productos</strong><p className="muted">Prueba con otra búsqueda o limpia los filtros.</p><button className="btn btn-light" onClick={() => { setQuery(''); setCategoryId(''); setStatus(''); }} type="button">Limpiar filtros</button></div> : <section className="catalog-grid" aria-label="Productos">
+      <div className="catalog-category-rail" role="group" aria-label="Categorías de productos">
+        <button className={!categoryId ? 'active' : ''} onClick={() => setCategoryId('')} type="button">Todos ({items?.length ?? 0})</button>
+        {categories.map((category) => <button key={category.id} className={categoryId === category.id ? 'active' : ''} onClick={() => setCategoryId(category.id)} type="button">{category.name}</button>)}
+      </div>
+      {items === null ? <SkeletonGrid count={6} className="skeleton-product-list" /> : error ? <div className="catalog-state catalog-error" role="alert">{error} <button className="btn btn-light" onClick={() => setRefresh((value) => value + 1)} type="button">Reintentar</button></div> : products.length === 0 ? <div className="catalog-state"><PackageSearch size={28} aria-hidden="true"/><strong>No encontramos productos</strong><p className="muted">Prueba con otra búsqueda o limpia los filtros.</p><button className="btn btn-light" onClick={() => { setQuery(''); setCategoryId(''); setStatus(''); }}>Limpiar filtros</button></div> : <section className="catalog-grid" aria-label="Productos">
         {products.map((product) => {
           const stock = product.variants.reduce((sum, variant) => sum + Number(variant.stock), 0);
           const threshold = product.variants.reduce((sum, variant) => sum + Number(variant.lowStockThreshold), 0);
           const primary = product.variants[0];
+          const productPrice = Number(primary.promoPrice ?? primary.price);
+          const margin = productPrice > 0 ? ((productPrice - Number(primary.cost)) / productPrice) * 100 : 0;
           const statusVariants = product.variants.filter((v) => status === 'out' ? Number(v.stock) <= 0 : status === 'low' ? Number(v.stock) > 0 && Number(v.stock) <= Number(v.lowStockThreshold) : status === 'available' ? Number(v.stock) > Number(v.lowStockThreshold) : true);
           if (status && statusVariants.length === 0) return null;
           return <article className="product-card" key={product.id}>
             <button className="product-card-main" type="button" onClick={(event) => showDetail(product, event.currentTarget)} aria-label={`Ver detalle de ${product.name}`}>
               <div className="product-photo-wrap"><ProductImage src={product.photoPath} name={product.name} className="product-photo" /><StockBadge stock={stock} threshold={threshold} /></div>
               <div className="product-content"><div className="product-title-line"><h3>{product.name}</h3><span className="product-category">{product.category?.name ?? 'Sin categoría'}</span></div>
-                <p className="product-sku">SKU {product.variants.map((v) => v.sku).join(' · ')}</p><p className="product-location">⌖ {product.location || 'Sin ubicación'}</p>
-                <div className="product-prices"><div><strong>{money(primary.promoPrice ?? primary.price)}</strong>{primary.promoPrice && <span className="product-was">{money(primary.price)} · Promo</span>}</div><div className="product-stock"><b>{stock}</b><span> en stock</span></div></div>
+                <p className="product-sku">SKU {product.variants.map((v) => v.sku).join(' · ')}</p><p className="product-location"><MapPin size={13} aria-hidden="true"/> {product.location || 'Sin ubicación'}</p>
+                <div className="product-prices"><div><span className="product-card-cost">Costo {money(primary.cost)}</span><strong>{money(primary.promoPrice ?? primary.price)}</strong>{primary.promoPrice && <span className="product-was">Normal {money(primary.price)}</span>}</div><div className="product-card-profit"><span>{margin.toFixed(1)}% util.</span><div className="product-stock"><b>{stock}</b><span> disp.</span></div></div></div>
               </div>
             </button>
             <footer className="product-actions"><span>{product.variants.length} {product.variants.length === 1 ? 'variante' : 'variantes'}</span><button className="btn btn-light" type="button" onClick={(event) => { event.stopPropagation(); openForm(event.currentTarget, product); }}>Editar</button></footer>
@@ -175,11 +194,11 @@ export default function Products() {
 
     <dialog ref={dialogRef} className="catalog-dialog" aria-labelledby="product-dialog-title" onKeyDown={trapDialogFocus} onCancel={(event) => { event.preventDefault(); closeForm(); }} onClose={() => { if (dialogOpen) setDialogOpen(false); }}>
       <form className="catalog-dialog-form" onSubmit={save}>
-        <header className="catalog-dialog-header"><div><p className="catalog-eyebrow">Catálogo</p><h2 id="product-dialog-title">{editing ? 'Editar producto' : 'Nuevo producto'}</h2></div><button className="catalog-icon-button" type="button" aria-label="Cerrar formulario" onClick={closeForm}>×</button></header>
+        <header className="catalog-dialog-header"><div><p className="catalog-eyebrow">Catálogo</p><h2 id="product-dialog-title">{editing ? 'Editar producto' : 'Nuevo producto'}</h2></div><button className="catalog-icon-button" type="button" aria-label="Cerrar formulario" onClick={closeForm}><X size={20}/></button></header>
         <div className="catalog-dialog-body">
           <div className="catalog-form-row product-basics"><label className="catalog-field">Nombre del producto<input className="field" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label className="catalog-field">Categoría<select className="field" required value={form.categoryId} onChange={(event) => setForm({ ...form, categoryId: event.target.value })}><option value="">Selecciona categoría</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="catalog-field">Ubicación<input className="field" value={form.location} placeholder="Ej. Estante B-2" onChange={(event) => setForm({ ...form, location: event.target.value })} /></label></div>
           <div className="catalog-photo-field"><ProductImage src={preview} name={form.name || 'Producto'} className="catalog-preview" /><div><strong>Foto del producto</strong><p className="muted">JPEG, PNG, WebP o GIF · máximo 5 MB</p><button type="button" className="btn btn-light" onClick={() => fileInput.current?.click()}>Elegir imagen</button><input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(event) => uploadImage(event.target.files?.[0])} /></div></div>
-          {form.variants.map((variant, index) => <fieldset className="catalog-variant" key={variant.id ?? index}><legend><span>Variante {index + 1}</span>{index === 0 && <button className="btn btn-light catalog-add-variant" type="button" onClick={() => setForm((current) => ({ ...current, variants: [...current.variants, blankVariant()] }))}>＋ Agregar variante</button>}</legend><div className="catalog-form-row"><label className="catalog-field">SKU<input className="field" required value={variant.sku} onChange={(event) => changeVariant(index, 'sku', event.target.value)} /></label><label className="catalog-field">Código de barras<input className="field" value={variant.barcode} onChange={(event) => changeVariant(index, 'barcode', event.target.value)} /></label></div>
+          {form.variants.map((variant, index) => <fieldset className="catalog-variant" key={variant.id ?? index}><legend><span>Variante {index + 1}</span>{index === 0 && <button className="btn btn-light catalog-add-variant" type="button" onClick={() => setForm((current) => ({ ...current, variants: [...current.variants, blankVariant()] }))}><Plus size={15}/> Agregar variante</button>}</legend><div className="catalog-form-row"><label className="catalog-field">SKU<input className="field" required value={variant.sku} onChange={(event) => changeVariant(index, 'sku', event.target.value)} /></label><label className="catalog-field">Código de barras<input className="field" value={variant.barcode} onChange={(event) => changeVariant(index, 'barcode', event.target.value)} /></label></div>
             <div className="catalog-form-row three"><label className="catalog-field">Talla<input className="field" value={variant.size} onChange={(event) => changeVariant(index, 'size', event.target.value)} /></label><label className="catalog-field">Color<input className="field" value={variant.color} onChange={(event) => changeVariant(index, 'color', event.target.value)} /></label><label className="catalog-field">Stock inicial<input className="field" required type="number" min="0" step="0.01" value={variant.stock} disabled={Boolean(editing && variant.id)} onChange={(event) => changeVariant(index, 'stock', event.target.value)} /></label></div>
             <div className="catalog-form-row three"><label className="catalog-field">Costo<input className="field" required type="number" min="0" step="0.01" value={variant.cost} onChange={(event) => changeVariant(index, 'cost', event.target.value)} /></label><label className="catalog-field">Precio normal<input className="field" required type="number" min="0" step="0.01" value={variant.price} onChange={(event) => changeVariant(index, 'price', event.target.value)} /></label><label className="catalog-field">Precio promocional<input className="field" type="number" min="0" step="0.01" value={variant.promoPrice} onChange={(event) => changeVariant(index, 'promoPrice', event.target.value)} /></label></div>
             <label className="catalog-field catalog-threshold">Límite de stock bajo<input className="field" required type="number" min="0" step="0.01" value={variant.lowStockThreshold} onChange={(event) => changeVariant(index, 'lowStockThreshold', event.target.value)} /></label>
@@ -192,7 +211,7 @@ export default function Products() {
     </dialog>
 
     <dialog ref={detailRef} className="catalog-dialog detail-dialog" aria-labelledby="product-detail-title" onKeyDown={trapDialogFocus} onCancel={(event) => { event.preventDefault(); closeDetail(); }} onClose={() => { if (detailOpen) setDetailOpen(false); }}>
-        {selected && <div className="detail-content"><header className="catalog-dialog-header"><div><p className="catalog-eyebrow">Detalle de producto</p><h2 id="product-detail-title">{selected.name}</h2></div><button className="catalog-icon-button" type="button" aria-label="Cerrar detalle" onClick={closeDetail}>×</button></header><div className="detail-body">
+        {selected && <div className="detail-content"><header className="catalog-dialog-header"><div><p className="catalog-eyebrow">Detalle de producto</p><h2 id="product-detail-title">{selected.name}</h2></div><button className="catalog-icon-button" type="button" aria-label="Cerrar detalle" onClick={closeDetail}><X size={20}/></button></header><div className="detail-body">
         {detailError ? <p role="alert" className="catalog-form-error">{detailError}</p> : <><ProductImage src={selected.photoPath} name={selected.name} className="detail-photo"/><div className="detail-meta"><p><strong>Categoría</strong><span>{selected.category?.name ?? 'Sin categoría'}</span></p><p><strong>Ubicación</strong><span>{selected.location || 'Sin ubicación'}</span></p></div>
           <h3>Variantes y existencias</h3><div className="detail-variants">{selected.variants?.map((variant: any) => <article key={variant.id}><div><strong>{variant.sku}</strong><span>{[variant.size, variant.color].filter(Boolean).join(' · ') || 'Talla/color sin especificar'}</span><StockBadge stock={Number(variant.stock)} threshold={Number(variant.lowStockThreshold)}/></div><div><strong>{money(variant.promoPrice ?? variant.price)}</strong>{variant.promoPrice && <span className="product-was">Normal {money(variant.price)}</span>}<small>Costo {money(variant.cost)} · Stock {variant.stock}</small></div></article>)}</div>
           <h3>Historial de costo y precio</h3>{history.length ? <div className="detail-history">{history.map((record) => <p key={record.id}><strong>{record.field === 'COST' ? 'Costo' : record.field === 'PRICE' ? 'Precio' : 'Precio promo'}</strong> {record.oldValue ?? '—'} → {record.newValue ?? '—'}<small>{record.user?.name} · {new Date(record.createdAt).toLocaleString('es-MX')}</small></p>)}</div> : <p className="muted">Sin cambios registrados todavía.</p>}

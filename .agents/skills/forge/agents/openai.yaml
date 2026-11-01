@@ -1,0 +1,7 @@
+interface:
+  display_name: "Forge"
+  short_description: "Construye y verifica aplicaciones en un ciclo controlado"
+  default_prompt: "Coordina el ciclo Planner, Generator y Evaluator para este proyecto."
+
+policy:
+  allow_implicit_invocation: true

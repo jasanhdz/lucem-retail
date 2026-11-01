@@ -1,3 +1,17 @@
-import {getAuth} from '@/lib/auth';import {redirect} from 'next/navigation';import Link from 'next/link';import {BusinessSelector} from './BusinessSelector';
-const links=[['/dashboard','Resumen'],['/pos','Punto de venta'],['/productos','Productos'],['/inventario','Inventario'],['/apartados','Apartados'],['/devoluciones','Devoluciones'],['/reportes','Reportes'],['/auditoria','Auditoria']];
-export default async function WorkspaceLayout({children}:{children:React.ReactNode}){const a=await getAuth();if(!a)redirect('/login');return <div className="workspace"><aside className="sidebar"><strong style={{fontSize:20}}>lucem<span style={{color:'#5ed2ad'}}>.</span></strong><p style={{fontSize:13,color:'#aeb8c8'}}>{a.business?.name}</p><nav>{links.map(([href,label])=><Link key={href} href={href}>{label}</Link>)}</nav><form action="/api/auth/logout" method="post"><button className="btn" style={{background:'#29364b',color:'white',width:'100%'}}>Cerrar sesión</button></form></aside><main className="workspace-main"><div className="workspace-toolbar"><BusinessSelector /></div>{children}</main></div>}
+import { getAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { BusinessSelector } from './BusinessSelector';
+import { WorkspaceNavigation } from './WorkspaceNavigation';
+
+export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  const auth = await getAuth();
+  if (!auth) redirect('/login');
+
+  return <div className="workspace">
+    <WorkspaceNavigation businessName={auth.business?.name ?? 'Lucem Retail'} />
+    <div className="workspace-main">
+      <div className="workspace-toolbar"><BusinessSelector /></div>
+      <main className="workspace-content">{children}</main>
+    </div>
+  </div>;
+}

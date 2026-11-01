@@ -13,15 +13,20 @@ Este documento contiene decisiones de arquitectura, programacion, datos, segurid
 ## 2. Interfaz y experiencia
 
 - Se usara Tailwind CSS.
+- Lucide React provee la iconografia de línea consistente en navegación, estados y acciones; usar stroke uniforme, 16–20px en controles y nombres accesibles para botones solo-icono.
+- Los tokens compartidos de UI se centralizan en `app/globals.css` para superficie, tipografia, borde, elevacion, marca y estados operativos; Inter se usa para datos/controles y Plus Jakarta Sans para titulares, con fallback de sistema si las fuentes externas no cargan.
 - Se conservara el lenguaje visual de `diseno/`: retail tactil moderno, paleta slate/emerald/amber/rose, tarjetas redondeadas, sombras suaves, chips de estado y layouts responsive mobile-first.
 - Las tipografias visuales de referencia son Inter para texto operativo y Plus Jakarta Sans para titulares.
+- La escala tipografica se adapta por viewport: titulares de pagina mantienen jerarquia desktop sin exceder una linea movil cuando sea posible; etiquetas operativas conservan un minimo legible, y precios/SKU/cantidades usan numerales tabulares. Se cargan Inter y Plus Jakarta Sans con fallback de sistema.
+- Se conservan Inter y Plus Jakarta Sans porque ya coinciden con el sistema visual; los ajustes de escala se hacen con tokens/clases responsive, y desktop incrementa columnas/tamaño de tarjetas cuando existe ancho disponible en vez de estirar contenido de forma ilimitada.
 - Se implementaran vistas para dashboard, catalogo/alta de productos, inventario, punto de venta y reportes.
-- El catalogo de productos se presentara como una grilla responsive de tarjetas con hasta cuatro columnas en escritorio y una o dos en movil, priorizando una imagen consistente y lectura inmediata de nombre, SKU, categoria, precio, existencias y estado.
+- El catalogo de productos se presentara como una grilla responsive de hasta cuatro columnas en escritorio y una lista de tarjetas compactas con miniatura en movil, priorizando lectura inmediata de nombre, SKU, categoria, ubicacion, costo/precio, existencias y estado.
 - Alta y edicion de productos usaran un dialogo accesible; el detalle se mostrara en un dialogo/drawer adaptable con variantes e historial. Los dialogos tendran nombre accesible, gestion y retorno de foco, cierre por Escape y control visible de cierre; en movil ocuparan el viewport con scroll interno.
 - La interfaz del catalogo, sus filtros, grilla, modales y vista de detalle son decisiones de presentacion/experiencia y no agregan ni alteran reglas de negocio.
 - En alta/edicion, «Agregar variante» se mantiene en el legend de la primera variante; la acción está en el encabezado de sección y agrega un conjunto de campos editable. El footer del diálogo queda fijo y el body solo desplaza cuando el contenido excede el espacio disponible.
-- En escritorio el sidebar es sticky a `top: 0`, ocupa `100dvh` y mantiene logo/negocio y logout visibles; el nav es su única región desplazable si el alto no alcanza. El documento desplaza el contenido principal independientemente del sidebar. En móvil el sidebar vuelve al flujo normal, muestra sus ocho rutas en dos columnas de controles táctiles y logout en flujo, sin sticky ni overflow horizontal.
+- En escritorio el sidebar es sticky a `top: 0`, ocupa `100dvh` y mantiene logo/negocio y logout visibles; el nav es su única región desplazable si el alto no alcanza. El documento desplaza el contenido principal independientemente del sidebar. En móvil se oculta el sidebar: se presenta un encabezado compacto sticky con marca y negocio, una barra inferior fija para POS/Productos/Inventario/Reportes y un menú «Más» para las demás rutas; el contenido reserva espacio para ambas barras y no tiene overflow horizontal.
 - El POS usa layout split escritorio con panel de carrito sticky, líneas en scroll propio y controles de cobro accesibles. En móvil la grilla de catálogo deja espacio inferior para resumen fijo; un bottom-sheet de hasta 85dvh presenta header, líneas desplazables, pago y footer sticky. El diálogo nativo bloquea scroll de fondo, cierra con Escape o botón y no añade backdrop visible. Resumen, sheet y panel usan el mismo estado de carrito; el precio aplicado usa `promoPrice` cuando existe.
+- Las pantallas principales comparten componentes/clases de Header, estado conectado, tarjetas de métricas, contenedores vacíos/cargando/error, filtros tipo chip, badge de inventario, tarjetas con imagen y formularios táctiles. En móvil el catálogo de productos cambia de grilla vertical de escritorio a filas compactas con miniatura e información; dashboard/inventario/reportes reorganizan KPIs en dos columnas y conservan márgenes/gutters móviles.
 - La interfaz debe funcionar en celulares, tabletas y escritorio.
 - Los estados de carga, vacio, error, agotado y confirmacion deben ser visibles.
 - Los componentes de negocio deben ser reutilizables y accesibles por teclado cuando sea posible.
@@ -31,6 +36,7 @@ Este documento contiene decisiones de arquitectura, programacion, datos, segurid
 - Zustand se usara para estado global de interfaz, usuario autenticado, negocio activo y carrito de venta cuando corresponda.
 - Los datos persistentes se consultaran mediante la API y no se duplicaran innecesariamente en Zustand.
 - Las operaciones de escritura deben invalidar o actualizar los datos visibles para evitar informacion obsoleta.
+- Los estados de carga de consultas de productos, POS, dashboard, inventario, apartados, devoluciones, reportes y auditoria se representan con skeletons dimensionados como el contenido final; deben evitar saltos de layout y respetar `prefers-reduced-motion`.
 
 ## 4. Base de datos
 
