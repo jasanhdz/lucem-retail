@@ -60,7 +60,8 @@ El E2E global no se ejecutó: `e2e/dev-00-placeholder.spec.ts` incluye una llama
 
 ## DEV-02A — Validación
 
-- Checkout evaluado: `HEAD 8c88985`, branch `feature`; no se hizo corrección de código.
+- Checkout de validación de comandos/HTTP: `HEAD 8c88985db9fa6c5b95ff5e289eb9e44ebdea06`, branch `feature/lucem-ui-redesign-v1`; no se hizo corrección de código.
+- Documentación posterior de DEV-02A: commit `bdbd510a0f4261248ea908cf38e292c9380e0aeb`. Este commit documenta la validación, pero no es el checkout donde se ejecutó.
 - Calidad: `npm run lint` — PASS; `npm run typecheck` — PASS; `npm test` — PASS, 4 suites/6 tests; `npm run build` — PASS; `git diff --check` — PASS.
 - E2E dirigido: `CI=1 npx playwright test e2e/dev-01-auth.spec.ts --reporter=list` — PASS, 6/6, pero sólo con mocks.
 - Auth y bloqueo: no existe `storageState`, fixture, harness ni entorno autorizado; no se usaron credenciales ni `.env`. Sin auth, `GET /dashboard` devuelve `307 /login` y `GET /api/dashboard` devuelve `401 Sesion requerida`. No se inventó sesión ni se ejecutó login real.
