@@ -6,5 +6,5 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   const auth = await getAuth();
   if (!auth) redirect('/login');
 
-  return <WorkspaceShell businessName={auth.business?.name ?? 'Mi negocio'} userName={auth.user.name} userEmail={auth.user.email}>{children}</WorkspaceShell>;
+  return <WorkspaceShell businessName={auth.business?.name ?? 'Mi negocio'} role={auth.membership?.role ?? 'SELLER'} userName={auth.user.name} userEmail={auth.user.email}>{children}</WorkspaceShell>;
 }
