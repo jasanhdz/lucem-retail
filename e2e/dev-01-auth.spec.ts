@@ -39,6 +39,7 @@ test('login shows recoverable server errors and permits retry', async ({ page })
   await page.route('**/api/auth/login', async route => {
     attempts += 1;
     if (attempts === 1) await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'No se pudo validar el acceso.' }) });
+    else if (attempts === 2) await route.abort('failed');
     else await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ redirect: '/dashboard' }) });
   });
   await page.goto('/login');
@@ -47,18 +48,24 @@ test('login shows recoverable server errors and permits retry', async ({ page })
   await page.getByRole('button', { name: /Iniciar sesión/ }).click();
   await expect(page.locator('.error-message')).toContainText('No se pudo validar');
   await page.getByRole('button', { name: /Iniciar sesión/ }).click();
+  await expect(page.locator('.error-message')).toBeVisible();
+  await page.getByRole('button', { name: /Iniciar sesión/ }).click();
   await expect.poll(() => requestedPaths).toContain('/dashboard');
-  expect(attempts).toBe(2);
+  expect(attempts).toBe(3);
 });
 
-test('business selection supports loading, empty and recoverable error states without creation', async ({ page }) => {
-  let mode: 'error' | 'empty' | 'list' = 'error';
+test('business selection supports loading, empty and recoverable errors without creation', async ({ page }) => {
+  let mode: 'error' | 'network' | 'empty' | 'list' = 'error';
   await page.route('**/api/businesses', async route => {
     if (mode === 'error') await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Servicio temporalmente no disponible.' }) });
+    else if (mode === 'network') await route.abort('failed');
     else await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ businesses: mode === 'empty' ? [] : [{ id: 'business-a', name: 'Tienda Centro', role: 'ADMIN' }, { id: 'business-b', name: 'Sucursal Norte', role: 'STAFF' }] }) });
   });
   await page.goto('/negocios');
   await expect(page.locator('.error-message')).toContainText('Servicio temporalmente no disponible');
+  mode = 'network';
+  await page.getByRole('button', { name: 'Reintentar' }).click();
+  await expect(page.locator('.error-message')).toBeVisible();
   mode = 'empty';
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await expect(page.getByText(/No hay negocios disponibles/)).toBeVisible();
@@ -106,6 +113,9 @@ test('login controls expose visible keyboard focus in tab order', async ({ page 
   await expect(page.getByRole('textbox', { name: 'Correo electrónico' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('textbox', { name: 'Contraseña' })).toBeFocused();
-  const focusStyle = await page.getByRole('textbox', { name: 'Contraseña' }).evaluate(element => getComputedStyle(element).boxShadow);
-  expect(focusStyle).not.toBe('none');
+  const focusStyle = await page.getByRole('textbox', { name: 'Contraseña' }).evaluate(element => {
+    const style = getComputedStyle(element);
+    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focusStyle).toEqual({ outlineStyle: 'solid', outlineWidth: '3px' });
 });
