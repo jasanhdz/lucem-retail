@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"secondary-container":"#a4f2d6","background":"#e7fef8","tertiary":"#1c1000","error-container":"#ffdad6","on-surface":"#0b1f1b","on-surface-variant":"#414847","surface-container-lowest":"#ffffff","on-secondary-fixed":"#002117","inverse-surface":"#203430","surface-container-low":"#e2f9f2","tertiary-fixed-dim":"#f1be6e","error":"#ba1a1a","surface":"#e7fef8","primary-fixed-dim":"#b0ccca","secondary-fixed":"#a4f2d6","outline-variant":"#c1c8c7","surface-variant":"#d1e7e1","surface-bright":"#e7fef8","secondary":"#166b55","on-primary-fixed-variant":"#314b4a","on-tertiary-container":"#b3863c","on-secondary-fixed-variant":"#00513f","tertiary-container":"#372300","on-secondary-container":"#1f715a","on-error":"#ffffff","on-primary":"#ffffff","on-secondary":"#ffffff","tertiary-fixed":"#ffddaf","on-tertiary":"#ffffff","on-tertiary-fixed-variant":"#614000","on-tertiary-fixed":"#281800","surface-container":"#dcf3ec","on-primary-container":"#789391","surface-dim":"#c8dfd9","surface-tint":"#496362","on-error-container":"#93000a","primary":"#001615","surface-container-highest":"#d1e7e1","inverse-primary":"#b0ccca","inverse-on-surface":"#dff6ef","on-primary-fixed":"#04201f","outline":"#727878","secondary-fixed-dim":"#89d5ba","primary-container":"#102b2a","surface-container-high":"#d6ede7","primary-fixed":"#cbe8e6","on-background":"#0b1f1b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","space-md":"1rem","space-xl":"2rem","gutter":"1rem","space-sm":"0.5rem","space-2xl":"3rem","margin-lg":"2rem","margin":"1rem","margin-md":"1.5rem","space-lg":"1.5rem","gutter-lg":"1.5rem"},"fontFamily":{"display-lg":["Plus Jakarta Sans"],"body-sm":["Inter"],"label-lg":["Inter"],"headline-sm":["Plus Jakarta Sans"],"body-md":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"],"label-md":["Inter"],"title-md":["Plus Jakarta Sans"],"body-lg":["Inter"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"numeric-total":["Plus Jakarta Sans"],"label-sm":["Inter"]},"fontSize":{"display-lg":["36px",{"lineHeight":"44px","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"700"}],"label-md":["12px",{"lineHeight":"16px","fontWeight":"500"}],"title-md":["16px",{"lineHeight":"22px","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","fontWeight":"700"}],"headline-md":["22px",{"lineHeight":"28px","fontWeight":"600"}],"numeric-total":["32px",{"lineHeight":"36px","fontWeight":"800"}],"label-sm":["11px",{"lineHeight":"14px","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col h-full"><div class="h-16 px-space-md flex items-center justify-between bg-surface-container-lowest border-surface-container-low"><div class="flex items-center gap-space-sm"><img alt="Lucem Retail Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UUJesZN8P2t1CdetRLvuKk9NmSPXKU_YV0dsQegIDoPemfJ_JamI72XDt7Uhzv1TCmuusx8TzfnrMu2VdwEde8t9Q20yznTC_gJpOkyHFZNnisBW2baUCCiDKapTI7MwKb5HhO06n0fyNWT13JsHjuggqlNiFDAefpPxuNWcq5TjXmcdih-MjBosHmK6I7ez5pZDII8-jH8oTirFvMGWNoXYG2CoAVIjo871AiHA"/><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">Lucem Retail</span></div><button aria-label="Colapsar menú lateral" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">menu_open</span></button></div><div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">Operaciones</div><nav class="flex flex-col gap-1"><a class="flex items-center justify-between px-space-sm py-2.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm transition-all" data-path="punto-de-venta-pos" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary-fixed">point_of_sale</span><span class="font-semibold text-surface-container-lowest">Punto de venta (POS)</span></div><span class="w-2 h-2 rounded-full bg-secondary-fixed"></span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="productos" href="#"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span class="">Productos</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="inventario" href="#"><span class="material-symbols-outlined text-[20px]">warehouse</span><span class="">Inventario</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="apartados" href="#"><span class="material-symbols-outlined text-[20px]">bookmark_border</span><span class="">Apartados</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">Gestión</div><nav class="flex flex-col gap-1"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="resumen" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="">Resumen</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="reportes" href="#"><span class="material-symbols-outlined text-[20px]">assessment</span><span class="">Reportes</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors" data-path="devoluciones" href="#"><span class="material-symbols-outlined text-[20px]">assignment_return</span><span class="">Devoluciones</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-normal opacity-80">Administración</div><nav class="flex flex-col gap-0.5"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-container hover:text-on-surface transition-colors" data-path="usuarios-y-permisos" href="#"><span class="material-symbols-outlined text-[18px] opacity-75">manage_accounts</span><span class="">Usuarios y permisos</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-container hover:text-on-surface transition-colors" data-path="auditoria" href="#"><span class="material-symbols-outlined text-[18px] opacity-75">history_toggle_off</span><span class="">Auditoría</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-container hover:text-on-surface transition-colors" data-path="configuracion" href="#"><span class="material-symbols-outlined text-[18px] opacity-75">settings</span><span class="">Configuración</span></a></nav></div></div><div class="p-space-sm bg-surface-container-low"><div class="p-space-sm rounded-lg bg-surface-container-lowest flex items-center justify-between shadow-sm"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Terminal en línea</span></div><span class="font-label-sm text-label-sm text-secondary font-bold tracking-wide">v2.4.2</span></div></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-md flex-1 max-w-3xl"><button class="flex items-center gap-space-sm py-1.5 px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors text-left border-surface-container-low" type="button"><div class="w-7 h-7 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-[13px] font-bold">AO</div><div class="flex flex-col leading-tight"><span class="font-title-md text-[13px] text-on-surface font-semibold">American Outfit</span><span class="flex items-center gap-1 font-label-sm text-[11px] text-secondary font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>Sucursal Matriz</span></div><span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span></button><div class="relative flex-1 max-w-md hidden sm:block"><span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full h-10 pl-10 pr-12 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:shadow-md transition-all" placeholder="Buscar producto, SKU o código de barras... (F3)" type="text"/><kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-[10px] uppercase font-semibold">F3</kbd></div></div><div class="flex items-center gap-space-md"><button class="inline-flex items-center gap-space-xs px-space-md h-10 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-secondary transition-all shadow-sm active:scale-95 group" type="button"><span class="material-symbols-outlined text-[18px] text-secondary-fixed group-hover:rotate-12 transition-transform">add_shopping_cart</span><span class="font-bold">Nueva venta</span><span class="ml-1 px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[10px] font-bold">F1</span></button><button aria-label="Centro de notificaciones" class="relative w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><div class="h-6 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm cursor-pointer"><div class="flex flex-col text-right leading-tight"><span class="font-title-md text-[13px] text-on-surface font-semibold">Carlos Mendoza</span><div class="flex items-center justify-end gap-1"><span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm text-[10px] font-semibold">Administrador</span></div></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 min-h-screen bg-surface-container-low w-full px-gutter-lg py-gutter-lg"><div class="flex flex-col w-full relative">
+<!-- POS Background Surface (Simulated underneath modal) -->
+<div class="grid grid-cols-12 gap-space-lg select-none opacity-40 filter blur-[2px] pointer-events-none transition-all">
+<!-- Catalog grid (7 cols) -->
+<div class="col-span-8 flex flex-col gap-space-md">
+<!-- Search and filter ribbon -->
+<div class="flex items-center gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl shadow-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">search</span>
+</div>
+<div class="flex-1 font-body-md text-on-surface-variant">Buscar SKU, código de barras o descripción...</div>
+<span class="px-space-sm py-1 rounded-full bg-primary-container text-on-primary font-label-sm">Todo el catálogo</span>
+</div>
+<!-- Dummy Catalog Items -->
+<div class="grid grid-cols-3 gap-space-md">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-full h-32 rounded-lg bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="High quality apparel studio shot of a minimalist basic cotton t-shirt in pristine dark forest green tone, hanging elegantly on a metallic fixture with soft studio retail lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADIupcDcFC8yoo_yYBUt0Q9Ld_AsX_Dnz7GNx8V_GAz9rgvUUU83OMGfOfAkuF9P1hTO7ZDYQ-zzoiMSqpNYGIxERc9Syex_FFBhS-MvFJhY4KWoAM0dSd2bAl0_u0BKAINsRp0VM9iygxJE025pJQJILWpbMhFutMYab4JrmFvLo68L_0HHsrNBwucTR9d1_KDjDsH-BdEXsWW_pTKyWoB9ax_wBZJN89tDmisQ"/>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Playera Básica Algodón</span>
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">$249.00</span>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-full h-32 rounded-lg bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Modern premium denim jacket displayed in retail boutique showroom with soft ambient lighting and botanical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaePORfO9ZUgeB7zqDz1dYk35-lhPs5ORL27b3N4GNReRT0mdinPlqD75x79uQq1HtVNBBPMFNutrtqHbj2jzYMICEMaU2dW3mF6wXY1s9miVBVTiPbeyKqgBgW1o2Y2HGznyRTKXbfiHUPy3N-1DkXi5D8XsPoQ-m_tsAReIDS61wy98yZ-YBEHUjl1TohS0zPhBjU3GuvcX5l2ZHtndsg079ZyfbQtyvzxV51g"/>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Chamarra Mezclilla Eco</span>
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">$890.00</span>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="w-full h-32 rounded-lg bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Folded luxury cotton linen trousers neatly stacked on modern light wood shelf with soft department store illumination." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiNfB7KqcmHs9ZYXyJLC0Nkny1mOTJNKSrYd--POP76Uy0mLRapqbshGrNoFalDzBRiQuyha_qbMUVpplNtz_v74CKYTQgvsnz8J1xA_x4nZ3qblf3X4QWpvQ06Dl8akeWffeCZCFfWCkqjxDymJvpTyBDzMcdYCN49Xk1ozXpxSoajs7oBvCXHINQawlBtqHSxAsq1KctDuBjJYDBNkl0u6N2nBdfXJbPhqQr3g"/>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Pantalón Lino Regular</span>
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">$640.00</span>
+</div>
+</div>
+</div>
+<!-- Active Ticket Sidebar (4 cols) -->
+<div class="col-span-4 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Ticket de venta</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold bg-secondary-container px-2 py-0.5 rounded-full">#TCK-8841</span>
+</div>
+<div class="flex flex-col gap-space-sm py-space-sm">
+<div class="flex justify-between items-center text-on-surface-variant font-body-sm">
+<span>Subtotal</span>
+<span>$0.00</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant font-body-sm">
+<span>IVA (16%)</span>
+<span>$0.00</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-md pt-space-md">
+<div class="flex justify-between items-baseline">
+<span class="font-title-md text-title-md text-on-surface">Total</span>
+<span class="font-numeric-total text-numeric-total text-primary">$0.00</span>
+</div>
+<div class="h-12 bg-surface-container-high rounded-lg flex items-center justify-center font-label-lg text-outline">
+          Esperando artículos
+        </div>
+</div>
+</div>
+</div>
+<!-- Focused Modal Overlay Backstage Tint -->
+<div class="absolute -inset-gutter-lg bg-primary-container/45 backdrop-blur-[6px] z-50 flex items-center justify-center p-space-md">
+<!-- Central Modal Card -->
+<div class="w-full max-w-2xl bg-surface-container-lowest rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200" id="variant-modal">
+<!-- Top Modal Header: Product Identity & Close button -->
+<div class="p-space-lg bg-surface-container-lowest flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-inner">
+<img class="w-full h-full object-cover" data-alt="Close up retail product shot of a premium black cotton crewneck t-shirt folded neatly under studio softbox lighting with pure fabric textures." id="product-header-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgJDEMqO3Q7YVKvdukkzfAWk-xA5Fcmin_ZulmmS4t6WhRc1kWRfo_1nSnPjj2IvbkVj2stLJxU5r0Iu7X0Iv83T871NmKlW8zePcbsOy3gSk7u9I3n6zfYXFJpdElLvS1Fz-iD-BuD8D8e-vz7XJmUptXZgeI4ZN3XL5vK0aXFpLpdEduNkx-NgydUfbdDDujFVCyHb4TCsUkWpffVM2lSWuJ75TISy_KbrOlOw"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-primary font-bold tracking-tight">Playera Básica Algodón</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wide">Ropa Casual</span>
+</div>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-title-md text-title-md text-secondary font-bold" id="header-price">$249.00 MXN</span>
+<span class="font-body-sm text-body-sm text-outline">Precio unitario base</span>
+</div>
+</div>
+</div>
+<button aria-label="Cerrar modal" class="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" id="close-modal-btn">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-space-lg flex flex-col gap-space-lg max-h-[768px] overflow-y-auto">
+<!-- Color Attribute Section -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-primary font-bold uppercase tracking-wider">1. Color Seleccionado:</span>
+<span class="font-title-md text-title-md text-secondary font-bold" id="color-label">Negro</span>
+</div>
+<div class="grid grid-cols-4 gap-space-sm" id="color-selector-group">
+<!-- Negro (Selected default) -->
+<button class="color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-primary-container text-on-primary shadow-sm transition-all text-left" data-color="Negro" data-hex="#0b1f1b">
+<span class="w-6 h-6 rounded-full bg-primary shrink-0 shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-surface-container-lowest text-[14px]">check</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md font-bold truncate">Negro</span>
+<span class="font-body-sm text-[11px] opacity-80">18 en total</span>
+</div>
+</button>
+<!-- Blanco -->
+<button class="color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-all text-left" data-color="Blanco" data-hex="#ffffff">
+<span class="w-6 h-6 rounded-full bg-surface-container-lowest shadow-sm shrink-0 flex items-center justify-center"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md font-semibold truncate">Blanco</span>
+<span class="font-body-sm text-[11px] text-outline">12 en total</span>
+</div>
+</button>
+<!-- Azul Marino -->
+<button class="color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-all text-left" data-color="Azul Marino" data-hex="#1b2a47">
+<span class="w-6 h-6 rounded-full bg-primary-container shrink-0 shadow-sm flex items-center justify-center"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md font-semibold truncate">Azul Marino</span>
+<span class="font-body-sm text-[11px] text-outline">9 en total</span>
+</div>
+</button>
+<!-- Gris Jaspe -->
+<button class="color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-all text-left" data-color="Gris Jaspe" data-hex="#a3a8a7">
+<span class="w-6 h-6 rounded-full bg-outline-variant shrink-0 shadow-sm flex items-center justify-center"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md font-semibold truncate">Gris Jaspe</span>
+<span class="font-body-sm text-[11px] text-outline">5 en total</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Size Attribute Section -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-primary font-bold uppercase tracking-wider">2. Talla de Prenda:</span>
+<span class="font-body-sm text-body-sm text-outline">Presione para alternar</span>
+</div>
+<div class="grid grid-cols-4 gap-space-sm" id="size-selector-group">
+<!-- CH -->
+<button class="size-btn flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-all text-center" data-size="CH" data-sku-suffix="CH" data-stock="4">
+<span class="font-headline-sm text-headline-sm font-bold">CH</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium mt-0.5">4 disponibles</span>
+</button>
+<!-- M (Selected Default) -->
+<button class="size-btn flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-primary-container text-on-primary shadow-sm transition-all text-center" data-size="M" data-sku-suffix="M" data-stock="8">
+<div class="flex items-center gap-1">
+<span class="font-headline-sm text-headline-sm font-bold">M</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary-fixed font-semibold mt-0.5">8 disponibles</span>
+</button>
+<!-- G -->
+<button class="size-btn flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-all text-center" data-size="G" data-sku-suffix="G" data-stock="6">
+<span class="font-headline-sm text-headline-sm font-bold">G</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium mt-0.5">6 disponibles</span>
+</button>
+<!-- XG (Disabled / Out of Stock) -->
+<button class="size-btn relative overflow-hidden flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-surface-container-highest/60 text-outline cursor-not-allowed opacity-75 text-center" data-size="XG" data-sku-suffix="XG" data-stock="0">
+<span class="font-headline-sm text-headline-sm font-bold line-through">XG</span>
+<span class="font-label-sm text-[10px] text-error font-semibold mt-0.5 uppercase tracking-tight bg-error-container/60 px-1.5 rounded">Agotado 0 disp.</span>
+</button>
+</div>
+</div>
+<!-- Real-Time Variant Specs Panel -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between shadow-sm">
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline font-semibold">SKU de variante específica</span>
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md font-bold text-primary tracking-wide" id="sku-display">PLY-BAS-M-NEG</span>
+<button aria-label="Copiar SKU" class="text-on-surface-variant hover:text-secondary flex items-center">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+</div>
+<div class="h-8 w-px bg-surface-container-high"></div>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline font-semibold">Disponibilidad en mostrador</span>
+<div class="flex items-center gap-1.5" id="stock-pill-container">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-secondary font-bold" id="stock-label">8 unidades en sucursal</span>
+</div>
+</div>
+<div class="h-8 w-px bg-surface-container-high"></div>
+<div class="flex flex-col gap-0.5 text-right">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline font-semibold">Precio unitario</span>
+<span class="font-title-md text-title-md font-bold text-primary" id="unit-price-display">$249.00 MXN</span>
+</div>
+</div>
+<!-- Quantity Stepper and Subtotal Bar -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-space-sm rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg font-bold text-primary">Cantidad requerida</span>
+<span class="font-body-sm text-body-sm text-outline" id="stepper-helper-text">Toque [+] o teclee F2</span>
+</div>
+<div class="flex items-center gap-space-xl">
+<!-- Stepper Container -->
+<div class="flex items-center bg-surface-container-low rounded-lg p-1">
+<button aria-label="Disminuir cantidad" class="w-11 h-11 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-primary font-bold flex items-center justify-center active:scale-95 shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="qty-minus">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<div class="w-14 text-center">
+<span class="font-headline-md text-headline-md font-extrabold text-primary" id="qty-counter">2</span>
+</div>
+<button aria-label="Aumentar cantidad" class="w-11 h-11 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-primary font-bold flex items-center justify-center active:scale-95 shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="qty-plus">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Calculated Variant Subtotal -->
+<div class="flex flex-col text-right">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">Subtotal variante</span>
+<span class="font-headline-md text-headline-md font-extrabold text-secondary" id="subtotal-display">$498.00 MXN</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="p-space-lg bg-surface-container-low flex items-center justify-between gap-space-md">
+<button class="h-12 px-space-lg rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-lg text-label-lg font-semibold transition-all" id="cancel-action-btn">
+          Cancelar selección (ESC)
+        </button>
+<button class="flex-1 h-12 px-space-xl rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-lg text-label-lg font-bold flex items-center justify-center gap-space-sm shadow-md transition-all active:scale-[0.99] disabled:bg-surface-container-highest disabled:text-outline disabled:cursor-not-allowed disabled:shadow-none" id="confirm-action-btn">
+<span class="material-symbols-outlined text-[20px] text-secondary-fixed">shopping_cart_checkout</span>
+<span id="btn-action-text">Agregar al carrito ($498.00 MXN)</span>
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[10px] font-bold ml-1">ENTER</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initVariantModal() {
+    let state = {
+      price: 249.00,
+      currentColor: 'Negro',
+      colorSuffix: 'NEG',
+      currentSize: 'M',
+      sizeSuffix: 'M',
+      stock: 8,
+      quantity: 2
+    };
+
+    const variantStockMatrix = {
+      'Negro': { 'CH': 4, 'M': 8, 'G': 6, 'XG': 0 },
+      'Blanco': { 'CH': 3, 'M': 5, 'G': 4, 'XG': 0 },
+      'Azul Marino': { 'CH': 2, 'M': 4, 'G': 3, 'XG': 0 },
+      'Gris Jaspe': { 'CH': 1, 'M': 2, 'G': 2, 'XG': 0 }
+    };
+
+    const colorCodeMap = {
+      'Negro': 'NEG',
+      'Blanco': 'BLA',
+      'Azul Marino': 'AZM',
+      'Gris Jaspe': 'GRJ'
+    };
+
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const sizeBtns = document.querySelectorAll('.size-btn');
+    const qtyCounter = document.getElementById('qty-counter');
+    const qtyMinus = document.getElementById('qty-minus');
+    const qtyPlus = document.getElementById('qty-plus');
+    const skuDisplay = document.getElementById('sku-display');
+    const stockLabel = document.getElementById('stock-label');
+    const colorLabel = document.getElementById('color-label');
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const confirmBtn = document.getElementById('confirm-action-btn');
+    const btnActionText = document.getElementById('btn-action-text');
+    const stockPill = document.getElementById('stock-pill-container');
+
+    function updateView() {
+      // Stock evaluation
+      state.stock = variantStockMatrix[state.currentColor][state.currentSize] || 0;
+      
+      // SKU computation
+      state.colorSuffix = colorCodeMap[state.currentColor] || 'GEN';
+      skuDisplay.textContent = `PLY-BAS-${state.currentSize}-${state.colorSuffix}`;
+      colorLabel.textContent = state.currentColor;
+
+      // Adjust quantity to fit bounded stock
+      if (state.stock === 0) {
+        state.quantity = 0;
+      } else if (state.quantity > state.stock) {
+        state.quantity = state.stock;
+      } else if (state.quantity === 0 && state.stock > 0) {
+        state.quantity = 1;
+      }
+
+      qtyCounter.textContent = state.quantity;
+      const subtotalVal = (state.price * state.quantity).toFixed(2);
+      subtotalDisplay.textContent = `$${subtotalVal} MXN`;
+
+      // Stepper button disabled states
+      qtyMinus.disabled = state.quantity <= 1;
+      qtyPlus.disabled = state.quantity >= state.stock || state.stock === 0;
+
+      // Stock indicator pill
+      if (state.stock === 0) {
+        stockPill.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-error"></span>
+          <span class="font-label-md text-label-md text-error font-bold">Sin existencias en tienda</span>
+        `;
+        confirmBtn.disabled = true;
+        btnActionText.textContent = "Variante sin stock disponible";
+      } else if (state.stock <= 3) {
+        stockPill.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+          <span class="font-label-md text-label-md text-on-tertiary-container font-bold">${state.stock} unidades (Stock bajo)</span>
+        `;
+        confirmBtn.disabled = false;
+        btnActionText.textContent = `Agregar al carrito ($${subtotalVal} MXN)`;
+      } else {
+        stockPill.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-secondary"></span>
+          <span class="font-label-md text-label-md text-secondary font-bold">${state.stock} unidades en sucursal</span>
+        `;
+        confirmBtn.disabled = false;
+        btnActionText.textContent = `Agregar al carrito ($${subtotalVal} MXN)`;
+      }
+
+      // Update Size buttons badges for current color
+      sizeBtns.forEach(btn => {
+        const s = btn.dataset.size;
+        const availableInColor = variantStockMatrix[state.currentColor][s];
+        btn.dataset.stock = availableInColor;
+        
+        const isSelected = (s === state.currentSize);
+
+        if (availableInColor === 0) {
+          btn.className = "size-btn relative overflow-hidden flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-surface-container-highest/60 text-outline cursor-not-allowed opacity-75 text-center";
+          btn.innerHTML = `
+            <span class="font-headline-sm text-headline-sm font-bold line-through">${s}</span>
+            <span class="font-label-sm text-[10px] text-error font-semibold mt-0.5 uppercase tracking-tight bg-error-container/60 px-1.5 rounded">Agotado 0 disp.</span>
+          `;
+        } else if (isSelected) {
+          btn.className = "size-btn flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-primary-container text-on-primary shadow-sm transition-all text-center";
+          btn.innerHTML = `
+            <div class="flex items-center gap-1">
+              <span class="font-headline-sm text-headline-sm font-bold">${s}</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span>
+            </div>
+            <span class="font-label-sm text-label-sm text-secondary-fixed font-semibold mt-0.5">${availableInColor} disponibles</span>
+          `;
+        } else {
+          btn.className = "size-btn flex flex-col items-center justify-center py-space-md px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-all text-center";
+          btn.innerHTML = `
+            <span class="font-headline-sm text-headline-sm font-bold">${s}</span>
+            <span class="font-label-sm text-label-sm text-secondary font-medium mt-0.5">${availableInColor} disponibles</span>
+          `;
+        }
+      });
+    }
+
+    // Color switch handler
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach(b => {
+          b.className = "color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-all text-left";
+          const checkIcon = b.querySelector('.material-symbols-outlined');
+          if (checkIcon) checkIcon.remove();
+        });
+
+        btn.className = "color-btn relative flex items-center gap-space-sm p-space-sm rounded-lg bg-primary-container text-on-primary shadow-sm transition-all text-left";
+        const bullet = btn.querySelector('.rounded-full');
+        if (bullet && !bullet.querySelector('.material-symbols-outlined')) {
+          bullet.innerHTML = '<span class="material-symbols-outlined text-surface-container-lowest text-[14px]">check</span>';
+        }
+
+        state.currentColor = btn.dataset.color;
+        updateView();
+      });
+    });
+
+    // Size switch handler
+    sizeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.currentSize = btn.dataset.size;
+        updateView();
+      });
+    });
+
+    // Quantity events
+    qtyMinus.addEventListener('click', () => {
+      if (state.quantity > 1) {
+        state.quantity--;
+        updateView();
+      }
+    });
+
+    qtyPlus.addEventListener('click', () => {
+      if (state.quantity < state.stock) {
+        state.quantity++;
+        updateView();
+      }
+    });
+
+    // Keyboard POS shortcuts (F2 for quantity add, Escape for close, Enter to submit)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('variant-modal');
+        if (modal) modal.style.opacity = '0.4';
+      }
+      if (e.key === 'Enter' && !confirmBtn.disabled) {
+        confirmBtn.click();
+      }
+    });
+
+    updateView();
+  })();
+</script></main></div>
+</body></html>

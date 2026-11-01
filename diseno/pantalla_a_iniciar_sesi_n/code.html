@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"secondary-container":"#a4f2d6","background":"#F4F6F5","tertiary":"#1c1000","error-container":"#ffdad6","on-surface":"#111827","on-surface-variant":"#4B5563","surface-container-lowest":"#ffffff","on-secondary-fixed":"#002117","inverse-surface":"#203430","surface-container-low":"#f0f4f2","tertiary-fixed-dim":"#f1be6e","error":"#ba1a1a","surface":"#ffffff","primary-fixed-dim":"#b0ccca","secondary-fixed":"#a4f2d6","outline-variant":"#DCE4E1","surface-variant":"#e6ecea","surface-bright":"#ffffff","secondary":"#176B55","on-primary-fixed-variant":"#314b4a","on-tertiary-container":"#b3863c","on-secondary-fixed-variant":"#00513f","tertiary-container":"#372300","on-secondary-container":"#1f715a","on-error":"#ffffff","on-primary":"#ffffff","on-secondary":"#ffffff","tertiary-fixed":"#ffddaf","on-tertiary":"#ffffff","on-tertiary-fixed-variant":"#614000","on-tertiary-fixed":"#281800","surface-container":"#e9efed","on-primary-container":"#789391","surface-dim":"#d8dedc","surface-tint":"#496362","on-error-container":"#93000a","primary":"#102B2A","surface-container-highest":"#dfe5e3","inverse-primary":"#b0ccca","inverse-on-surface":"#eff5f3","on-primary-fixed":"#04201f","outline":"#6B7280","secondary-fixed-dim":"#89d5ba","primary-container":"#102b2a","surface-container-high":"#e2e8e6","primary-fixed":"#cbe8e6","on-background":"#111827"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","2xl":"1rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","space-sm":"0.5rem","space-md":"1rem","space-lg":"1.5rem","space-xl":"2rem","space-2xl":"2.5rem"},"fontFamily":{"headline-lg":["Plus Jakarta Sans","sans-serif"],"headline-md":["Plus Jakarta Sans","sans-serif"],"headline-sm":["Plus Jakarta Sans","sans-serif"],"body-lg":["Inter","sans-serif"],"body-md":["Inter","sans-serif"],"body-sm":["Inter","sans-serif"],"label-lg":["Inter","sans-serif"],"label-md":["Inter","sans-serif"],"label-sm":["Inter","sans-serif"]}}}}</script></head><body class="bg-[#F4F6F5] font-body-md text-on-surface antialiased min-h-screen flex items-center justify-center p-4 sm:p-6"><main class="w-full flex items-center justify-center"><div class="relative w-full max-w-[460px]">
+<!-- Subtle ambient decorative glow -->
+<div class="absolute -top-12 -left-12 w-60 h-60 bg-[#a4f2d6]/25 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-12 -right-12 w-60 h-60 bg-[#176B55]/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Main Card -->
+<div class="relative bg-white rounded-2xl border border-[#DCE4E1] shadow-[0_12px_40px_-12px_rgba(16,43,42,0.12)] overflow-hidden">
+<div class="p-7 sm:p-9 pb-8">
+<!-- Brand & Header -->
+<div class="flex flex-col items-center text-center mb-7">
+<!-- Brand Mark -->
+<div class="flex items-center gap-3 mb-4">
+<div class="w-11 h-11 rounded-xl bg-[#102B2A] flex items-center justify-center shadow-md">
+<svg class="w-6 h-6 text-[#a4f2d6]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<polygon fill="#a4f2d6" fill-opacity="0.25" points="12 2 2 7 12 12 22 7 12 2"></polygon>
+<polyline points="2 17 12 22 22 17"></polyline>
+<polyline points="2 12 12 17 22 12"></polyline>
+</svg>
+</div>
+<div class="flex flex-col text-left">
+<span class="font-headline-md text-[20px] font-bold text-[#102B2A] tracking-tight leading-none">Lucem</span>
+<span class="font-label-sm text-[#176B55] uppercase tracking-wider font-semibold text-[10.5px] mt-0.5">Retail POS</span>
+</div>
+</div>
+<!-- Terminal Status Pill Badge -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F5F1] text-[#176B55] font-label-sm text-[12px] font-semibold mb-3 border border-[#cbe8e6]">
+<span class="w-2 h-2 rounded-full bg-[#176B55] animate-pulse"></span>
+<span>Terminal autorizada • v2.4</span>
+</div>
+<h1 class="font-headline-md text-[22px] sm:text-[24px] font-bold text-[#102B2A] tracking-tight">
+          Iniciar sesión en Lucem Retail
+        </h1>
+<p class="font-body-md text-[13.5px] text-[#4B5563] mt-1.5 leading-snug">
+          Ingresa con tus credenciales de operador o administrador
+        </p>
+</div>
+<!-- Feedback / Interactive Validation Alert -->
+<div class="hidden mb-5 p-3.5 rounded-lg border transition-all duration-200" id="statusAlert">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[20px] select-none mt-0.5" id="statusIcon">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-[13px] font-semibold" id="statusTitle">Validación de seguridad</span>
+<span class="font-body-sm text-[12px]" id="statusMessage">Verificando credenciales con el servidor comercial.</span>
+</div>
+</div>
+</div>
+<!-- Login Form -->
+<form class="flex flex-col gap-4" id="loginForm" onsubmit="event.preventDefault(); handleSubmit();">
+<!-- Email Field -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-label-lg text-[13px] font-semibold text-[#111827]" for="email">
+              Correo electrónico
+            </label>
+<span class="font-body-sm text-[11px] text-[#6B7280]">Operador</span>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-[#6B7280] text-[20px] select-none pointer-events-none">
+              mail
+            </span>
+<input class="w-full min-h-[44px] h-11 pl-11 pr-4 rounded-lg bg-white text-[#111827] font-body-md text-[14px] outline-none placeholder:text-[#9CA3AF] transition-all duration-150 border border-[#DCE4E1] focus:border-[#176B55] focus:ring-2 focus:ring-[#176B55]/20" id="email" placeholder="carlos@americanoutfit.mx" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-label-lg text-[13px] font-semibold text-[#111827]" for="password">
+              Contraseña
+            </label>
+<span class="font-body-sm text-[11px] text-[#6B7280]">PIN / Clave</span>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-[#6B7280] text-[20px] select-none pointer-events-none">
+              lock
+            </span>
+<input class="w-full min-h-[44px] h-11 pl-11 pr-11 rounded-lg bg-white text-[#111827] font-body-md text-[14px] outline-none placeholder:text-[#9CA3AF] transition-all duration-150 border border-[#DCE4E1] focus:border-[#176B55] focus:ring-2 focus:ring-[#176B55]/20" id="password" placeholder="••••••••••••" required="" type="password"/>
+<button aria-label="Alternar visibilidad de contraseña" class="absolute right-3 text-[#6B7280] hover:text-[#102B2A] transition-colors flex items-center justify-center p-1 rounded focus:outline-none focus:ring-1 focus:ring-[#176B55]" id="togglePassword" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-[20px] select-none" id="eyeIcon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Terminal & Branch Details -->
+<div class="flex items-center justify-between pt-1">
+<label class="flex items-center gap-2 cursor-pointer select-none">
+<input class="w-4 h-4 rounded border-[#DCE4E1] text-[#102B2A] focus:ring-[#176B55] cursor-pointer accent-[#102B2A]" id="rememberDevice" type="checkbox"/>
+<span class="font-body-sm text-[13px] text-[#4B5563]">Recordar esta terminal de caja</span>
+</label>
+<span class="font-label-sm text-[12px] text-[#6B7280] flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">store</span>
+            Sucursal CDMX
+          </span>
+</div>
+<!-- Submit Button -->
+<button class="relative w-full min-h-[44px] h-11 mt-2 rounded-lg bg-[#102B2A] text-white font-label-lg text-[14px] font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-[#176B55] active:scale-[0.99] transition-all duration-150 cursor-pointer" id="submitButton" type="submit">
+<span id="buttonText">Iniciar sesión</span>
+<span class="hidden animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" id="buttonSpinner"></span>
+<span class="material-symbols-outlined text-[18px]" id="buttonArrow">arrow_forward</span>
+</button>
+</form>
+</div>
+<!-- Security & Clearance Bottom Footer -->
+<div class="bg-[#F8FAF9] border-t border-[#DCE4E1] px-6 py-4 flex flex-col items-center text-center gap-1">
+<div class="flex items-center gap-1.5 text-[#176B55]">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-label-sm text-[12px] font-semibold">Acceso seguro con cifrado TLS 1.3</span>
+</div>
+<p class="font-body-sm text-[11.5px] text-[#6B7280]">
+        Acceso exclusivo para personal y administradores autorizados
+      </p>
+</div>
+</div>
+</div>
+<script>
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.textContent = 'visibility_off';
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.textContent = 'visibility';
+    }
+  }
+
+  function handleSubmit() {
+    const btn = document.getElementById('submitButton');
+    const btnText = document.getElementById('buttonText');
+    const spinner = document.getElementById('buttonSpinner');
+    const arrow = document.getElementById('buttonArrow');
+    const alertBox = document.getElementById('statusAlert');
+    const alertIcon = document.getElementById('statusIcon');
+    const alertTitle = document.getElementById('statusTitle');
+    const alertMsg = document.getElementById('statusMessage');
+    const emailVal = document.getElementById('email').value.trim();
+
+    btn.disabled = true;
+    btnText.textContent = 'Autenticando...';
+    spinner.classList.remove('hidden');
+    arrow.classList.add('hidden');
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btnText.textContent = 'Iniciar sesión';
+      spinner.classList.add('hidden');
+      arrow.classList.remove('hidden');
+
+      alertBox.classList.remove('hidden');
+      if (emailVal.includes('@') && emailVal.includes('.')) {
+        alertBox.className = 'mb-5 p-3.5 rounded-lg border bg-[#E8F5F1] border-[#cbe8e6] text-[#0f4437] transition-all duration-200';
+        alertIcon.textContent = 'check_circle';
+        alertIcon.className = 'material-symbols-outlined text-[#176B55] text-[20px] select-none mt-0.5';
+        alertTitle.textContent = 'Credenciales verificadas';
+        alertTitle.className = 'font-label-lg text-[13px] font-semibold text-[#102B2A]';
+        alertMsg.textContent = 'Sesión autorizada para caja. Conectando al punto de venta...';
+        alertMsg.className = 'font-body-sm text-[12px] text-[#176B55]';
+      } else {
+        alertBox.className = 'mb-5 p-3.5 rounded-lg border bg-[#FDF2F2] border-[#FBD5D5] text-[#9B1C1C] transition-all duration-200';
+        alertIcon.textContent = 'error';
+        alertIcon.className = 'material-symbols-outlined text-[#ba1a1a] text-[20px] select-none mt-0.5';
+        alertTitle.textContent = 'Formato inválido';
+        alertTitle.className = 'font-label-lg text-[13px] font-semibold text-[#9B1C1C]';
+        alertMsg.textContent = 'Por favor ingresa un correo corporativo asignado a esta sucursal.';
+        alertMsg.className = 'font-body-sm text-[12px] text-[#ba1a1a]';
+      }
+    }, 700);
+  }
+</script></main></body></html>

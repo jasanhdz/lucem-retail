@@ -1,0 +1,431 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary-fixed-variant":"#00513f","on-tertiary-container":"#b3863c","tertiary-fixed":"#ffddaf","surface-variant":"#d1e7e1","on-tertiary-fixed-variant":"#614000","inverse-on-surface":"#dff6ef","surface-bright":"#e7fef8","surface-container-highest":"#d1e7e1","error-container":"#ffdad6","on-secondary-fixed":"#002117","primary":"#001615","primary-fixed":"#cbe8e6","tertiary-container":"#372300","outline":"#727878","on-primary-fixed":"#04201f","surface":"#e7fef8","inverse-primary":"#b0ccca","surface-container":"#dcf3ec","primary-container":"#102b2a","tertiary-fixed-dim":"#f1be6e","on-error":"#ffffff","on-error-container":"#93000a","secondary-fixed-dim":"#89d5ba","surface-container-low":"#e2f9f2","on-secondary":"#ffffff","primary-fixed-dim":"#b0ccca","secondary-fixed":"#a4f2d6","on-tertiary-fixed":"#281800","surface-dim":"#c8dfd9","on-primary-fixed-variant":"#314b4a","outline-variant":"#c1c8c7","inverse-surface":"#203430","on-primary":"#ffffff","on-surface":"#0b1f1b","on-surface-variant":"#414847","background":"#e7fef8","on-primary-container":"#789391","surface-tint":"#496362","error":"#ba1a1a","surface-container-high":"#d6ede7","secondary":"#166b55","secondary-container":"#a4f2d6","on-background":"#0b1f1b","surface-container-lowest":"#ffffff","on-secondary-container":"#1f715a","on-tertiary":"#ffffff","tertiary":"#1c1000"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{margin:"1rem","space-lg":"1.5rem","space-xs":"0.25rem","gutter-lg":"1.5rem","space-md":"1rem","space-xl":"2rem","margin-md":"1.5rem",gutter:"1rem","space-2xl":"3rem","space-sm":"0.5rem","margin-lg":"2rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"label-sm":["Inter"],"headline-sm":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"label-lg":["Inter"],"numeric-total":["Plus Jakarta Sans"],"body-sm":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",fontWeight:"700"}],"title-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"numeric-total":["32px",{lineHeight:"36px",fontWeight:"800"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface-container-low font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-secondary-container"><span class="material-symbols-outlined text-[20px]">storefront</span></div><div><span class="font-headline-sm text-headline-sm text-primary tracking-tight block">Lucem Retail</span><span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Enterprise POS</span></div></div><div class="flex-1 overflow-y-auto px-space-md py-space-md"><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Operaciones</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="punto-de-venta" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">point_of_sale</span><span class="">Punto de venta</span></div></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="productos" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span class="">Productos</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-md py-2.5 rounded-lg transition-all bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]" data-path="inventario" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">warehouse</span><span class="">Inventario</span></div><span class="w-2 h-2 rounded-full bg-secondary-container"></span></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="apartados" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">bookmark_border</span><span class="">Apartados</span></div></a></nav></div><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gestión</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="resumen" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span class="">Resumen</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="reportes" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="">Reportes</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="devoluciones" href="#"><span class="material-symbols-outlined text-[20px]">assignment_return</span><span class="">Devoluciones</span></a></nav></div><div class="mb-space-md"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Administración</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="usuarios-y-permisos" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span><span class="">Usuarios y permisos</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="auditoria" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="">Auditoría</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="configuracion" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="">Configuración</span></a></nav></div></div><div class="p-space-md bg-surface-container-lowest"><div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-secondary text-[20px]">wifi_tethering</span><div><span class="font-label-sm text-label-sm text-on-surface block">Terminal Online</span><span class="font-body-sm text-body-sm text-on-surface-variant block">Sincronizado</span></div></div><span class="w-2 h-2 rounded-full bg-secondary"></span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="w-full h-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-md py-1.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"><span class="material-symbols-outlined text-secondary text-[18px]">store</span><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider leading-none">Sucursal activa</span><span class="font-title-md text-title-md leading-tight text-on-surface">American Outfit - Matriz Centro</span></div><span class="material-symbols-outlined text-on-surface-variant text-[18px] ml-space-xs">expand_more</span></div></div><div class="flex-1 max-w-xl mx-space-md"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span><input class="w-full h-10 pl-10 pr-space-md rounded-lg bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest" placeholder="Buscar producto, código de barras o SKU..." type="text"></div></div><div class="flex items-center gap-space-md"><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="text-right hidden sm:block"><span class="font-title-md text-title-md text-on-surface block leading-tight">Carlos Mendoza</span><span class="font-label-sm text-label-sm text-secondary block font-semibold">Administrador</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="relative pt-16 bg-surface-container-low min-h-screen"><div class="flex flex-col w-full">
+<!-- Underlay: Contextual Inventory Detail Dashboard Screen -->
+<div class="px-gutter-lg py-space-lg flex flex-col gap-space-lg select-none filter blur-[2px] opacity-45 pointer-events-none transition-all duration-300">
+<!-- Top breadcrumb and actions bar -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm text-on-surface-variant">
+<span class="font-label-md text-label-md">Inventario</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md">Textil y Confección</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Playera Básica Algodón</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span class="">Historial Kárdex</span>
+</div>
+<div class="px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+<span class="">Ajustar existencias</span>
+</div>
+</div>
+</div>
+<!-- Product Header Bar in Background -->
+<div class="p-space-lg bg-surface-container-lowest rounded-xl shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-space-lg">
+<div class="w-16 h-16 rounded-lg bg-surface-container flex items-center justify-center text-primary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Folded premium black cotton t-shirt in a boutique retail display with soft dramatic studio spotlighting and crisp botanical green ambient tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDROIIZuU2RXbXKNWr8O4qKhIwaAy-xOdmDJEGYF60zm6n4R2VLgizioNjn7M7r0TFtuUh7Oyyy9rbWU1kUSilb_Bqj45j8H48XGU0Q7__f_UwjvcP7mcaQ_iNwcGga_Q3ZjPyEUWmXjV2oJMdlULP8qhTZHnOwKd_WpNULuDo40mvCe-Wcsd55QHeIZpYPGBbasFMTMhBnO2OqfR5772Gts8ImqeYHPmljhXRkFw">
+</div>
+<div>
+<div class="flex items-center gap-space-sm mb-1">
+<h1 class="font-headline-md text-headline-md text-primary">Playera Básica Algodón</h1>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold">SKU: PLY-BAS-M-NEG</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ubicación física: Pasillo 03 • Anaquel C-12 • Matriz Centro</p>
+</div>
+</div>
+<div class="flex gap-space-xl">
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase">Físico Total</span>
+<span class="font-headline-md text-headline-md text-primary">76 pzas</span>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-on-tertiary-container block uppercase">Apartados</span>
+<span class="font-headline-md text-headline-md text-on-tertiary-container">2 pzas</span>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-secondary block uppercase">Disponible</span>
+<span class="font-headline-md text-headline-md text-secondary">74 pzas</span>
+</div>
+</div>
+</div>
+<!-- Background Table Preview -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="h-10 bg-surface-container-low rounded flex items-center px-space-md mb-2 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1/4">Variante / Atributo</span>
+<span class="w-1/4">Código de barras</span>
+<span class="w-1/6 text-right">Físico</span>
+<span class="w-1/6 text-right">Apartado</span>
+<span class="w-1/6 text-right">Disponible</span>
+</div>
+<div class="space-y-2">
+<div class="h-12 bg-surface-container-high rounded flex items-center px-space-md font-body-sm text-body-sm font-medium">
+<span class="w-1/4">Negro / M</span>
+<span class="w-1/4">7501029384712</span>
+<span class="w-1/6 text-right">76</span>
+<span class="w-1/6 text-right text-on-tertiary-container font-semibold">2</span>
+<span class="w-1/6 text-right text-secondary font-bold">74</span>
+</div>
+<div class="h-12 bg-surface-container-lowest rounded flex items-center px-space-md font-body-sm text-body-sm">
+<span class="w-1/4">Negro / L</span>
+<span class="w-1/4">7501029384713</span>
+<span class="w-1/6 text-right">45</span>
+<span class="w-1/6 text-right">0</span>
+<span class="w-1/6 text-right text-secondary">45</span>
+</div>
+<div class="h-12 bg-surface-container-lowest rounded flex items-center px-space-md font-body-sm text-body-sm">
+<span class="w-1/4">Blanco / M</span>
+<span class="w-1/4">7501029384801</span>
+<span class="w-1/6 text-right">82</span>
+<span class="w-1/6 text-right">5</span>
+<span class="w-1/6 text-right text-secondary">77</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Overlay Backdrop (Focused Inventory Adjustment Dialog) -->
+<div class="fixed inset-0 top-16 left-72 z-50 flex items-center justify-center p-space-lg bg-primary/45 backdrop-blur-[4px] overflow-y-auto" id="adjustmentModalBackdrop">
+<!-- Active Modal Card Structure -->
+<div class="relative w-full max-w-3xl my-auto bg-surface-container-lowest rounded-xl shadow-xl overflow-hidden flex flex-col transition-all duration-200">
+<!-- Top Decorative Botanical Ambient Glow Strip -->
+<div class="h-1.5 w-full bg-gradient-to-r from-secondary via-secondary-fixed to-error"></div>
+<!-- Modal Header -->
+<div class="px-space-xl pt-space-lg pb-space-md bg-surface-container-lowest flex items-start justify-between gap-space-md">
+<div class="flex-1">
+<div class="flex items-center gap-space-sm mb-1.5 flex-wrap">
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">Ajuste de existencias</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+              Operación de regularización física
+            </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl leading-snug">
+            Registra discrepancias por merma, conteo físico o daño. Este movimiento quedará registrado en el kárdex permanente de auditoría.
+          </p>
+</div>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer" onclick="alert('Cerrar diálogo cancela los cambios no guardados.')" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Main Form Body Content -->
+<div class="px-space-xl py-space-md flex flex-col gap-space-lg overflow-y-auto max-h-[calc(85vh-150px)]">
+<!-- 1. Producto y variante seleccionada -->
+<div class="p-space-md bg-surface-container-low rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex-shrink-0 flex items-center justify-center text-secondary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="High-resolution close-up macro texture of soft black combed cotton knit fabric for garment manufacturing in a clean luxury atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX-xsSln8oC5zbEPtOaYPodexAzyjrTXL5Ur1uBuVX24S8WazFdIhEB2uDstmpRjZm12vFKgGZiR7JG-AjjmkGei7-n3TvdMVpadvW10rtofcomXS7JQWZRem0_xnYpfNHwAztWTL4RFPuf2P-t0mSWsX4SqjWPXZj2NXjKfHBtVn0G8YaZkJasP2YXyEKRGFQsQypb__MuQhAN2VKksC9Ces2NWjO_W2iWmJTVQ">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-title-md text-title-md text-primary truncate">Playera Básica Algodón</span>
+<span class="text-on-surface-variant">•</span>
+<span class="font-title-md text-title-md text-secondary">Negro / M</span>
+</div>
+<div class="flex items-center gap-space-sm mt-0.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="">SKU: <strong class="text-on-surface font-semibold">PLY-BAS-M-NEG</strong></span>
+<span class="">•</span>
+<span class="">Sucursal: <strong class="text-on-surface font-semibold">Matriz Centro</strong></span>
+</div>
+</div>
+</div>
+<!-- Mini Pills Metric Status -->
+<div class="flex items-center gap-2 self-end sm:self-center bg-surface-container-lowest px-space-md py-2 rounded-lg shadow-sm">
+<div class="flex flex-col text-center px-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Físico</span>
+<span class="font-title-md text-title-md text-primary leading-tight font-bold" id="badgeFisico">76</span>
+</div>
+<div class="w-px h-6 bg-surface-container-high"></div>
+<div class="flex flex-col text-center px-2">
+<span class="font-label-sm text-label-sm text-on-tertiary-container uppercase">Apartadas</span>
+<span class="font-title-md text-title-md text-on-tertiary-container leading-tight font-bold" id="badgeApartadas">2</span>
+</div>
+<div class="w-px h-6 bg-surface-container-high"></div>
+<div class="flex flex-col text-center px-2">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Disponibles</span>
+<span class="font-title-md text-title-md text-secondary leading-tight font-bold" id="badgeDisponibles">74</span>
+</div>
+</div>
+</div>
+<!-- 2. Sentido del ajuste (Conmutador visual claro y directo) -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center justify-between">
+<span class="">Sentido de la regularización *</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Selecciona el tipo de impacto en inventario</span>
+</label>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md mt-1">
+<!-- Toggle 1: Disminuir stock (Activo inicial) -->
+<button class="group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-error-container text-on-error-container shadow-sm cursor-pointer" id="toggleDisminuir" onclick="selectAdjustmentType('decrease')" type="button">
+<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-on-error text-error shadow-sm">
+<span class="material-symbols-outlined text-[24px]">remove_circle</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md font-bold tracking-tight">[-] Disminuir stock</span>
+<span class="w-2.5 h-2.5 rounded-full bg-error" id="dotDisminuir"></span>
+</div>
+<span class="font-body-sm text-body-sm block mt-0.5 opacity-90">Salida / Merma, daño o faltante físico</span>
+</div>
+</button>
+<!-- Toggle 2: Aumentar stock -->
+<button class="group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer" id="toggleAumentar" onclick="selectAdjustmentType('increase')" type="button">
+<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-surface-container-lowest text-secondary shadow-sm">
+<span class="material-symbols-outlined text-[24px]">add_circle</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md font-bold tracking-tight">[+] Aumentar stock</span>
+<span class="w-2.5 h-2.5 rounded-full bg-transparent" id="dotAumentar"></span>
+</div>
+<span class="font-body-sm text-body-sm block mt-0.5 text-on-surface-variant">Sobrante de conteo físico o hallazgo</span>
+</div>
+</button>
+</div>
+</div>
+<!-- 3. Cantidad a ajustar y Motivo (Fila de 2 columnas) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<!-- Columna Cantidad -->
+<div class="md:col-span-5 flex flex-col gap-space-xs">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center gap-1" for="adjustmentAmountInput">
+<span id="labelUnitsAction" class="">Unidades a descontar</span>
+<span class="text-error font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<button class="w-10 h-12 flex items-center justify-center bg-surface-container hover:bg-surface-container-highest text-on-surface rounded-l-lg transition-colors cursor-pointer" onclick="adjustInputValue(-1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<input class="w-full h-12 text-center font-headline-sm text-headline-sm font-bold bg-surface-container-lowest text-primary focus:outline-none focus:bg-surface-container-low transition-colors" id="adjustmentAmountInput" max="74" min="1" oninput="handleAmountChange(this.value)" type="number" value="3">
+<button class="w-10 h-12 flex items-center justify-center bg-surface-container hover:bg-surface-container-highest text-on-surface rounded-r-lg transition-colors cursor-pointer" onclick="adjustInputValue(1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<!-- Advertencia preventiva context -->
+<div class="flex items-start gap-1.5 p-2 rounded-lg bg-surface-container text-on-surface-variant mt-1" id="stockConstraintNotice"><span class="material-symbols-outlined text-on-tertiary-container text-[16px] flex-shrink-0 mt-0.5">info</span><p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">No es posible realizar un ajuste que deje la existencia disponible en negativo (mínimo <strong class="text-on-surface">2 pzas reservadas</strong> para apartados vigentes).</p></div>
+</div>
+<!-- Columna Motivo Dropdown -->
+<div class="md:col-span-7 flex flex-col gap-space-xs">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center gap-1" for="adjustmentReasonSelect">
+<span class="">Motivo obligatorio del ajuste</span>
+<span class="text-error font-bold">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-12 pl-space-md pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container cursor-pointer appearance-none shadow-sm" id="adjustmentReasonSelect">
+<option selected="" value="damage">Merma por daño o exhibición</option>
+<option value="negative_count">Conteo físico negativo</option>
+<option value="theft_loss">Robo / Pérdida en piso</option>
+<option value="vendor_return">Devolución a proveedor</option>
+<option value="commercial_sample">Muestra comercial</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-space-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant px-1 mt-1 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[15px] text-secondary">task_alt</span><span class="">Movimiento verificado para kárdex de almacén</span></div>
+</div>
+</div>
+<!-- 4. Detalle o justificación obligatoria -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center gap-1" for="adjustmentNote">
+<span class="">Detalle o justificación obligatoria</span>
+<span class="text-error font-bold">*</span>
+</label>
+<span class="font-body-sm text-body-sm text-on-surface-variant" id="charCounter">59 / 250 caracteres</span>
+</div>
+<div class="relative">
+<textarea class="w-full p-space-md rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container placeholder:text-on-surface-variant shadow-sm resize-none" id="adjustmentNote" maxlength="250" oninput="updateCharCount(this.value)" rows="2">Prenda con mancha de tinta detectada durante inventario en mostrador.</textarea>
+</div>
+</div>
+<!-- 5. Cálculo y vista previa del balance resultante -->
+<div class="p-space-lg bg-surface-container-low rounded-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">calculate</span>
+<span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Proyección de balance en Kárdex</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cálculo en tiempo real</span>
+</div>
+<!-- Matriz de Cálculo Comparativo -->
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-space-sm bg-surface-container-lowest p-space-md rounded-lg shadow-sm text-center"><div class="flex flex-col items-center justify-center p-2 rounded bg-surface-container-low"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Física actual</span><span class="font-title-md text-title-md text-primary font-bold mt-0.5">76 pzas</span></div><div class="flex flex-col items-center justify-center p-2 rounded bg-error-container text-on-error-container" id="boxDelta"><span class="font-label-sm text-label-sm uppercase font-semibold">Ajuste</span><span class="font-title-md text-title-md font-bold mt-0.5" id="previewDeltaText">-3 pzas</span></div><div class="flex flex-col items-center justify-center p-2 rounded bg-primary-container text-on-primary shadow-sm"><span class="font-label-sm text-label-sm text-on-primary-container uppercase font-semibold">Nueva física</span><span class="font-headline-sm text-headline-sm text-on-primary font-bold mt-0.5" id="previewNuevoFisico">73 pzas</span></div><div class="flex flex-col items-center justify-center p-2 rounded bg-surface-container-low"><span class="font-label-sm text-label-sm text-on-tertiary-container uppercase">Apartada</span><span class="font-title-md text-title-md text-on-tertiary-container font-semibold mt-0.5">2 pzas</span><span class="text-[10px] text-on-surface-variant leading-none">(sin cambio)</span></div><div class="col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-2 rounded bg-secondary-container text-on-secondary-container font-semibold shadow-sm"><span class="font-label-sm text-label-sm uppercase">Nueva disponible</span><span class="font-headline-sm text-headline-sm text-on-secondary-container font-bold mt-0.5" id="previewNuevoDisponible">71 pzas</span></div></div>
+<!-- Indicador de validez de existencias -->
+<div class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-secondary" id="validityIndicator">
+<span class="material-symbols-outlined text-[20px] text-secondary flex-shrink-0" id="validityIcon">check_circle</span>
+<span class="font-body-md text-body-md font-medium" id="validityMessage">Válido: la nueva existencia disponible (71 pzas) respeta el mínimo requerido de 2 pzas apartadas.</span>
+</div>
+</div>
+</div>
+<!-- Modal Footer Action Bar -->
+<div class="px-space-xl py-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-md mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-outline">person_outline</span><span class="">Registrado por: <strong class="text-on-surface font-semibold">Carlos Mendoza (Administrador)</strong></span></div>
+<div class="flex items-center gap-space-md w-full sm:w-auto justify-end">
+<button class="w-full sm:w-auto px-space-lg py-2.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors cursor-pointer" onclick="handleCancelModal()" type="button">
+            Cancelar
+          </button>
+<!-- Primary Adjustment Button with Safety Warning State -->
+<button class="w-full sm:w-auto px-space-xl py-2.5 rounded-lg bg-primary-container hover:bg-secondary text-on-primary font-label-lg text-label-lg shadow-sm transition-all duration-150 flex items-center justify-center gap-space-xs cursor-pointer active:scale-95" id="btnSubmitAdjustment" onclick="triggerConfirmSecurity()" type="button">
+<span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+<span id="submitButtonLabel" class="">Confirmar ajuste (-3 pzas)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline Script for Interactive Adjustments & Safety Logic -->
+<script>
+    (function () {
+      var currentMode = 'decrease'; // 'decrease' | 'increase'
+      var physicalStock = 76;
+      var reservedStock = 2;
+      var currentQty = 3;
+      var isConfirmingSecurity = false;
+
+      function updateCalculation() {
+        var delta = (currentMode === 'decrease') ? -currentQty : currentQty;
+        var newPhysical = physicalStock + delta;
+        var newAvailable = newPhysical - reservedStock;
+
+        var boxDelta = document.getElementById('boxDelta');
+        var previewDeltaText = document.getElementById('previewDeltaText');
+        var previewNuevoFisico = document.getElementById('previewNuevoFisico');
+        var previewNuevoDisponible = document.getElementById('previewNuevoDisponible');
+        var submitButtonLabel = document.getElementById('submitButtonLabel');
+        var validityIndicator = document.getElementById('validityIndicator');
+        var validityIcon = document.getElementById('validityIcon');
+        var validityMessage = document.getElementById('validityMessage');
+        var btnSubmit = document.getElementById('btnSubmitAdjustment');
+
+        // Text & delta formats
+        if (currentMode === 'decrease') {
+          previewDeltaText.innerText = '-' + currentQty + ' pzas';
+          if (boxDelta) {
+            boxDelta.className = "flex flex-col items-center justify-center p-2 rounded bg-error-container text-on-error-container";
+          }
+          if (!isConfirmingSecurity) {
+            submitButtonLabel.innerText = 'Confirmar ajuste (-' + currentQty + ' pzas)';
+          }
+        } else {
+          previewDeltaText.innerText = '+' + currentQty + ' pzas';
+          if (boxDelta) {
+            boxDelta.className = "flex flex-col items-center justify-center p-2 rounded bg-secondary-container text-on-secondary-container";
+          }
+          if (!isConfirmingSecurity) {
+            submitButtonLabel.innerText = 'Confirmar ajuste (+' + currentQty + ' pzas)';
+          }
+        }
+
+        previewNuevoFisico.innerText = newPhysical + ' pzas';
+        previewNuevoDisponible.innerText = newAvailable + ' pzas';
+
+        // Check availability logic
+        if (newAvailable < 0) {
+          validityIndicator.className = "flex items-center gap-space-sm px-space-md py-2.5 rounded-lg bg-error-container text-on-error-container";
+          validityIcon.innerText = "error";
+          validityIcon.className = "material-symbols-outlined text-[20px] text-error flex-shrink-0";
+          validityMessage.innerText = "Inválido: La operación dejaría la disponibilidad en negativo (" + newAvailable + " pzas).";
+          btnSubmit.disabled = true;
+          btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          validityIndicator.className = "flex items-center gap-space-sm px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-secondary";
+          validityIcon.innerText = "check_circle";
+          validityIcon.className = "material-symbols-outlined text-[20px] text-secondary flex-shrink-0";
+          validityMessage.innerText = "Válido: el balance resultante respeta los apartados activos.";
+          btnSubmit.disabled = false;
+          btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+
+      window.selectAdjustmentType = function (mode) {
+        currentMode = mode;
+        isConfirmingSecurity = false;
+        var toggleDisminuir = document.getElementById('toggleDisminuir');
+        var toggleAumentar = document.getElementById('toggleAumentar');
+        var dotDisminuir = document.getElementById('dotDisminuir');
+        var dotAumentar = document.getElementById('dotAumentar');
+        var labelUnitsAction = document.getElementById('labelUnitsAction');
+        var stockNotice = document.getElementById('stockConstraintNotice');
+
+        if (mode === 'decrease') {
+          toggleDisminuir.className = "group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-error-container text-on-error-container shadow-sm cursor-pointer";
+          toggleAumentar.className = "group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer";
+          dotDisminuir.className = "w-2.5 h-2.5 rounded-full bg-error";
+          dotAumentar.className = "w-2.5 h-2.5 rounded-full bg-transparent";
+          labelUnitsAction.innerText = "Unidades a descontar";
+          if (stockNotice) stockNotice.style.display = 'flex';
+        } else {
+          toggleDisminuir.className = "group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer";
+          toggleAumentar.className = "group relative p-space-md rounded-xl text-left transition-all duration-150 flex items-start gap-space-md bg-secondary-container text-on-secondary-container shadow-sm cursor-pointer";
+          dotDisminuir.className = "w-2.5 h-2.5 rounded-full bg-transparent";
+          dotAumentar.className = "w-2.5 h-2.5 rounded-full bg-secondary";
+          labelUnitsAction.innerText = "Unidades a sumar";
+          if (stockNotice) stockNotice.style.display = 'none';
+        }
+        updateCalculation();
+      };
+
+      window.adjustInputValue = function (step) {
+        var input = document.getElementById('adjustmentAmountInput');
+        var val = parseInt(input.value, 10) || 1;
+        val += step;
+        if (val < 1) val = 1;
+        input.value = val;
+        currentQty = val;
+        isConfirmingSecurity = false;
+        updateCalculation();
+      };
+
+      window.handleAmountChange = function (val) {
+        var parsed = parseInt(val, 10);
+        if (isNaN(parsed) || parsed < 1) {
+          parsed = 1;
+        }
+        currentQty = parsed;
+        isConfirmingSecurity = false;
+        updateCalculation();
+      };
+
+      window.updateCharCount = function (text) {
+        var counter = document.getElementById('charCounter');
+        if (counter) {
+          counter.innerText = text.length + ' / 250 caracteres';
+        }
+      };
+
+      window.handleCancelModal = function () {
+        if (confirm('¿Deseas descartar el ajuste de inventario en curso?')) {
+          var modal = document.getElementById('adjustmentModalBackdrop');
+          if (modal) modal.style.display = 'none';
+        }
+      };
+
+      window.triggerConfirmSecurity = function () {
+        var label = document.getElementById('submitButtonLabel');
+        var btn = document.getElementById('btnSubmitAdjustment');
+        
+        if (!isConfirmingSecurity) {
+          isConfirmingSecurity = true;
+          if (currentMode === 'decrease') {
+            label.innerText = '¿Estás seguro de descontar ' + currentQty + ' piezas?';
+            btn.classList.add('bg-error', 'text-on-error');
+          } else {
+            label.innerText = '¿Estás seguro de ingresar ' + currentQty + ' piezas?';
+            btn.classList.add('bg-secondary', 'text-on-secondary');
+          }
+        } else {
+          // Success Feedback
+          label.innerText = '¡Ajuste aplicado con éxito!';
+          btn.disabled = true;
+          setTimeout(function () {
+            alert('Ajuste de inventario registrado con éxito en Kárdex Matriz Centro.');
+            var modal = document.getElementById('adjustmentModalBackdrop');
+            if (modal) modal.style.display = 'none';
+          }, 400);
+        }
+      };
+
+      // Initial execution
+      updateCalculation();
+    })();
+  </script>
+</div></main></div>
+
+</body></html>

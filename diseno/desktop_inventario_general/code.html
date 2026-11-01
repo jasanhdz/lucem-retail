@@ -1,0 +1,382 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary-fixed-variant":"#00513f","on-tertiary-container":"#b3863c","tertiary-fixed":"#ffddaf","surface-variant":"#d1e7e1","on-tertiary-fixed-variant":"#614000","inverse-on-surface":"#dff6ef","surface-bright":"#e7fef8","surface-container-highest":"#d1e7e1","error-container":"#ffdad6","on-secondary-fixed":"#002117","primary":"#001615","primary-fixed":"#cbe8e6","tertiary-container":"#372300","outline":"#727878","on-primary-fixed":"#04201f","surface":"#e7fef8","inverse-primary":"#b0ccca","surface-container":"#dcf3ec","primary-container":"#102b2a","tertiary-fixed-dim":"#f1be6e","on-error":"#ffffff","on-error-container":"#93000a","secondary-fixed-dim":"#89d5ba","surface-container-low":"#e2f9f2","on-secondary":"#ffffff","primary-fixed-dim":"#b0ccca","secondary-fixed":"#a4f2d6","on-tertiary-fixed":"#281800","surface-dim":"#c8dfd9","on-primary-fixed-variant":"#314b4a","outline-variant":"#c1c8c7","inverse-surface":"#203430","on-primary":"#ffffff","on-surface":"#0b1f1b","on-surface-variant":"#414847","background":"#e7fef8","on-primary-container":"#789391","surface-tint":"#496362","error":"#ba1a1a","surface-container-high":"#d6ede7","secondary":"#166b55","secondary-container":"#a4f2d6","on-background":"#0b1f1b","surface-container-lowest":"#ffffff","on-secondary-container":"#1f715a","on-tertiary":"#ffffff","tertiary":"#1c1000"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{margin:"1rem","space-lg":"1.5rem","space-xs":"0.25rem","gutter-lg":"1.5rem","space-md":"1rem","space-xl":"2rem","margin-md":"1.5rem",gutter:"1rem","space-2xl":"3rem","space-sm":"0.5rem","margin-lg":"2rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"label-sm":["Inter"],"headline-sm":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"label-lg":["Inter"],"numeric-total":["Plus Jakarta Sans"],"body-sm":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",fontWeight:"700"}],"title-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"numeric-total":["32px",{lineHeight:"36px",fontWeight:"800"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface-container-low font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-secondary-container"><span class="material-symbols-outlined text-[20px]">storefront</span></div><div><span class="font-headline-sm text-headline-sm text-primary tracking-tight block">Lucem Retail</span><span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Enterprise POS</span></div></div><div class="flex-1 overflow-y-auto px-space-md py-space-md"><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Operaciones</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="punto-de-venta" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">point_of_sale</span><span class="">Punto de venta</span></div></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="productos" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span class="">Productos</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-md py-2.5 rounded-lg transition-all bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]" data-path="inventario" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">warehouse</span><span class="">Inventario</span></div><span class="w-2 h-2 rounded-full bg-secondary-container"></span></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="apartados" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">bookmark_border</span><span class="">Apartados</span></div></a></nav></div><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gestión</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="resumen" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span class="">Resumen</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="reportes" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="">Reportes</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="devoluciones" href="#"><span class="material-symbols-outlined text-[20px]">assignment_return</span><span class="">Devoluciones</span></a></nav></div><div class="mb-space-md"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Administración</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="usuarios-y-permisos" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span><span class="">Usuarios y permisos</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="auditoria" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="">Auditoría</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="configuracion" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="">Configuración</span></a></nav></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="w-full h-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-md py-1.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"><span class="material-symbols-outlined text-secondary text-[18px]">store</span><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider leading-none">Sucursal activa</span><span class="font-title-md text-title-md leading-tight text-on-surface">American Outfit - Matriz Centro</span></div><span class="material-symbols-outlined text-on-surface-variant text-[18px] ml-space-xs">expand_more</span></div></div><div class="flex-1 max-w-xl mx-space-md"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span><input class="w-full h-10 pl-10 pr-space-md rounded-lg bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest" placeholder="Buscar producto, código de barras o SKU..." type="text"></div></div><div class="flex items-center gap-space-md"><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="text-right hidden sm:block"><span class="font-title-md text-title-md text-on-surface block leading-tight">Carlos Mendoza</span><span class="font-label-sm text-label-sm text-secondary block font-semibold">Administrador</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="relative pt-16 bg-surface-container-low min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Command Context Bar -->
+<div class="px-space-xl pt-space-lg pb-space-md">
+<!-- Breadcrumb & Status Marker -->
+<div class="flex items-center justify-between pb-space-xs"><div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm tracking-wider uppercase"><span class="">Operaciones</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-semibold">Inventario</span><span class="ml-space-sm inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm text-[11px] font-medium"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Sucursal Matriz Centro</span></div></div>
+<!-- Header Title & Action Buttons -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md mt-1">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Inventario</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Control operacional de existencias físicas, apartados y unidades disponibles para venta.</p>
+</div>
+<div class="flex items-center flex-wrap gap-space-sm">
+<!-- Ghost Button: Kárdex -->
+<a class="px-space-md py-2 rounded-lg text-primary hover:bg-surface-container-high transition-colors font-label-lg text-label-lg flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span class="">Ver kárdex completo</span>
+</a>
+<!-- Secondary Button: Ajuste -->
+<button class="px-space-md py-2 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-high transition-colors font-label-lg text-label-lg flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span class="">Realizar ajuste</span>
+</button>
+<!-- Primary Action: Registrar Entrada -->
+<button class="px-space-lg py-2 rounded-lg bg-primary-container text-on-primary hover:bg-secondary transition-all font-label-lg text-label-lg flex items-center gap-1.5 shadow-md active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add_box</span>
+<span class="">Registrar entrada</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Operational Core KPI Cards (4 Pure Operational Questions) -->
+<div class="px-space-xl pb-space-lg">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md"><div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between"><div class="flex items-start justify-between"><div><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant block mb-1">¿Cuánto tengo?</span><span class="font-title-md text-title-md text-primary font-semibold">Existencia física</span></div><div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">inventory</span></div></div><div class="mt-4"><div class="flex items-baseline gap-1"><span class="font-numeric-total text-numeric-total text-primary leading-none">1,420</span><span class="font-title-md text-title-md text-on-surface-variant font-medium">pzas</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">store</span>Conteo real en tienda física</p></div><div class="w-full bg-surface-container-low h-1 rounded-full mt-3 overflow-hidden"><div class="bg-primary-container h-full rounded-full" style="width: 100%"></div></div></div><div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between"><div class="flex items-start justify-between"><div><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-tertiary-container block mb-1">¿Cuánto está apartado?</span><span class="font-title-md text-title-md text-primary font-semibold">Cantidad apartada</span></div><div class="w-9 h-9 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary-container"><span class="material-symbols-outlined text-[20px]">bookmark</span></div></div><div class="mt-4"><div class="flex items-baseline gap-1"><span class="font-numeric-total text-numeric-total text-on-tertiary-container leading-none">38</span><span class="font-title-md text-title-md text-on-surface-variant font-medium">pzas</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">pending_actions</span>Comprometida en pedidos y mostrador</p></div><div class="w-full bg-surface-container-low h-1 rounded-full mt-3 overflow-hidden"><div class="bg-tertiary-fixed-dim h-full rounded-full" style="width: 2.7%"></div></div></div><div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between ring-1 ring-secondary/20"><div class="flex items-start justify-between"><div><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary block mb-1 font-semibold">¿Cuánto puedo vender?</span><span class="font-title-md text-title-md text-primary font-semibold">Existencia disponible</span></div><div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[20px]">point_of_sale</span></div></div><div class="mt-4"><div class="flex items-baseline gap-1"><span class="font-numeric-total text-numeric-total text-secondary leading-none">1,382</span><span class="font-title-md text-title-md text-secondary font-medium">pzas</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span>Disponible para venta inmediata</p></div><div class="w-full bg-surface-container-low h-1 rounded-full mt-3 overflow-hidden"><div class="bg-secondary h-full rounded-full" style="width: 97.3%"></div></div></div><div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm relative overflow-hidden flex flex-col justify-between"><div class="flex items-start justify-between"><div><span class="font-label-sm text-label-sm uppercase tracking-wider text-error block mb-1">Atención requerida</span><span class="font-title-md text-title-md text-primary font-semibold">Alertas activas</span></div><div class="w-9 h-9 rounded-lg bg-error-container flex items-center justify-center text-error"><span class="material-symbols-outlined text-[20px]">warning</span></div></div><div class="mt-4"><div class="flex items-baseline gap-2"><span class="font-numeric-total text-numeric-total text-error leading-none">7</span><span class="font-label-sm text-label-sm uppercase px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-semibold">Crítico</span></div><p class="font-body-sm text-body-sm text-on-surface mt-2 font-medium flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>5 con stock bajo<span class="mx-1 text-outline">•</span><span class="inline-block w-2 h-2 rounded-full bg-error"></span>2 agotados</p></div><div class="w-full bg-surface-container-low h-1 rounded-full mt-3 overflow-hidden"><div class="bg-error h-full rounded-full" style="width: 8.3%"></div></div></div></div>
+</div>
+<!-- Operational Filter & Fast Search Console -->
+<div class="px-space-xl pb-space-md">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<!-- Top Row: Search and Dropdown -->
+<div class="flex flex-col md:flex-row items-stretch md:items-center gap-space-md">
+<!-- Search Input -->
+<div class="flex-1 relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-11 pl-11 pr-10 rounded-lg bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary/40 transition-all shadow-inner" placeholder="Buscar por producto, SKU o código de barras (ej. PLY-BAS)..." type="text">
+<kbd class="hidden sm:inline-flex absolute right-3 px-1.5 py-0.5 text-[10px] font-label-sm text-on-surface-variant bg-surface-container rounded uppercase">⌘K</kbd>
+</div>
+<!-- Category Dropdown Filter -->
+<div class="relative w-full md:w-64">
+<div class="h-11 px-3 rounded-lg bg-surface-container-low flex items-center justify-between text-on-surface cursor-pointer hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[18px] text-secondary">category</span>
+<span class="font-body-md text-body-md truncate">Todas las categorías</span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Quick Export / Column View -->
+<div class="flex items-center gap-space-xs self-end md:self-auto">
+<button class="h-11 px-3 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1 font-label-md text-label-md" title="Descargar reporte Excel / CSV">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span class="hidden sm:inline">Exportar</span>
+</button>
+<button class="h-11 px-3 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1 font-label-md text-label-md" title="Imprimir etiquetas de góndola">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+</div>
+</div>
+<!-- Bottom Row: Stock status filter pills -->
+<div class="flex items-center justify-between flex-wrap gap-2 pt-1 border-t-0">
+<div class="flex items-center flex-wrap gap-1.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mr-1">Filtrar por:</span>
+<button class="px-3 py-1 rounded-full bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm">
+            Todos (84)
+          </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-all flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+            Disponible (77)
+          </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-all flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+            Stock bajo (&lt; 10) (5)
+          </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-all flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+            Agotado (0) (2)
+          </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-tertiary-container">bookmark</span>
+            Con apartados (8)
+          </button>
+</div>
+<div class="text-on-surface-variant font-label-sm text-label-sm">
+          Mostrando <span class="font-semibold text-primary">5</span> de 84 registros
+        </div>
+</div>
+</div>
+</div>
+<!-- Operational Inventory Table -->
+<div class="px-space-xl pb-space-lg">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider h-11 select-none"><th class="py-2.5 px-space-md font-semibold">Producto y Variante</th><th class="py-2.5 px-space-md font-semibold">SKU / Cód. Barras</th><th class="py-2.5 px-space-md font-semibold">Categoría</th><th class="py-2.5 px-space-md font-semibold text-right">Existencia Física</th><th class="py-2.5 px-space-md font-semibold text-right">Apartada</th><th class="py-2.5 px-space-md font-semibold text-right">Existencia Disponible</th><th class="py-2.5 px-space-md font-semibold text-center">Estado / Alertas</th><th class="py-2.5 px-space-md font-semibold text-right pr-6">Acciones Rápidas</th></tr>
+</thead>
+<tbody class="divide-y-0 text-body-md font-body-md text-on-surface">
+<!-- Row 1: THE MANDATED ILLUSTRATIVE EXAMPLE -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<!-- Producto y variante -->
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Editorial product photograph of a premium black crewneck cotton t-shirt neatly folded against a soft studio sage green background with soft directional natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJZkClQoo5PHl17VOSo3Yga7-3d2J_RhSxUIeL_k-WuOQztCrc5bQoqfuMzbFl7IXo05QxfMd6RXPabdGKiilMUq11jqb0nDMV_4peURwC05xhE-GLtieZ_wqKgmvnz6nGxnuRt5jqPMQBtOGV4szGRIvQ6WJp5Ij5EZh7zwTE9QP0hYedSQqw036OaklYiVGXFJM6n2ehlNJvFhfgpuWo3MLqP8rjsTiT9uhrdw">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold truncate">Playera Básica Algodón</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">
+                        Negro / M
+                      </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Algodón peinado 180g • Unisex</span>
+</div>
+</div>
+</td>
+<!-- SKU / Barcode -->
+<td class="py-3 px-space-md font-mono text-[13px]">
+<div class="font-semibold text-primary">PLY-BAS-M-NEG</div>
+<div class="text-on-surface-variant text-[11px] font-mono tracking-tight flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-outline">barcode</span>
+                  750102049102
+                </div>
+</td>
+<!-- Categoria -->
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                  Ropa y Playeras
+                </span>
+</td>
+<!-- Existencia fisica -->
+<td class="py-3 px-space-md text-right font-title-md text-title-md text-on-surface font-semibold tabular-nums">
+                76 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">pzas</span>
+</td>
+<!-- Apartado -->
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="inline-flex items-center justify-end gap-1 font-label-lg text-label-lg text-on-tertiary-container font-semibold">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                  2 pzas
+                </span>
+</td>
+<!-- Disponible para venta (EMPHASIS MANDATED) -->
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="font-numeric-total text-[20px] leading-tight text-secondary font-extrabold tracking-tight">
+                  74 <span class="font-label-lg text-label-lg">pzas</span>
+</span>
+</td>
+<!-- Estado -->
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Normal
+                </span>
+</td>
+<!-- Acciones -->
+<td class="py-3 px-space-md text-right pr-6"><div class="flex items-center justify-end gap-1.5"><button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Ver detalle">Ver detalle</button><button class="px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Registrar entrada">+ Entrada</button><button class="w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center transition-colors" title="Ajustar"><span class="material-symbols-outlined text-[18px]">tune</span></button></div></td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group bg-surface-container-lowest">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Catalog photograph of a small black crewneck t-shirt arranged cleanly on a clean neutral surface with natural side illumination." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJ8HkZRlsQZYa7OFiOZhYmq35JlpvXwBFzAO-c177tgyAJdhbX83mj20RkPiAsjcNLZhrtnot8rvHnUdo8VQvoXq-EnYZg8X5Dr_ZmY_6db8jXcHJhKWgCGK5_70-s2uZrlIRLXTurspMXBXCrdCEC7kOLe0j5CelkixFIRZedkltk4rxKNCB2UFVqtJ84VGeVcDufDiCdQ__WZQflQVkFEvPzJcIIxUL6NKgl3g">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold truncate">Playera Básica Algodón</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+                        Negro / CH
+                      </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Algodón peinado 180g • Unisex</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md font-mono text-[13px]">
+<div class="font-semibold text-primary">PLY-BAS-CH-NEG</div>
+<div class="text-on-surface-variant text-[11px] font-mono tracking-tight flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-outline">barcode</span>
+                  750102049101
+                </div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                  Ropa y Playeras
+                </span>
+</td>
+<td class="py-3 px-space-md text-right font-title-md text-title-md text-on-surface font-semibold tabular-nums">
+                14 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">pzas</span>
+</td>
+<td class="py-3 px-space-md text-right tabular-nums text-on-surface-variant font-body-md">
+                0 pzas
+              </td>
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="font-numeric-total text-[20px] leading-tight text-secondary font-bold">
+                  14 <span class="font-label-lg text-label-lg font-medium">pzas</span>
+</span>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Normal
+                </span>
+</td>
+<td class="py-3 px-space-md text-right pr-6"><div class="flex items-center justify-end gap-1.5"><button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Ver detalle">Ver detalle</button><button class="px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Registrar entrada">+ Entrada</button><button class="w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center transition-colors" title="Ajustar"><span class="material-symbols-outlined text-[18px]">tune</span></button></div></td>
+</tr>
+<!-- Row 3: Stock bajo -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group bg-tertiary-fixed/10">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Product photograph of a folded crisp white cotton t-shirt on a warm cream background with soft lighting, minimalist apparel retail layout." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPknbjDtm6_b8LPJC5mJuKRiedi46g9SrixEHzFLQKKr_Q31ujUQNvh3hA6PxdQCrcpLsT9MaknBebPAoROBPoyzE7bJH8vBr2eaNACmMdR3yZKft4twVGUmzwahG1mk0WOvOs5AD0_qE8ExzBuoi_I59S6bi4PBDJriZJSvg7r3ygpIjkOuk247gk6k-BOz6AhivlNoLQlXyhiyR7LpdDxE3MRbg8MY4XvDKwyQ">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold truncate">Playera Básica Algodón</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+                        Blanco / G
+                      </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Algodón peinado 180g • Unisex</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md font-mono text-[13px]">
+<div class="font-semibold text-primary">PLY-BAS-G-BLA</div>
+<div class="text-on-surface-variant text-[11px] font-mono tracking-tight flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-outline">barcode</span>
+                  750102049103
+                </div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                  Ropa y Playeras
+                </span>
+</td>
+<td class="py-3 px-space-md text-right font-title-md text-title-md text-on-surface font-semibold tabular-nums">
+                12 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">pzas</span>
+</td>
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="inline-flex items-center justify-end gap-1 font-label-lg text-label-lg text-on-tertiary-container font-semibold">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                  3 pzas
+                </span>
+</td>
+<!-- 9 pzas: Stock bajo -->
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="font-numeric-total text-[20px] leading-tight text-on-tertiary-container font-bold">
+                  9 <span class="font-label-lg text-label-lg font-medium">pzas</span>
+</span>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+                  Stock bajo
+                </span>
+</td>
+<td class="py-3 px-space-md text-right pr-6"><div class="flex items-center justify-end gap-1.5"><button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Ver detalle">Ver detalle</button><button class="px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Registrar entrada">+ Entrada</button><button class="w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center transition-colors" title="Ajustar"><span class="material-symbols-outlined text-[18px]">tune</span></button></div></td>
+</tr>
+<!-- Row 4: Agotado -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group bg-error-container/15">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative opacity-60">
+<img class="w-full h-full object-cover grayscale" data-alt="Editorial close-up photograph of an olive green cotton crewneck shirt neatly presented on clean boutique shelving under warm ambient illumination." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbxTFnrai5PC4qYa49GxFzPlHR6QFTvlP0MHagf3UABw4Zn2EPNtaE49jFVMiR2IPRVh5molidViMtB85YIAQ81Ou2oQAcvW0YgyY6_9g3A-My86iU51XzA4L96foJPqAmXr1_ry8OMZHNmj2D52rQMAkVNlV5c9fwmZB4FP9FEGs6a6KVfhclV0Le6jVI8JefLAFb3FaPMw4aeT_YNcL5XRaO3u2i7-48DlTvzA">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold truncate opacity-70">Playera Básica Algodón</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold">
+                        Verde Olivo / XG
+                      </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Algodón peinado 180g • Unisex</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md font-mono text-[13px]">
+<div class="font-semibold text-on-surface-variant">PLY-BAS-XG-VER</div>
+<div class="text-on-surface-variant text-[11px] font-mono tracking-tight flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-outline">barcode</span>
+                  750102049104
+                </div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                  Ropa y Playeras
+                </span>
+</td>
+<td class="py-3 px-space-md text-right font-title-md text-title-md text-on-surface-variant font-semibold tabular-nums">
+                0 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">pzas</span>
+</td>
+<td class="py-3 px-space-md text-right tabular-nums text-on-surface-variant font-body-md">
+                0 pzas
+              </td>
+<!-- 0 pzas: Agotado -->
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="font-numeric-total text-[20px] leading-tight text-error font-extrabold">
+                  0 <span class="font-label-lg text-label-lg font-medium">pzas</span>
+</span>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                  Agotado
+                </span>
+</td>
+<td class="py-3 px-space-md text-right pr-6"><div class="flex items-center justify-end gap-1.5"><button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Ver detalle">Ver detalle</button><button class="px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Registrar entrada">+ Entrada</button><button class="w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center transition-colors" title="Ajustar"><span class="material-symbols-outlined text-[18px]">tune</span></button></div></td>
+</tr>
+<!-- Row 5: Simple Product -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group bg-surface-container-lowest">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Stationery product photography of a hardcover wirebound 100-sheet lined professional notebook placed flat on a clean matte desk surface under balanced soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqT4Jxd8PC9RdZbwxXzTsjNCNsnKUOIjb0ve--nF38QsM6ad5cr4chvpH2rd-_FVMUsiG4i37zKD4bHjC36r9Ptj_KSbGuFtEbDtDrshlYoBQZP5WWhzNJNgu70DjsnNcqzQoqUwDQymGBE9d5AzLPhNl4M0KFVhemoneV9azzUuSItxesG7XXXXkdGZJw9xmADtRw1_gf9uq3NS62B9aYWGkXgo5Oa4d59HTXwA">
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-primary font-bold truncate">Cuaderno Profesional Raya 100 H</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-[10px] uppercase font-medium">
+                        Presentación única
+                      </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Pasta dura espiral doble • Raya clásica</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md font-mono text-[13px]">
+<div class="font-semibold text-primary">PAP-CUA-100R</div>
+<div class="text-on-surface-variant text-[11px] font-mono tracking-tight flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-outline">barcode</span>
+                  7501004523910
+                </div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+                  Papelería y Oficina
+                </span>
+</td>
+<td class="py-3 px-space-md text-right font-title-md text-title-md text-on-surface font-semibold tabular-nums">
+                50 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">pzas</span>
+</td>
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="inline-flex items-center justify-end gap-1 font-label-lg text-label-lg text-on-tertiary-container font-semibold">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                  5 pzas
+                </span>
+</td>
+<td class="py-3 px-space-md text-right tabular-nums">
+<span class="font-numeric-total text-[20px] leading-tight text-secondary font-bold">
+                  45 <span class="font-label-lg text-label-lg font-medium">pzas</span>
+</span>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Normal
+                </span>
+</td>
+<td class="py-3 px-space-md text-right pr-6"><div class="flex items-center justify-end gap-1.5"><button class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Ver detalle">Ver detalle</button><button class="px-2.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-label-sm text-label-sm font-semibold transition-colors shadow-sm" title="Registrar entrada">+ Entrada</button><button class="w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center transition-colors" title="Ajustar"><span class="material-symbols-outlined text-[18px]">tune</span></button></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Operational Audit Bar -->
+<div class="px-space-lg py-3.5 bg-surface-container-low flex flex-col md:flex-row items-center justify-between gap-space-md"><div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-secondary">info</span><span class="">Fórmula operativa: <strong>Existencia disponible</strong> = Existencia física − Cantidad apartada.</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-1"><span class="font-body-sm text-body-sm text-on-surface-variant mr-1">Filas por página:</span><select class="bg-surface-container-lowest text-primary font-label-md text-label-md rounded px-2 py-1 focus:outline-none"><option>10</option><option selected="">25</option><option>50</option><option>100</option></select></div><div class="flex items-center gap-1"><span class="font-body-sm text-body-sm text-on-surface-variant mr-2">1-5 de 84</span><button class="w-8 h-8 rounded-lg flex items-center justify-center text-outline cursor-not-allowed" disabled=""><span class="material-symbols-outlined text-[18px]">chevron_left</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary-container text-on-primary font-label-sm text-label-sm">1</button><button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors">2</button><button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors">3</button><span class="px-1 text-on-surface-variant">...</span><button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors">4</button><button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-container text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button></div></div></div>
+</div>
+</div>
+<!-- Operational Short-cuts Ribbon & Realtime Ledger Ticker -->
+
+</div></main></div>
+
+</body></html>

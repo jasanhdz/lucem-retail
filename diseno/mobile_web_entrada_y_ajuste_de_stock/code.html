@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed-variant": "#00513f", "on-tertiary-container": "#b3863c", "tertiary-fixed": "#ffddaf", "surface-variant": "#d1e7e1", "on-tertiary-fixed-variant": "#614000", "inverse-on-surface": "#dff6ef", "surface-bright": "#e7fef8", "surface-container-highest": "#d1e7e1", "error-container": "#ffdad6", "on-secondary-fixed": "#002117", "primary": "#001615", "primary-fixed": "#cbe8e6", "tertiary-container": "#372300", "outline": "#727878", "on-primary-fixed": "#04201f", "surface": "#e7fef8", "inverse-primary": "#b0ccca", "surface-container": "#dcf3ec", "primary-container": "#102b2a", "tertiary-fixed-dim": "#f1be6e", "on-error": "#ffffff", "on-error-container": "#93000a", "secondary-fixed-dim": "#89d5ba", "surface-container-low": "#e2f9f2", "on-secondary": "#ffffff", "primary-fixed-dim": "#b0ccca", "secondary-fixed": "#a4f2d6", "on-tertiary-fixed": "#281800", "surface-dim": "#c8dfd9", "on-primary-fixed-variant": "#314b4a", "outline-variant": "#c1c8c7", "inverse-surface": "#203430", "on-primary": "#ffffff", "on-surface": "#0b1f1b", "on-surface-variant": "#414847", "background": "#e7fef8", "on-primary-container": "#789391", "surface-tint": "#496362", "error": "#ba1a1a", "surface-container-high": "#d6ede7", "secondary": "#166b55", "secondary-container": "#a4f2d6", "on-background": "#0b1f1b", "surface-container-lowest": "#ffffff", "on-secondary-container": "#1f715a", "on-tertiary": "#ffffff", "tertiary": "#1c1000" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin": "1rem", "space-lg": "1.5rem", "space-xs": "0.25rem", "gutter-lg": "1.5rem", "space-md": "1rem", "space-xl": "2rem", "margin-md": "1.5rem", "gutter": "1rem", "space-2xl": "3rem", "space-sm": "0.5rem", "margin-lg": "2rem" }, fontFamily: { "headline-lg": ["Plus Jakarta Sans"], "title-md": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Inter"], "body-md": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "numeric-total": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "body-lg": ["Inter"] }, fontSize: { "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "700" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "display-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "numeric-total": ["32px", { "lineHeight": "36px", "fontWeight": "800" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-14 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Volver" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface transition-colors min-h-[44px] min-w-[44px]" onclick="history.back()"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><h1 class="font-title-md text-title-md text-primary-container truncate">Ajuste De Stock</h1></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex flex-col relative w-full pt-14 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-32">
+<div class="px-gutter pt-space-sm pb-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-secondary">inventory_2</span>
+<span class="">Ajuste de Almacén · Sucursal Centro</span>
+</div>
+<span class="bg-secondary-container text-on-secondary-container px-space-sm py-0.5 rounded-full font-label-sm text-label-sm font-semibold">Modo Entrada • Tienda Matriz</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-inner">
+<img class="w-full h-full object-cover" data-alt="Black premium folded cotton t-shirt sitting on a minimal studio podium with soft directional retail lighting in dark forest green tone" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHFjsHrA5vP1llxBYxLLjBkYKijXlSrlcN0LM_lmKoKs-xE-snopEUfZEwl121Yk_GwUACi4FXcicL0RGeKKwxrgYBGKA18Nn7iF_QW1TXMYVfPCE6BEUHtTh17ij5dYmWlODGv5g15AgRq8PaGKGFg0bwbdNMSW3D5XeOjFQSoCU2wMnaI4CrBjbCfkb27NHnyGcRS_HVs_ZEzH7cze25Z4KP7z7SAt0io9mfHQ">
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-space-xs mb-0.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-1.5 py-0.5 rounded">SKU: PLY-NEG-M</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface truncate">Playera Básica Algodón</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Variante: Negro / Talla M</p>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-space-sm bg-surface-container-low rounded-lg p-2.5"><div class="flex flex-col items-center text-center"><span class="font-label-sm text-label-sm text-on-surface-variant">Física</span><span class="font-title-md text-title-md text-on-surface font-semibold" id="current-physical">76 <span class="text-[12px] font-normal text-on-surface-variant">pzas</span></span></div><div class="flex flex-col items-center text-center"><span class="font-label-sm text-label-sm text-on-surface-variant">Apartadas</span><span class="font-title-md text-title-md text-tertiary font-semibold" id="current-reserved">2 <span class="text-[12px] font-normal text-on-surface-variant">pzas</span></span></div><div class="flex flex-col items-center text-center"><span class="font-label-sm text-label-sm text-on-surface-variant">Disponibles</span><span class="font-title-md text-title-md text-secondary font-semibold" id="current-available">74 <span class="text-[12px] font-normal text-on-secondary-container">pzas</span></span></div></div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-on-surface">Cantidad a ingresar</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded-full font-medium">Incremento de stock</span>
+</div>
+<div class="flex items-center justify-between gap-space-md">
+<button aria-label="Disminuir una pieza" class="w-14 h-14 rounded-xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-transform shrink-0 min-h-[48px] min-w-[48px]" id="btn-decrement">
+<span class="material-symbols-outlined text-[28px]">remove</span>
+</button>
+<div class="flex-1 flex flex-col items-center justify-center py-1">
+<div class="flex items-baseline gap-1">
+<span class="font-numeric-total text-numeric-total text-primary-container tracking-tight" id="display-quantity">20</span>
+<span class="font-title-md text-title-md text-on-surface-variant">pzas</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">add_circle</span> Unidades validadas
+          </span>
+</div>
+<button aria-label="Aumentar una pieza" class="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center text-on-primary hover:bg-secondary active:scale-95 transition-transform shrink-0 min-h-[48px] min-w-[48px]" id="btn-increment">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</button>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="quick-add-btn h-12 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg font-semibold hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1 min-h-[48px]" data-delta="5">
+<span class="">+5</span>
+</button>
+<button class="quick-add-btn h-12 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg font-semibold hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1 min-h-[48px]" data-delta="10">
+<span class="">+10</span>
+</button>
+<button class="quick-add-btn h-12 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg font-semibold hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1 min-h-[48px]" data-delta="20">
+<span class="">+20</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-title-md text-title-md text-on-surface" for="reason-select">Motivo de entrada <span class="text-error font-body-sm text-[12px] font-normal ml-1">(obligatorio)</span></label>
+<div class="relative">
+<select class="w-full h-12 px-space-md bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg appearance-none focus:outline-none min-h-[48px] pr-10" id="reason-select">
+<option selected="" value="reception">Recepción de mercancía nueva</option>
+<option value="provider_return">Devolución de cliente / Garantía</option>
+<option value="transfer">Traspaso entre sucursales</option>
+<option value="audit_adjust">Ajuste por inventario físico</option>
+<option value="production">Ingreso de taller / Maquila</option>
+</select>
+<div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-title-md text-title-md text-on-surface flex items-center justify-between" for="observation-input">
+<span class="">Observación opcional</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Máx. 80 car.</span>
+</label>
+<div class="relative">
+<input class="w-full h-12 px-space-md bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg focus:outline-none min-h-[48px]" id="observation-input" maxlength="80" placeholder="Añadir notas del envío, remisión o lote..." type="text" value="Lote recibido en tienda">
+</div>
+</div>
+</div>
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md shadow-md flex flex-col gap-space-sm relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-secondary opacity-20 pointer-events-none"></div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-container text-[20px]">auto_graph</span>
+<span class="font-label-lg text-label-lg font-semibold text-secondary-container uppercase tracking-wider">Impacto tras confirmación</span>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-1"><div class="flex flex-col bg-primary/40 rounded-lg p-2.5 text-center"><span class="font-label-sm text-label-sm text-on-primary-container text-[11px] truncate">Nueva existencia</span><div class="flex items-baseline justify-center gap-1 mt-0.5"><span class="font-headline-sm text-headline-sm text-on-primary font-bold" id="preview-physical">96</span><span class="font-label-sm text-label-sm text-on-primary-container">pzas</span></div><span class="font-label-sm text-label-sm text-secondary-container mt-1 font-semibold flex items-center justify-center gap-0.5 text-[11px]" id="badge-diff-physical"><span class="material-symbols-outlined text-[12px]">arrow_upward</span> +20 pzas</span></div><div class="flex flex-col bg-primary/40 rounded-lg p-2.5 text-center"><span class="font-label-sm text-label-sm text-on-primary-container text-[11px] truncate">Apartadas</span><div class="flex items-baseline justify-center gap-1 mt-0.5"><span class="font-headline-sm text-headline-sm text-on-primary font-bold">2</span><span class="font-label-sm text-label-sm text-on-primary-container">pzas</span></div><span class="font-label-sm text-label-sm text-on-primary-container/80 mt-1 font-medium text-[11px]">sin cambio</span></div><div class="flex flex-col bg-primary/40 rounded-lg p-2.5 text-center"><span class="font-label-sm text-label-sm text-on-primary-container text-[11px] truncate">Nuevo disponible</span><div class="flex items-baseline justify-center gap-1 mt-0.5"><span class="font-headline-sm text-headline-sm text-on-primary font-bold" id="preview-available">94</span><span class="font-label-sm text-label-sm text-on-primary-container">pzas</span></div><span class="font-label-sm text-label-sm text-secondary-container mt-1 font-semibold flex items-center justify-center gap-0.5 text-[11px]" id="badge-diff-available"><span class="material-symbols-outlined text-[12px]">arrow_upward</span> +20 pzas</span></div></div>
+</div>
+<div class="flex items-center gap-space-sm p-3 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex-1">Registro verificado de movimiento para almacén. Responsable: <strong>Carlos Mendoza</strong>.</p>
+</div>
+</div>
+<div class="fixed bottom-0 inset-x-0 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.06)] px-gutter py-space-sm pb-safe z-40 flex flex-col gap-2">
+<div class="flex gap-space-sm w-full max-w-[430px] mx-auto">
+<button class="h-14 px-space-md rounded-xl bg-surface-container-low text-on-surface-variant hover:bg-surface-container active:scale-95 font-label-lg text-label-lg font-semibold flex items-center justify-center shrink-0 min-h-[48px] min-w-[96px] transition-all" onclick="history.back()" type="button">
+        Cancelar
+      </button>
+<button class="h-14 flex-1 rounded-xl bg-primary-container text-on-primary hover:bg-secondary active:scale-[0.98] font-label-lg text-label-lg font-semibold flex items-center justify-center gap-space-xs shadow-md transition-all min-h-[48px]" id="submit-cta" type="button">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span id="submit-text" class="">Confirmar entrada (+20 pzas)</span>
+</button>
+</div>
+</div>
+<div class="fixed top-16 left-1/2 -translate-x-1/2 bg-primary-container text-on-primary px-space-md py-space-sm rounded-full shadow-xl flex items-center gap-space-xs opacity-0 pointer-events-none transition-opacity duration-300 z-50" id="toast">
+<span class="material-symbols-outlined text-secondary-container text-[18px]">done</span>
+<span class="font-label-md text-label-md" id="toast-text">Inventario actualizado con éxito</span>
+</div>
+</div>
+<script>
+  (function() {
+    let quantity = 20;
+    const basePhysical = 76;
+    const baseReserved = 2;
+    const baseAvailable = 74;
+
+    const displayQuantity = document.getElementById('display-quantity');
+    const previewPhysical = document.getElementById('preview-physical');
+    const previewAvailable = document.getElementById('preview-available');
+    const submitText = document.getElementById('submit-text');
+    const badgePhysical = document.getElementById('badge-diff-physical');
+    const badgeAvailable = document.getElementById('badge-diff-available');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+
+    function updateStockViews() {
+      displayQuantity.textContent = quantity;
+      
+      const newPhysical = basePhysical + quantity;
+      const newAvailable = baseAvailable + quantity;
+
+      previewPhysical.textContent = newPhysical;
+      previewAvailable.textContent = newAvailable;
+      
+      const diffString = (quantity >= 0 ? '+' : '') + quantity + ' pzas';
+      submitText.textContent = `Confirmar entrada (${diffString})`;
+      
+      badgePhysical.innerHTML = `<span class="material-symbols-outlined text-[13px]">arrow_upward</span> ${diffString}`;
+      badgeAvailable.innerHTML = `<span class="material-symbols-outlined text-[13px]">arrow_upward</span> ${diffString}`;
+    }
+
+    document.getElementById('btn-increment').addEventListener('click', () => {
+      quantity += 1;
+      updateStockViews();
+    });
+
+    document.getElementById('btn-decrement').addEventListener('click', () => {
+      if (quantity > 1) {
+        quantity -= 1;
+        updateStockViews();
+      }
+    });
+
+    document.querySelectorAll('.quick-add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const delta = parseInt(e.currentTarget.getAttribute('data-delta'), 10);
+        quantity += delta;
+        updateStockViews();
+      });
+    });
+
+    document.getElementById('submit-cta').addEventListener('click', () => {
+      toastText.textContent = `Entrada de ${quantity} pzas registrada correctamente`;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+          if (window.history.length > 1) {
+            history.back();
+          }
+        }, 400);
+      }, 1600);
+    });
+  })();
+</script></main>
+
+</body></html>

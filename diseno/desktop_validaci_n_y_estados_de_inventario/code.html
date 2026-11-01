@@ -1,0 +1,414 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary-fixed-variant":"#00513f","on-tertiary-container":"#b3863c","tertiary-fixed":"#ffddaf","surface-variant":"#d1e7e1","on-tertiary-fixed-variant":"#614000","inverse-on-surface":"#dff6ef","surface-bright":"#e7fef8","surface-container-highest":"#d1e7e1","error-container":"#ffdad6","on-secondary-fixed":"#002117","primary":"#001615","primary-fixed":"#cbe8e6","tertiary-container":"#372300","outline":"#727878","on-primary-fixed":"#04201f","surface":"#e7fef8","inverse-primary":"#b0ccca","surface-container":"#dcf3ec","primary-container":"#102b2a","tertiary-fixed-dim":"#f1be6e","on-error":"#ffffff","on-error-container":"#93000a","secondary-fixed-dim":"#89d5ba","surface-container-low":"#e2f9f2","on-secondary":"#ffffff","primary-fixed-dim":"#b0ccca","secondary-fixed":"#a4f2d6","on-tertiary-fixed":"#281800","surface-dim":"#c8dfd9","on-primary-fixed-variant":"#314b4a","outline-variant":"#c1c8c7","inverse-surface":"#203430","on-primary":"#ffffff","on-surface":"#0b1f1b","on-surface-variant":"#414847","background":"#e7fef8","on-primary-container":"#789391","surface-tint":"#496362","error":"#ba1a1a","surface-container-high":"#d6ede7","secondary":"#166b55","secondary-container":"#a4f2d6","on-background":"#0b1f1b","surface-container-lowest":"#ffffff","on-secondary-container":"#1f715a","on-tertiary":"#ffffff","tertiary":"#1c1000"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{margin:"1rem","space-lg":"1.5rem","space-xs":"0.25rem","gutter-lg":"1.5rem","space-md":"1rem","space-xl":"2rem","margin-md":"1.5rem",gutter:"1rem","space-2xl":"3rem","space-sm":"0.5rem","margin-lg":"2rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"label-sm":["Inter"],"headline-sm":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"label-lg":["Inter"],"numeric-total":["Plus Jakarta Sans"],"body-sm":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",fontWeight:"700"}],"title-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"500"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"numeric-total":["32px",{lineHeight:"36px",fontWeight:"800"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface-container-low font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-secondary-container"><span class="material-symbols-outlined text-[20px]">storefront</span></div><div><span class="font-headline-sm text-headline-sm text-primary tracking-tight block">Lucem Retail</span><span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Enterprise POS</span></div></div><div class="flex-1 overflow-y-auto px-space-md py-space-md"><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Operaciones</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="punto-de-venta" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">point_of_sale</span><span class="">Punto de venta</span></div></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="productos" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span class="">Productos</span></div></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="inventario" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">warehouse</span><span class="">Inventario</span></div><span class="w-2 h-2 rounded-full bg-secondary-container"></span></a><a class="flex items-center justify-between px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="apartados" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">bookmark_border</span><span class="">Apartados</span></div></a></nav></div><div class="mb-space-lg"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gestión</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="resumen" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span class="">Resumen</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="reportes" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="">Reportes</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="devoluciones" href="#"><span class="material-symbols-outlined text-[20px]">assignment_return</span><span class="">Devoluciones</span></a></nav></div><div class="mb-space-md"><div class="px-space-md mb-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Administración</div><nav class="space-y-1" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[0_1px_3px_rgba(16,43,42,0.08)]"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="usuarios-y-permisos" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span><span class="">Usuarios y permisos</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="auditoria" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="">Auditoría</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body-md text-body-md" data-path="configuracion" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="">Configuración</span></a></nav></div></div><div class="p-space-md bg-surface-container-lowest"><div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-secondary text-[20px]">wifi_tethering</span><div><span class="font-label-sm text-label-sm text-on-surface block">Terminal Online</span><span class="font-body-sm text-body-sm text-on-surface-variant block">Sincronizado</span></div></div><span class="w-2 h-2 rounded-full bg-secondary"></span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="w-full h-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-md py-1.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"><span class="material-symbols-outlined text-secondary text-[18px]">store</span><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider leading-none">Sucursal activa</span><span class="font-title-md text-title-md leading-tight text-on-surface">American Outfit - Matriz Centro</span></div><span class="material-symbols-outlined text-on-surface-variant text-[18px] ml-space-xs">expand_more</span></div></div><div class="flex-1 max-w-xl mx-space-md"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span><input class="w-full h-10 pl-10 pr-space-md rounded-lg bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest" placeholder="Buscar producto, código de barras o SKU..." type="text"></div></div><div class="flex items-center gap-space-md"><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="text-right hidden sm:block"><span class="font-title-md text-title-md text-on-surface block leading-tight">Carlos Mendoza</span><span class="font-label-sm text-label-sm text-secondary block font-semibold">Administrador</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="relative pt-16 bg-surface-container-low min-h-screen"><div class="flex flex-col w-full">
+<div class="p-space-lg space-y-space-lg max-w-[1600px] mx-auto w-full">
+<!-- Top Context & Header Banner -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
+<div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-secondary-container/30 blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider mb-1">
+<span class="">Operaciones</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="">Inventario</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-secondary font-semibold">Estados y validaciones</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+            Alertas y Control de Validación Operacional
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-3xl">
+            Guía de referencia de estados del sistema para el operador y cajero durante el control de existencias. Modos reactivos, bloqueos por concurrencia y validaciones de integridad de bodega.
+          </p>
+</div>
+<!-- Terminal Status Pill Counter -->
+<div class="flex items-center gap-space-sm bg-surface-container px-space-md py-2.5 rounded-lg shrink-0"><div class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></div><div class="flex flex-col"><span class="font-label-sm text-label-sm text-on-surface uppercase tracking-wider leading-none">Control de Almacén</span><span class="font-body-sm text-body-sm text-secondary font-semibold leading-tight">Reglas activas en línea</span></div></div>
+</div>
+</div>
+<!-- System Diagnostic Summary Metrics Strip -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-space-md">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Reglas de Bodega</span>
+<span class="font-title-md text-title-md text-primary font-bold">100% Blindadas</span>
+<span class="font-body-sm text-body-sm text-secondary block truncate">Cero inventarios ficticios</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined text-[24px]">crisis_alert</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Umbrales Mínimos</span>
+<span class="font-title-md text-title-md text-primary font-bold">10 Pzas / SKU</span>
+<span class="font-body-sm text-body-sm text-on-tertiary-container block truncate">Disparo preventivo</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[24px]">lock_clock</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Apartados Activos</span>
+<span class="font-title-md text-title-md text-primary font-bold">Reserva Forzosa</span>
+<span class="font-body-sm text-body-sm text-error block truncate">Bloqueo de saldo negativo</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md"><div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center text-secondary-container"><span class="material-symbols-outlined text-[24px]">sync</span></div><div class="min-w-0"><span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Control de Concurrencia</span><span class="font-title-md text-title-md text-primary font-bold">Protección Activa</span><span class="font-body-sm text-body-sm text-on-primary-container block truncate">Bloqueo ante cobro simultáneo</span></div></div>
+</div>
+<!-- Main Grid: 6 Contextual Alert & Validation States -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+<!-- CARD 1: Alerta de Stock Bajo -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 01
+              </span>
+<span class="font-title-md text-title-md text-primary">Alerta de Stock Bajo</span>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-on-tertiary-container"></span>
+</div>
+<!-- Product detail card snippet -->
+<div class="bg-surface-container-low rounded-lg p-space-md space-y-space-sm">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex gap-space-md items-center">
+<div class="w-14 h-14 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[28px] text-secondary">checkroom</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary leading-tight">
+                    Playera Básica Algodón
+                  </h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Variante: Blanco / G</span>
+<span class="text-on-surface-variant text-[10px]">•</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">SKU: PLY-BAS-BLN-G</span>
+</div>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-[#FCF6EC] text-[#B07D2B] font-label-sm text-label-sm font-semibold">
+                Stock bajo
+              </span>
+</div>
+<!-- Stocks breakdown pills -->
+<div class="grid grid-cols-3 gap-space-sm pt-space-xs">
+<div class="bg-surface-container-lowest p-2.5 rounded-lg text-center">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Existencia Física</span>
+<span class="font-title-md text-title-md text-primary font-bold">12 pzas</span>
+</div>
+<div class="bg-surface-container-lowest p-2.5 rounded-lg text-center">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Apartados</span>
+<span class="font-title-md text-title-md text-on-tertiary-container font-bold">3 pzas</span>
+</div>
+<div class="bg-surface-container-lowest p-2.5 rounded-lg text-center">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Disponible Venta</span>
+<span class="font-title-md text-title-md text-secondary font-extrabold">9 pzas</span>
+</div>
+</div>
+<!-- Visual stock bar -->
+<div class="space-y-1 pt-1">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span class="">Nivel de resguardo (Umbral mín: 10 pzas)</span>
+<span class="font-semibold text-on-tertiary-container">9 / 10 unidades</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-on-tertiary-container rounded-full" style="width: 60%;"></div>
+</div>
+</div>
+</div>
+<!-- Inline warning banner -->
+<div class="p-space-md rounded-lg bg-[#FCF6EC] flex items-start gap-space-sm text-[#B07D2B]">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5">warning</span>
+<div class="space-y-0.5">
+<span class="font-label-lg text-label-lg font-semibold block leading-tight">Alerta de aprovisionamiento</span>
+<p class="font-body-md text-body-md text-on-surface leading-snug">
+                Alerta: Stock por debajo del umbral mínimo configurado (10 unidades). Se sugiere generar orden de resurtido a Matriz Bodega.
+              </p>
+</div>
+</div>
+</div>
+<div class="pt-space-md flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="">Notificación automática activada</span>
+<button class="text-secondary font-semibold hover:underline flex items-center gap-1">
+<span class="">Configurar umbral</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- CARD 2: Validación de Ajuste No Permitido (Apartados Comprometidos) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 02
+              </span>
+<span class="font-title-md text-title-md text-primary">Validación de Ajuste No Permitido</span>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+</div>
+<!-- Simulated Adjustment Dialog Box -->
+<div class="bg-surface-container-low rounded-lg p-space-md space-y-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Ajuste Manual de Inventario #AJ-992</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Baja por merma / daño</span>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Existencia física</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">76 pzas</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Apartados vigentes</span>
+<span class="font-headline-sm text-headline-sm text-error font-bold">2 pzas</span>
+</div>
+</div>
+<!-- Cantidad a descontar simulated input -->
+<div class="space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant block">Cantidad a descontar</label>
+<div class="relative">
+<input class="w-full h-11 px-space-md bg-surface-container-lowest rounded-lg font-headline-sm text-headline-sm text-error font-semibold focus:outline-none" disabled="" type="text" value="75">
+<span class="absolute right-3 top-2.5 font-label-sm text-label-sm text-on-surface-variant">piezas</span>
+</div>
+</div>
+<!-- Error message container -->
+<div class="p-space-md rounded-lg bg-[#FDF2F2] flex items-start gap-space-sm text-error">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5">block</span>
+<div class="space-y-0.5">
+<span class="font-label-lg text-label-lg font-semibold block leading-tight">Operación Rechazada</span>
+<p class="font-body-md text-body-md text-on-surface leading-snug">
+                  Error: No es posible reducir 75 piezas. Dejaría el inventario disponible en -1 pieza (hay 2 unidades comprometidas en apartados vigentes).
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Dialog Buttons (Disabled State) -->
+<div class="pt-space-md flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-highest transition-colors">
+            Cancelar
+          </button>
+<button class="px-space-lg py-2.5 rounded-lg bg-surface-container text-on-surface-variant/40 font-label-lg text-label-lg cursor-not-allowed flex items-center gap-space-xs" disabled="">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+<span class="">Confirmar ajuste</span>
+</button>
+</div>
+</div>
+<!-- CARD 3: Validación de Precisión Decimal y Cantidades Negativas -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 03
+              </span>
+<span class="font-title-md text-title-md text-primary">Validación de Formato Numérico</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">pin</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Validación automática al capturar para prevenir errores en cantidades y registros de existencias.</p>
+<!-- Input Sample 1: Negative Quantity -->
+<div class="bg-surface-container-low p-space-md rounded-lg space-y-space-xs">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-on-surface uppercase font-semibold">Caso A: Cantidad menor o igual a cero</label>
+<span class="font-label-sm text-label-sm text-error font-mono">Código #VAL-01</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative flex-1">
+<input class="w-full h-11 px-space-md bg-surface-container-lowest rounded-lg font-title-md text-title-md text-error focus:outline-none" readonly="" type="text" value="-5">
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-error text-[20px]">error</span>
+</div>
+<span class="px-3 py-2 bg-error-container text-error rounded-lg font-label-sm text-label-sm font-semibold shrink-0">Inválido</span>
+</div>
+<div class="flex items-center gap-1.5 text-error font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span class="">La cantidad a ingresar debe ser mayor a cero.</span>
+</div>
+</div>
+<!-- Input Sample 2: Decimal Precision Overflow -->
+<div class="bg-surface-container-low p-space-md rounded-lg space-y-space-xs">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-on-surface uppercase font-semibold">Caso B: Exceso de precisión decimal</label>
+<span class="font-label-sm text-label-sm text-error font-mono">Código #VAL-02</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative flex-1">
+<input class="w-full h-11 px-space-md bg-surface-container-lowest rounded-lg font-title-md text-title-md text-error focus:outline-none" readonly="" type="text" value="12.345">
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-error text-[20px]">error</span>
+</div>
+<span class="px-3 py-2 bg-error-container text-error rounded-lg font-label-sm text-label-sm font-semibold shrink-0">Inválido</span>
+</div>
+<div class="flex items-center gap-1.5 text-error font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span class="">Solo se permiten hasta dos decimales (ej. 12.50).</span>
+</div>
+</div>
+</div>
+<div class="pt-space-md flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm"><span class="">Regla de captura: Números positivos</span><span class="text-secondary font-semibold">Máximo 2 decimales permitidos</span></div>
+</div>
+<!-- CARD 4: Cambio Concurrente de Inventario (Detección de Conflicto) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 04
+              </span>
+<span class="font-title-md text-title-md text-primary">Conflicto de Concurrencia POS</span>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container text-[20px] animate-spin">sync</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Ocurre cuando otro punto de venta cobra el mismo SKU mientras se preparaba un movimiento o ajuste.
+          </p>
+<!-- Conflict Warning Card Dialog -->
+<div class="bg-[#FCF6EC] p-space-md rounded-lg space-y-space-md">
+<div class="flex items-start gap-space-sm text-[#B07D2B]">
+<span class="material-symbols-outlined text-[24px] shrink-0 mt-0.5">sync_problem</span>
+<div class="space-y-1">
+<span class="font-headline-sm text-headline-sm font-bold block text-primary">Conflicto de Versión de Stock</span>
+<p class="font-body-md text-body-md text-on-surface leading-normal">
+                  El stock de esta variante ha cambiado recientemente en terminal POS (Ticket #POS-2025-0495). Por favor actualiza los datos antes de registrar el ajuste.
+                </p>
+</div>
+</div>
+<!-- Version Timeline Comparison -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex flex-col">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Versión local cargada</span>
+<span class="text-primary font-bold">Existencia: 40 pzas</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_forward</span>
+<div class="flex flex-col text-right">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Versión en servidor (POS)</span>
+<span class="text-secondary font-bold">Existencia: 38 pzas (-2 pzas)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button to Reload -->
+<div class="pt-space-md flex items-center justify-between gap-space-md">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Transacción aislada de forma segura</span>
+<button class="px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-secondary transition-all flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+<span class="">Actualizar existencia</span>
+</button>
+</div>
+</div>
+<!-- CARD 5: Confirmación de Movimiento Exitoso -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 05
+              </span>
+<span class="font-title-md text-title-md text-primary">Confirmación de Movimiento Exitoso</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[22px]">check_circle</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Confirmación inmediata del movimiento registrado para mantener existencias actualizadas en el almacén.</p>
+<!-- Toast Banner Demonstration -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-md shadow-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed-variant shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">inventory</span>
+</div>
+<div class="space-y-1 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-primary font-bold">Entrada de Almacén Registrada</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono font-semibold">Folio: #REC-442</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-snug">
+                Entrada registrada exitosamente: +20 piezas agregadas a Playera Básica Algodón (Negro / M). Folio de kárdex #REC-442 generado.
+              </p>
+<div class="flex items-center gap-space-sm pt-1 text-on-surface-variant font-label-sm text-label-sm">
+<span class="">Operador: C. Mendoza</span>
+<span class="">•</span>
+<span class="">Almacén Central Centro</span>
+<span class="">•</span>
+<span class="">Hace 1 min</span>
+</div>
+</div>
+</div>
+<!-- Secondary confirmation details -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-secondary text-[20px]">receipt_long</span><span class="font-body-sm text-body-sm text-on-surface">Movimiento guardado con folio #REC-442</span></div><button class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors">Comprobante</button></div>
+</div>
+<div class="pt-space-md flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="">Tiempo de permanencia: 6.0 seg</span>
+<span class="text-secondary font-semibold flex items-center gap-1">
+<span class="">Ver en auditoría</span>
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</span>
+</div>
+</div>
+<!-- CARD 6: Permisos Insuficientes (Solo Lectura) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+                Estado 06
+              </span>
+<span class="font-title-md text-title-md text-primary">Permisos Insuficientes (Solo Lectura)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">admin_panel_settings</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Vista restringida mostrada al rol "Cajero / Auxiliar" cuando intenta ejecutar rutinas de administración.
+          </p>
+<!-- Banner para cajero sin rol de inventario -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]">lock_person</span>
+</div>
+<div class="space-y-1 flex-1">
+<span class="font-title-md text-title-md text-primary font-bold block">Acceso Restringido por Perfil</span>
+<p class="font-body-md text-body-md text-on-surface leading-snug">
+                Tu usuario cuenta con permisos de consulta. Para registrar entradas o ajustes manuales contacta a un administrador.
+              </p>
+<div class="mt-space-sm pt-space-xs flex flex-wrap gap-2">
+<span class="px-2.5 py-1 rounded bg-surface-container-lowest font-label-sm text-label-sm text-on-surface-variant">
+                  Rol activo: <strong class="text-on-surface">Cajero Sucursal</strong>
+</span>
+<span class="px-2.5 py-1 rounded bg-surface-container-lowest font-label-sm text-label-sm text-on-surface-variant">
+                  Requerido: <strong class="text-secondary font-semibold">Encargado de Inventario</strong>
+</span>
+</div>
+</div>
+</div>
+<!-- Micro action for cashier -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg flex items-center justify-between text-body-sm font-body-sm"><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">info</span><span class="">Acceso solo lectura para perfil Auxiliar / Consulta</span></div><span class="px-2.5 py-1 rounded bg-surface-container-high font-label-sm text-label-sm text-on-surface-variant font-medium">Solo Consulta</span></div>
+</div>
+<div class="pt-space-md flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm"><span class="">Perfil de usuario verificado</span><span class="text-on-surface-variant font-medium">Permisos gestionados por Administrador</span></div>
+</div>
+</div>
+<!-- Quick Documentation / Best Practices Footer Tray -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">help_center</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-primary">Protocolo de Operación en Caja y Almacén</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Ante cualquier alerta de concurrencia o bloqueo de apartado, no fuerces cierres manuales. Consulta los registros en el módulo de Auditoría.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 w-full md:w-auto">
+<a class="flex-1 md:flex-none text-center px-space-md py-2.5 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-colors" data-path="inventario" href="#">
+          Ir al Inventario
+        </a>
+<a class="flex-1 md:flex-none text-center px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-secondary transition-colors" data-path="auditoria" href="#">
+          Bitácora de Sucesos
+        </a>
+</div>
+</div>
+</div>
+</div></main></div>
+
+</body></html>

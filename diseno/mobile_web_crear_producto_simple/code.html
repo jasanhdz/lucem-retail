@@ -1,0 +1,301 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary": "#1c1000", "on-error": "#ffffff", "on-tertiary": "#ffffff", "outline-variant": "#c1c8c7", "on-tertiary-container": "#b3863c", "tertiary-fixed-dim": "#f1be6e", "surface-container-low": "#e2f9f2", "on-secondary": "#ffffff", "surface-container": "#dcf3ec", "outline": "#727878", "primary": "#001615", "on-primary-container": "#789391", "secondary-fixed": "#a4f2d6", "on-surface": "#0b1f1b", "inverse-primary": "#b0ccca", "on-primary": "#ffffff", "primary-fixed": "#cbe8e6", "secondary-fixed-dim": "#89d5ba", "on-secondary-fixed": "#002117", "surface-dim": "#c8dfd9", "on-secondary-fixed-variant": "#00513f", "error": "#ba1a1a", "tertiary-container": "#372300", "on-secondary-container": "#1f715a", "secondary": "#166b55", "surface-tint": "#496362", "inverse-on-surface": "#dff6ef", "inverse-surface": "#203430", "on-tertiary-fixed-variant": "#614000", "surface-container-highest": "#d1e7e1", "primary-fixed-dim": "#b0ccca", "surface-bright": "#e7fef8", "tertiary-fixed": "#ffddaf", "surface-variant": "#d1e7e1", "background": "#e7fef8", "surface-container-lowest": "#ffffff", "surface-container-high": "#d6ede7", "on-primary-fixed-variant": "#314b4a", "on-background": "#0b1f1b", "on-surface-variant": "#414847", "on-error-container": "#93000a", "on-primary-fixed": "#04201f", "error-container": "#ffdad6", "on-tertiary-fixed": "#281800", "primary-container": "#102b2a", "surface": "#e7fef8", "secondary-container": "#a4f2d6" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-lg": "2rem", "gutter-lg": "1.5rem", "space-md": "1rem", "space-lg": "1.5rem", "space-xs": "0.25rem", "margin-md": "1.5rem", "gutter": "1rem", "space-2xl": "3rem", "space-sm": "0.5rem", "space-xl": "2rem", "margin": "1rem" }, fontFamily: { "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "label-sm": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-md": ["Inter"], "label-md": ["Inter"], "numeric-total": ["Plus Jakarta Sans"], "title-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "headline-lg": ["28px", { lineHeight: "36px", fontWeight: "700" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-sm": ["11px", { lineHeight: "14px", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "display-lg": ["36px", { lineHeight: "44px", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", fontWeight: "500" }], "numeric-total": ["32px", { lineHeight: "36px", fontWeight: "800" }], "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "700" }] } } } };</script><style>@layer base { html, body { width: 100%; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="w-9 h-9 rounded-lg bg-primary-container text-secondary-fixed flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[20px]">storefront</span></div><button class="flex items-center gap-space-xs bg-surface-container-low hover:bg-surface-container py-space-xs px-space-sm rounded-full text-on-surface transition-colors min-h-[44px]" type="button"><span class="material-symbols-outlined text-secondary text-[16px]">store</span><span class="font-label-sm text-label-sm truncate max-w-[110px]">American Outfit</span><span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span></button></div><div class="flex items-center gap-space-xs shrink-0"><button class="relative w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-surface"><div class="flex flex-col w-full pb-28">
+<div class="px-gutter pt-space-sm pb-space-xs flex items-center justify-between">
+<a class="inline-flex items-center gap-1 text-secondary font-label-lg text-label-lg active:opacity-70 transition-opacity min-h-[44px]" href="#">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+<span class="">Productos</span>
+</a>
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-secondary font-label-sm text-label-sm px-2.5 py-1 rounded-full shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+      Nuevo registro
+    </span>
+</div>
+<div class="px-gutter pb-space-sm">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Crear Producto</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Captura las especificaciones de inventario para alta inmediata</p>
+</div>
+<div class="px-gutter pb-space-md"><div class="p-1 rounded-xl bg-surface-container flex items-center shadow-sm">
+<button class="flex-1 min-h-[44px] rounded-lg bg-surface-container-lowest text-secondary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-sm transition-all duration-200" id="btn-mode-simple" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="">Una sola presentación</span>
+</button>
+<button class="flex-1 min-h-[44px] rounded-lg text-on-surface-variant font-label-lg text-label-lg flex items-center justify-center gap-1.5 hover:text-on-surface transition-all duration-200" id="btn-mode-variant" type="button">
+<span class="material-symbols-outlined text-[18px]">style</span>
+<span class="">Varias opciones</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 px-1">Una sola presentación: Artículos estándar sin tallas ni colores (ej. Cuaderno, Termo).</p></div>
+<div class="px-gutter flex flex-col gap-space-md">
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">inventory_2</span>
+</div>
+<h2 class="font-title-md text-title-md text-on-surface">Datos principales</h2>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded-full">Requeridos *</span>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-name">
+          Nombre del producto <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full min-h-[46px] px-3.5 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors placeholder:text-on-surface-variant/50" id="prod-name" placeholder="ej: Cuaderno Profesional Raya 100 H" type="text" value="Cuaderno Profesional Raya 100 H">
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-category">
+          Categoría <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<select class="w-full min-h-[46px] pl-3.5 pr-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md appearance-none focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-category">
+<option selected="" value="papeleria">Papelería y Oficina</option>
+<option value="electronica">Electrónica &amp; Cables</option>
+<option value="arte">Materiales de Arte</option>
+<option value="escolar">Accesorios Escolares</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 pointer-events-none text-on-surface-variant text-[20px]">
+            expand_more
+          </span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-sku">
+          Código SKU <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full min-h-[46px] pl-3.5 pr-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md uppercase tracking-wide focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-sku" type="text" value="PAP-CUA-100R">
+<span class="material-symbols-outlined absolute right-3 text-secondary text-[20px]">
+            check_circle
+          </span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+<span class="font-body-sm text-body-sm text-secondary">Clave única y validada en tu catálogo actual</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="flex flex-col gap-1.5 min-w-0">
+<label class="font-label-md text-label-md text-on-surface truncate" for="prod-cost">Costo <span class="text-error">*</span></label>
+<div class="relative flex items-center">
+<span class="absolute left-3 font-label-md text-label-md text-on-surface-variant">$</span>
+<input class="w-full min-h-[46px] pl-7 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-cost" inputmode="decimal" type="text" value="28.50">
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Costo base (MXN)</span>
+</div>
+<div class="flex flex-col gap-1.5 min-w-0">
+<label class="font-label-md text-label-md text-on-surface truncate" for="prod-price">
+            Precio final <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<span class="absolute left-3 font-label-md text-label-md text-secondary font-bold">$</span>
+<input class="w-full min-h-[46px] pl-7 pr-3 rounded-lg bg-surface-container-low text-on-surface font-title-md text-title-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-price" inputmode="decimal" type="text" value="45.00">
+</div>
+
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-stock">
+          Existencia inicial <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full min-h-[46px] pl-3.5 pr-24 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-stock" min="0" type="number" value="50">
+<div class="absolute right-2 flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant pr-1">unidades</span>
+<div class="flex items-center rounded-lg bg-surface-container overflow-hidden">
+<button class="w-7 h-7 flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-95 transition-transform" id="btn-stock-dec" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-95 transition-transform" id="btn-stock-inc" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Captura de stock para alta inicial en tienda principal</p>
+</div>
+</section>
+<section class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<button class="w-full min-h-[54px] px-space-md py-3 flex items-center justify-between text-left hover:bg-surface-container-low transition-colors" id="accordion-toggle" type="button">
+<div class="flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-7 h-7 rounded-lg bg-surface-container text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div class="min-w-0">
+<span class="font-title-md text-title-md text-on-surface block truncate">Información opcional</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Foto, código de barras, ubicación y promociones</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-300" id="accordion-chevron">
+            expand_more
+          </span>
+</div>
+</button>
+<div class="px-space-md pb-space-md pt-space-xs flex flex-col gap-space-md" id="accordion-body">
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface">Fotografía (Opcional)</label>
+<div class="flex items-center gap-3">
+<div class="w-16 h-16 rounded-xl bg-surface-container-low flex flex-col items-center justify-center text-on-surface-variant shrink-0 shadow-sm overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Modern stationary product photo of a neat lined spiral notebook on a soft sage green studio desk, soft ambient light, minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBif_vokN8glicgkcd0fjvHJEZD5XpI1MapguhnEuDa9QNvD-XDK-3FtzrRm9r7wXKajCqfclJkqI5gDU94-l0dM93bwurWNCUAEowQ6WmCqGqJBimuBIywNTnr_f0zx-o1ISzTKnoGgR5kx1akQYfCwgDrWcI4z8we3FTrMa7K0vPMMB0lH2m9Mpy0UFcU1EGD0NwwWZ96P9GsVJ1woFQam4ZWN6nknDmYR1Jtkw">
+</div>
+<div class="flex flex-col gap-1 min-w-0 flex-1">
+<button class="min-h-[44px] px-3.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-sm transition-colors active:scale-98" type="button">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+<span class="">Subir foto (PNG, JPG)</span>
+</button>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Máximo 5MB por imagen</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-barcode">Código de barras (Opcional)</label>
+<div class="relative flex items-center">
+<input class="w-full min-h-[46px] pl-3.5 pr-12 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors placeholder:text-on-surface-variant/50" id="prod-barcode" placeholder="7501004523910" type="text">
+<button class="absolute right-2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-highest text-secondary flex items-center justify-center active:scale-95 transition-transform" title="Escanear con cámara" type="button">
+<span class="material-symbols-outlined text-[18px]">barcode_scanner</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-location">Ubicación en tienda (Opcional)</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">shelves</span>
+<input class="w-full min-h-[46px] pl-10 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors placeholder:text-on-surface-variant/50" id="prod-location" placeholder="ej: Pasillo 2, Estante C" type="text" value="Pasillo 1 - Vitrina Principal">
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface" for="prod-promo">Precio promocional (Opcional)</label>
+<span class="font-label-sm text-label-sm text-tertiary-fixed-dim bg-tertiary-container px-2 py-0.5 rounded-full">Temporal</span>
+</div>
+<div class="relative flex items-center">
+<span class="absolute left-3 font-label-md text-label-md text-on-surface-variant">$</span>
+<input class="w-full min-h-[46px] pl-7 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-promo" inputmode="decimal" type="text" value="39.00">
+</div>
+<div class="flex items-start gap-1.5 mt-0.5 bg-surface-container-low p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0 mt-0.5">check_circle</span>
+<p class="font-body-sm text-body-sm text-secondary">
+              Validación correcta: El precio promocional ($39.00) es menor al precio de lista ($45.00 MXN).
+            </p>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="prod-min-stock">Alerta de existencia baja (Opcional)</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">notifications_active</span>
+<input class="w-full min-h-[46px] pl-10 pr-24 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none shadow-sm transition-colors" id="prod-min-stock" min="1" type="number" value="10">
+<span class="absolute right-3 font-label-sm text-label-sm text-on-surface-variant">unidades mín.</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Avisar cuando el inventario esté por debajo del umbral</p>
+</div>
+</div>
+</section>
+</div>
+<div class="fixed bottom-16 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md px-gutter py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex items-center gap-space-sm">
+<button class="min-h-[46px] px-4 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors flex items-center justify-center shrink-0 shadow-sm active:scale-98" type="button">
+      Cancelar
+    </button>
+<button class="flex-1 min-h-[46px] px-4 rounded-lg bg-primary-container hover:bg-secondary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md transition-all active:scale-98" id="btn-submit" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
+<span class="">Guardar producto</span>
+</button>
+</div>
+<div class="fixed top-16 left-4 right-4 z-50 transform -translate-y-16 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2.5 p-3 rounded-xl bg-primary text-on-primary shadow-xl" id="toast-success">
+<span class="material-symbols-outlined text-secondary-fixed text-[22px]">check_circle</span>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-label-md text-label-md">Producto registrado con éxito</span>
+<span class="font-body-sm text-body-sm text-secondary-fixed truncate">PAP-CUA-100R añadido a inventario</span>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // Accordion toggle
+    const accordionToggle = document.getElementById('accordion-toggle');
+    const accordionBody = document.getElementById('accordion-body');
+    const chevron = document.getElementById('accordion-chevron');
+    let isOpen = true;
+
+    if (accordionToggle && accordionBody && chevron) {
+      accordionToggle.addEventListener('click', () => {
+        isOpen = !isOpen;
+        if (isOpen) {
+          accordionBody.classList.remove('hidden');
+          chevron.style.transform = 'rotate(0deg)';
+        } else {
+          accordionBody.classList.add('hidden');
+          chevron.style.transform = 'rotate(-90deg)';
+        }
+      });
+    }
+
+    // Stock increment/decrement
+    const stockInput = document.getElementById('prod-stock');
+    const decBtn = document.getElementById('btn-stock-dec');
+    const incBtn = document.getElementById('btn-stock-inc');
+
+    if (stockInput && decBtn && incBtn) {
+      decBtn.addEventListener('click', () => {
+        const val = parseInt(stockInput.value, 10) || 0;
+        if (val > 0) stockInput.value = val - 1;
+      });
+      incBtn.addEventListener('click', () => {
+        const val = parseInt(stockInput.value, 10) || 0;
+        stockInput.value = val + 1;
+      });
+    }
+
+    // Mode Selector interaction
+    const btnSimple = document.getElementById('btn-mode-simple');
+    const btnVariant = document.getElementById('btn-mode-variant');
+
+    if (btnSimple && btnVariant) {
+      btnVariant.addEventListener('click', () => {
+        btnVariant.className = 'flex-1 min-h-[44px] rounded-lg bg-surface-container-lowest text-secondary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-sm transition-all duration-200';
+        btnSimple.className = 'flex-1 min-h-[44px] rounded-lg text-on-surface-variant font-label-lg text-label-lg flex items-center justify-center gap-1.5 hover:text-on-surface transition-all duration-200';
+      });
+
+      btnSimple.addEventListener('click', () => {
+        btnSimple.className = 'flex-1 min-h-[44px] rounded-lg bg-surface-container-lowest text-secondary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-sm transition-all duration-200';
+        btnVariant.className = 'flex-1 min-h-[44px] rounded-lg text-on-surface-variant font-label-lg text-label-lg flex items-center justify-center gap-1.5 hover:text-on-surface transition-all duration-200';
+      });
+    }
+
+    // Save notification micro-interaction
+    const submitBtn = document.getElementById('btn-submit');
+    const toast = document.getElementById('toast-success');
+    if (submitBtn && toast) {
+      submitBtn.addEventListener('click', () => {
+        toast.classList.remove('-translate-y-16', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+          toast.classList.add('-translate-y-16', 'opacity-0', 'pointer-events-none');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 3200);
+      });
+    }
+
+    // Ensure 'Productos' is marked active in the global navigation shell
+    const navItems = document.querySelectorAll('nav a[data-path]');
+    navItems.forEach(item => {
+      if (item.getAttribute('data-path') === 'productos') {
+        item.classList.remove('text-on-surface-variant');
+        item.classList.add('text-secondary');
+        const icon = item.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+      } else {
+        item.classList.remove('text-secondary');
+        item.classList.add('text-on-surface-variant');
+      }
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-secondary"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="inicio" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-sm text-label-sm mt-0.5">Inicio</span></a><a class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="pos-terminal" href="#"><span class="material-symbols-outlined text-[22px]">point_of_sale</span><span class="font-label-sm text-label-sm mt-0.5">POS</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] transition-colors text-secondary" data-path="productos" href="#"><span class="material-symbols-outlined text-[22px]">sell</span><span class="font-label-sm text-label-sm mt-0.5">Productos</span></a><a class="relative flex flex-col items-center justify-center min-w-[54px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="inventario" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm mt-0.5">Inventario</span><span class="absolute top-1 right-2.5 w-1.5 h-1.5 rounded-full bg-secondary"></span></a><a class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="mas-menu" href="#"><span class="material-symbols-outlined text-[22px]">menu</span><span class="font-label-sm text-label-sm mt-0.5">Más</span></a></div></nav>
+
+</body></html>
