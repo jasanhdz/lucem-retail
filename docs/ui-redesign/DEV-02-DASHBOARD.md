@@ -57,3 +57,14 @@ El E2E global no se ejecutó: `e2e/dev-00-placeholder.spec.ts` incluye una llama
 - La integración autenticada, las métricas reales y las capturas a 1440x900, 768x1024 y 390x844 requieren una sesión autorizada del entorno; sólo el redirect no autenticado puede verificarse sin crear sesión.
 - No se afirma producción lista mientras persista el warning de seguridad: `GET /api/audit exposes passwordHash`.
 - La semántica de COGS, devoluciones y periodo permanece bajo el contrato existente del backend; el cliente no la corrige.
+
+## DEV-02A — Validación
+
+- Checkout evaluado: `HEAD 8c88985`, branch `feature`; no se hizo corrección de código.
+- Calidad: `npm run lint` — PASS; `npm run typecheck` — PASS; `npm test` — PASS, 4 suites/6 tests; `npm run build` — PASS; `git diff --check` — PASS.
+- E2E dirigido: `CI=1 npx playwright test e2e/dev-01-auth.spec.ts --reporter=list` — PASS, 6/6, pero sólo con mocks.
+- Auth y bloqueo: no existe `storageState`, fixture, harness ni entorno autorizado; no se usaron credenciales ni `.env`. Sin auth, `GET /dashboard` devuelve `307 /login` y `GET /api/dashboard` devuelve `401 Sesion requerida`. No se inventó sesión ni se ejecutó login real.
+- Disponibilidad: `:3102` fue detenido y quedó sin listener. El E2E global no se ejecutó porque `dev-00-placeholder` llama al prohibido `GET /api/audit`.
+- Visual: BLOCKED; no hay screenshots ni comparación para `1440/768/390`.
+- Riesgos restantes: permanece `GET /api/audit exposes passwordHash`; la integración autenticada, métricas reales, permisos, aislamiento y evidencia visual siguen sin validarse.
+- Aceptación DEV-02A: `BLOCKED`, no aceptada como validación autenticada/visual ni como producción lista.
