@@ -20,9 +20,32 @@ test('login, business selection and invalid credentials use the real API contrac
   expect((await (await request.get('/api/businesses')).json()).activeBusinessId).toBe(ids.norte);
 });
 
-test('dashboard contract and business data remain isolated', async ({ browser }) => {
+test('seller and inventory cannot select non-member Norte', async ({ browser }) => {
+  for (const role of ['seller', 'inventory'] as const) {
+    const context = await browser.newContext({ storageState: `playwright/.auth/${role}.json` });
+    expect((await context.request.post('/api/businesses/select', { data: { businessId: ids.norte } })).status()).toBe(403);
+    expect((await (await context.request.get('/api/businesses')).json()).activeBusinessId).toBe(ids.centro);
+    await context.close();
+  }
+});
+
+test('real role matrix protects write handlers without audit', async ({ browser, request }) => {
+  for (const role of ['seller', 'inventory'] as const) {
+    const context = await browser.newContext({ storageState: `playwright/.auth/${role}.json` });
+    expect((await context.request.post('/api/products', { data: {} })).status()).toBe(403);
+    expect((await context.request.post('/api/inventory', { data: {} })).status()).toBe(403);
+    expect((await context.request.post(`/api/sales/${ids.centroSaleOne}/cancel`, { data: {} })).status()).toBe(403);
+    await context.close();
+  }
+  expect((await request.get('/api/dashboard')).status()).toBe(401);
+});
+
+test('dashboard and catalog data remain isolated across all existing APIs', async ({ browser }) => {
   const context = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
   const page = await context.newPage();
+  expect((await (await page.request.get('/api/products')).json()).map((item: { sku: string }) => item.sku)).toEqual(expect.arrayContaining(['DEV-TEST-01-ZERO', 'DEV-TEST-01-LOW', 'DEV-TEST-01-NORMAL']));
+  expect((await (await page.request.get('/api/inventory')).json()).every((item: { businessId: string }) => item.businessId === ids.centro)).toBeTruthy();
+  expect((await (await page.request.get('/api/sales')).json()).map((sale: { id: string }) => sale.id)).toEqual(expect.arrayContaining([ids.centroSaleOne, ids.centroSaleTwo]));
   const center = await page.request.get('/api/dashboard');
   expect(center.status()).toBe(200);
   expect(await center.json()).toMatchObject({ gross: '250.00', net: '250.00', units: 3, cogs: '100.00', profit: '150.00', outOfStock: 1, lowStock: 1 });
@@ -32,5 +55,9 @@ test('dashboard contract and business data remain isolated', async ({ browser })
   expect(await north.json()).toMatchObject({ gross: '0.00', net: '0.00', units: 0, cogs: '0.00', profit: '0.00', recent: [] });
   const products = await page.request.get('/api/products');
   expect((await products.json()).every((item: { sku: string }) => item.sku === 'DEV-TEST-01-NORTE')).toBeTruthy();
+  expect((await (await page.request.get('/api/inventory')).json()).every((item: { businessId: string }) => item.businessId === ids.norte)).toBeTruthy();
+  expect(await (await page.request.get('/api/sales')).json()).toEqual([]);
+  expect((await page.request.get('/api/products/dev-test-01-centro-product')).status()).toBe(404);
+  expect((await page.request.get(`/api/sales/${ids.centroSaleOne}`)).status()).toBe(404);
   await context.close();
 });

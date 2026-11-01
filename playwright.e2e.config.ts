@@ -1,19 +1,27 @@
 import { defineConfig, devices } from '@playwright/test';
 import { requireE2eDatabaseUrl } from './scripts/e2e/database';
 
-const databaseUrl = requireE2eDatabaseUrl();
+let databaseUrl: string;
+try {
+  databaseUrl = requireE2eDatabaseUrl();
+} catch (error) {
+  console.error(`BLOCKED: E2E PostgreSQL unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  throw error;
+}
 const authDir = 'playwright/.auth';
 
 export default defineConfig({
   testDir: './e2e/dev-test-01',
   fullyParallel: false,
   reporter: 'list',
+  globalTeardown: './e2e/dev-test-01/teardown.ts',
   outputDir: 'test-results/dev-test-01',
   use: { baseURL: 'http://127.0.0.1:3101', trace: 'retain-on-failure' },
   projects: [
     { name: 'setup', testMatch: /setup\.ts/ },
-    { name: 'chromium', dependencies: ['setup'], testMatch: /(?:api|browser)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
-    { name: 'visual-desktop', dependencies: ['setup'], testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: `${authDir}/admin.json` } },
+    { name: 'chromium', dependencies: ['setup'], testMatch: /(?:api|browser|dashboard-states)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'visual-desktop', dependencies: ['setup'], testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 768 }, storageState: `${authDir}/admin.json` } },
+    { name: 'visual-desktop-wide', dependencies: ['setup'], testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: `${authDir}/admin.json` } },
     { name: 'visual-tablet', dependencies: ['setup'], testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 }, storageState: `${authDir}/admin.json` } },
     { name: 'visual-mobile', dependencies: ['setup'], testMatch: /visual\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 }, storageState: `${authDir}/admin.json` } },
   ],

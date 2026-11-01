@@ -1,4 +1,4 @@
-import { PrismaClient, Role, SaleStatus, PaymentMethod } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { requireE2eDatabaseUrl, requirePasswords } from './database';
 
@@ -12,8 +12,11 @@ export const ids = {
 const emails = { admin: 'dev-test-01-admin@invalid.test', seller: 'dev-test-01-seller@invalid.test', inventory: 'dev-test-01-inventory@invalid.test' };
 
 export async function clearE2eData(db: PrismaClient) {
-  const businesses = [ids.centro, ids.norte];
-  const users = [ids.admin, ids.seller, ids.inventory];
+  const businessRows = await db.business.findMany({ where: { OR: [{ id: { in: [ids.centro, ids.norte] } }, { name: { in: ['DEV-TEST-01 Centro', 'DEV-TEST-01 Norte'] } }] }, select: { id: true } });
+  const userRows = await db.user.findMany({ where: { email: { in: Object.values(emails) } }, select: { id: true } });
+  const businesses = businessRows.map(row => row.id);
+  const users = userRows.map(row => row.id);
+  if (!businesses.length && !users.length) return;
   await db.$transaction(async tx => {
     const sales = await tx.sale.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
     const saleIds = sales.map(sale => sale.id);
@@ -35,11 +38,21 @@ export async function clearE2eData(db: PrismaClient) {
     await tx.business.deleteMany({ where: { id: { in: businesses } } });
     await tx.user.deleteMany({ where: { id: { in: users } } });
   });
+  const remaining = await Promise.all([
+    db.business.count({ where: { id: { in: [ids.centro, ids.norte] }, name: { startsWith: 'DEV-TEST-01-' } } }),
+    db.user.count({ where: { email: { in: Object.values(emails) } } }),
+    db.category.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
+    db.product.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
+    db.productVariant.count({ where: { sku: { startsWith: 'DEV-TEST-01-' } } }),
+    db.sale.count({ where: { id: { in: [ids.centroSaleOne, ids.centroSaleTwo] } } }),
+  ]);
+  if (remaining.some(count => count !== 0)) throw new Error(`E2E cleanup left namespace rows: ${remaining.join(',')}`);
 }
 
 export async function seedE2e() {
-  requireE2eDatabaseUrl();
+  process.env.DATABASE_URL = requireE2eDatabaseUrl();
   const passwords = requirePasswords();
+  const { PrismaClient, Role, SaleStatus, PaymentMethod } = await import('@prisma/client');
   const db = new PrismaClient();
   try {
     await clearE2eData(db);
@@ -81,4 +94,4 @@ export async function seedE2e() {
   } finally { await db.$disconnect(); }
 }
 
-if (require.main === module) seedE2e().catch(error => { console.error(error instanceof Error ? error.message : 'E2E seed failed'); process.exitCode = 1; });
+if (require.main === module) seedE2e().catch(error => { console.error(`BLOCKED: E2E PostgreSQL unavailable: ${error instanceof Error ? error.message : String(error)}`); process.exitCode = 1; });

@@ -7,10 +7,25 @@ for (const role of ['admin', 'seller', 'inventory'] as const) {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: 'Buenos días, aquí tienes el pulso de tu negocio.' })).toBeVisible();
     await expect(page.getByText('DEV-TEST-01 Centro')).toBeVisible();
+    if (role === 'admin') {
+      await expect(page.getByText('$250.00').first()).toBeVisible();
+      await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
+      await expect(page.getByText('$100.00').first()).toBeVisible();
+      await expect(page.getByText('$150.00').first()).toBeVisible();
+      await expect(page.getByText('Venta #901')).toBeVisible();
+      await expect(page.getByText('Venta #902')).toBeVisible();
+      await expect(page.getByText('1 producto requiere atención')).toBeVisible();
+    }
     const auditLink = page.getByRole('link', { name: 'Auditoría' });
     if (role === 'admin') await expect(auditLink).toBeVisible();
     else await expect(auditLink).toHaveCount(0);
     await expect(page.locator('body')).toHaveJSProperty('scrollWidth', await page.locator('body').evaluate(body => body.clientWidth));
+    await page.getByRole('link', { name: 'Catálogo' }).focus();
+    await expect(page.getByRole('link', { name: 'Catálogo' })).toBeFocused();
+    expect(await page.getByRole('link', { name: 'Catálogo' }).evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return rect.width >= 44 && rect.height >= 44 && Boolean(element.textContent?.trim());
+    })).toBeTruthy();
     await context.close();
   });
 }

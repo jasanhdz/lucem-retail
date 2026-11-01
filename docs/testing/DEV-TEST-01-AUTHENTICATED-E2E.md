@@ -5,7 +5,7 @@ This suite is isolated from the existing Playwright suite and is intended for a 
 ## Prerequisites
 
 - Node 20+, dependencies installed, and PostgreSQL 16 reachable on a local/loopback host.
-- A dedicated database whose name clearly ends in `_e2e` or `_test`, for example `lucem_retail_e2e`, and a dedicated E2E user. Port `5432` is rejected; use a dedicated port such as `55432`.
+- A dedicated database named exactly `lucem_retail_e2e`, user `lucem_e2e`, loopback host, and dedicated port `55432`. Port `5432` and every other database name are rejected.
 - Docker is optional. The suite does not run Docker commands because the host may not have Docker. If PostgreSQL, readiness, migration, or the URL guard is unavailable, the result is `BLOCKED: E2E PostgreSQL unavailable`; no shared database is used.
 
 Copy `.env.e2e.example` to `.env.e2e` and export its values without committing the file. Required password variables are `E2E_ADMIN_PASSWORD`, `E2E_SELLER_PASSWORD`, and `E2E_INVENTORY_PASSWORD`; each must be at least 12 characters. `SESSION_SECRET` is kept separate from development when the local runtime requires it.
@@ -20,9 +20,9 @@ npm run test:e2e:visual
 npm run e2e:cleanup
 ```
 
-The commands above are intentionally separate: preparation validates `E2E_DATABASE_URL`, runs only `prisma migrate deploy` with child-process `DATABASE_URL` set to that same validated URL, and seeds the namespace. Cleanup is explicit and only accepts that same URL guard. Do not set `DATABASE_URL` as a substitute for `E2E_DATABASE_URL`.
+The commands above are intentionally separate: preparation validates `E2E_DATABASE_URL`, assigns only that validated value to `process.env.DATABASE_URL` before Prisma is imported/created, runs only `prisma migrate deploy`, and seeds the namespace. Cleanup is explicit, idempotent, verifies zero namespace rows, disconnects on every path, and only accepts that same URL guard. Do not set `DATABASE_URL` as a substitute for `E2E_DATABASE_URL`.
 
-The guard accepts only PostgreSQL URLs with a loopback host, rejects absent or ambiguous URLs, shared/production names, and port `5432`. It does not inspect or load an existing `.env` file. `scripts/e2e/cleanup.ts` deletes only DEV-TEST-01 rows in FK-safe order and is idempotent; it does not truncate tables or manage a container/volume.
+The guard accepts only PostgreSQL URLs with a loopback host, exact database `lucem_retail_e2e`, user `lucem_e2e`, and port `55432`. It never reads an existing `.env` file or falls back to `DATABASE_URL`. Missing URL, unavailable PostgreSQL, connection, or migration errors use the exact prefix `BLOCKED: E2E PostgreSQL unavailable: ...`; the original cause remains after the prefix.
 
 ## Deterministic dataset
 
@@ -32,9 +32,10 @@ Passwords exist only in the environment and login requests. They are not printed
 
 ## Coverage
 
-- `api.spec.ts`: real login success/failure, business list/select/change/rejection, dashboard contract, exact Centro metrics, and Norte isolation.
-- `browser.spec.ts`: authenticated dashboard, role navigation, admin-only Auditoría visibility without requesting its endpoint, seller/inventory exclusion, responsive overflow check, real logout, and protected-route redirect.
-- `visual.spec.ts`: authenticated dashboard screenshots at 1440x900, 768x1024, and 390x844 under ignored `test-results/dev-test-01`. Compare these captures manually with the existing Stitch references in `docs/ui-redesign/dev-01b-visual-evidence/`; this repository does not claim visual PASS unless the environment actually runs the suite.
+- `api.spec.ts`: real login success/failure, member/non-member selection, role-derived write permissions without audit, exact Centro metrics, and Centro/Norte catalog, inventory, sales, variants, and ID isolation.
+- `browser.spec.ts`: authenticated real dashboard values, accessible names/focus/size/overflow checks, role navigation, admin-only Auditoría visibility without requesting its endpoint, real logout, and protected-route redirect.
+- `dashboard-states.spec.ts`: explicitly labeled UI-only pending, empty, and error/retry fixtures intercepting only `/api/dashboard`; they do not prove auth or business data.
+- `visual.spec.ts`: authenticated screenshots at 1440x768, 1440x900, 768x1024, and 390x844 under ignored `test-results/dev-test-01`, named with role/business/project/URL context and HEAD marker. This repository does not claim visual PASS unless the environment actually runs the suite.
 
 The setup and specs deliberately contain no `GET /api/audit` request. Required security warning: `GET /api/audit exposes passwordHash`. This suite does not use audit for permission checks.
 
@@ -42,4 +43,4 @@ The setup and specs deliberately contain no `GET /api/audit` request. Required s
 
 If `E2E_DATABASE_URL` is absent, fails the loopback/name/port guard, PostgreSQL is unavailable, or migration fails, stop with `BLOCKED: E2E PostgreSQL unavailable`, retain the exact command/error in the run record, and do not use development credentials or `DATABASE_URL`. If the focused suite runs, execute cleanup afterward even after test failures. Never run cleanup with a different URL and never point it at the development or production database.
 
-The current implementation has not been declared PASS or visually approved until the commands are run against an explicitly provisioned E2E PostgreSQL database.
+The current status is `BLOCKED` until an explicitly provisioned E2E PostgreSQL database is available. Safe absent-URL checks must emit `BLOCKED: E2E PostgreSQL unavailable: E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.` No global Playwright run is performed by the safe verification workflow.
