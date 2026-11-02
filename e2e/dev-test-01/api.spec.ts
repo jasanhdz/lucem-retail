@@ -30,13 +30,24 @@ test('seller and inventory cannot select non-member Norte', async ({ browser }) 
 });
 
 test('real role matrix protects write handlers without audit', async ({ browser, request }) => {
-  for (const role of ['seller', 'inventory'] as const) {
-    const context = await browser.newContext({ storageState: `playwright/.auth/${role}.json` });
-    expect((await context.request.post('/api/products', { data: {} })).status()).toBe(403);
-    expect((await context.request.post('/api/inventory', { data: {} })).status()).toBe(403);
-    expect((await context.request.post(`/api/sales/${ids.centroSaleOne}/cancel`, { data: {} })).status()).toBe(403);
-    await context.close();
-  }
+  const seller = await browser.newContext({ storageState: 'playwright/.auth/seller.json' });
+  expect((await seller.request.post('/api/products', { data: {
+    name: 'DEV-TEST-01 unauthorized product', categoryId: ids.centroCategory,
+    variants: [{ sku: 'DEV-TEST-01-UNAUTHORIZED', cost: 1, price: 2 }],
+  } })).status()).toBe(403);
+  expect((await seller.request.post('/api/inventory', { data: {
+    variantId: ids.centroNormal, quantity: 1, type: 'CORRECTION', reason: 'DEV-TEST-01 unauthorized',
+  } })).status()).toBe(403);
+  expect((await seller.request.post(`/api/sales/${ids.centroSaleOne}/cancel`, { data: {
+    confirmation: true, reason: 'DEV-TEST-01 unauthorized',
+  } })).status()).toBe(403);
+  await seller.close();
+
+  const inventory = await browser.newContext({ storageState: 'playwright/.auth/inventory.json' });
+  expect((await inventory.request.post(`/api/sales/${ids.centroSaleOne}/cancel`, { data: {
+    confirmation: true, reason: 'DEV-TEST-01 unauthorized',
+  } })).status()).toBe(403);
+  await inventory.close();
   expect((await request.get('/api/dashboard')).status()).toBe(401);
 });
 
