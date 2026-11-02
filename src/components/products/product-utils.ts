@@ -63,21 +63,26 @@ export function groupProductRows(rows: ProductRow[]): ProductGroup[] {
   return [...grouped.values()];
 }
 
-export function validateProductDraft(name: string, categoryId: string, variants: Array<{ sku: string; cost: string; price: string; stock: string; lowStockThreshold: string }>, editing = false) {
+export function validateProductDraft(name: string, categoryId: string, variants: Array<{ sku: string; cost: string; price: string; stock: string; lowStockThreshold: string; barcode?: string; promoPrice?: string }>, editing = false) {
   const errors: string[] = [];
   if (!name.trim()) errors.push('El nombre del producto es obligatorio.');
   if (!categoryId) errors.push('Selecciona una categoría.');
   if (!variants.length) errors.push('Agrega al menos una variante.');
   const skus = new Set<string>();
+  const barcodes = new Set<string>();
   variants.forEach((variant, index) => {
     const label = `Variante ${index + 1}`;
     if (!variant.sku.trim()) errors.push(`${label}: el SKU es obligatorio.`);
     const normalizedSku = variant.sku.trim().toLowerCase();
     if (normalizedSku && skus.has(normalizedSku)) errors.push(`${label}: el SKU está repetido en este formulario.`);
     if (normalizedSku) skus.add(normalizedSku);
+    const normalizedBarcode = variant.barcode?.trim().toLowerCase() ?? '';
+    if (normalizedBarcode && barcodes.has(normalizedBarcode)) errors.push(`${label}: el barcode está repetido en este formulario.`);
+    if (normalizedBarcode) barcodes.add(normalizedBarcode);
     for (const [field, value] of [['costo', variant.cost], ['precio', variant.price], ['stock', variant.stock], ['umbral', variant.lowStockThreshold]] as const) {
       if (value === '' || !Number.isFinite(Number(value)) || Number(value) < 0) errors.push(`${label}: ${field} debe ser un número no negativo.`);
     }
+    if (variant.promoPrice !== undefined && variant.promoPrice !== '' && (!Number.isFinite(Number(variant.promoPrice)) || Number(variant.promoPrice) < 0)) errors.push(`${label}: promoción debe ser un número no negativo.`);
   });
   if (editing && !variants.length) errors.push('Conserva o agrega una variante.');
   return errors;

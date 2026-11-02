@@ -87,6 +87,15 @@ test.describe('DEV-03 products', () => {
     await noOverflow(page);
   });
 
+  test('DEV-03B conserva placeholder, altura de tarjetas y truncamiento accesible', async ({ page }) => {
+    await waitForCatalog(page);
+    const card = page.locator('.product-card').first();
+    await expect(card.locator('.product-placeholder')).toContainText('Sin fotografía');
+    await expect(card.locator('h2')).toHaveAttribute('title', /.+/);
+    expect(await card.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(400);
+    await noOverflow(page);
+  });
+
   test('ADMIN crea simple, crea dos variantes manuales y persiste stock sin combinaciones', async ({ browser }) => {
     const context = await browser.newContext({ storageState: 'playwright/.auth/admin-centro.json' });
     try {
@@ -142,7 +151,7 @@ test.describe('DEV-03 products', () => {
     if (await promo.count()) {
       await promo.fill('-1');
       await dialog.locator('button[type="submit"]').click();
-      const alert = dialog.getByRole('alert');
+      const alert = dialog.locator('.products-form-alert');
       if (await alert.count()) {
         const message = await alert.textContent();
         if (/promocion|promoción|precio|numero|número/i.test(message ?? '')) await expect(alert).toContainText(/promocion|promoción|precio|numero|número/i);
@@ -157,6 +166,10 @@ test.describe('DEV-03 products', () => {
       const page = await context.newPage();
       await waitForCatalog(page);
       await expect(page.getByRole('button', { name: 'Nuevo producto' })).toHaveCount(0);
+      await page.locator('.product-card').first().getByRole('button', { name: 'Ver detalle', exact: true }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByText(/^Costo /)).toHaveCount(0);
+      await page.getByRole('button', { name: /Cerrar detalle/ }).click();
       const request = context.request;
       expect((await request.post('/api/products', { data: { name: 'DEV-03-seller', categoryId: ids.centroCategory, variants: [{ sku: 'DEV-03-SELLER', cost: 1, price: 2 }] } })).status()).toBe(403);
       expect((await request.put('/api/products/dev-test-01-centro-product', { data: {} })).status()).toBe(403);
@@ -279,13 +292,14 @@ test.describe('DEV-03 products', () => {
     const trigger = page.getByRole('button', { name: 'Nuevo producto' });
     await trigger.focus();
     await expect(trigger).toBeFocused();
+    await expect(page.locator('.products-page')).toHaveCSS('overflow-x', 'hidden');
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
     const close = dialog.getByRole('button', { name: 'Cerrar nuevo producto' });
     await expect(close).toBeFocused();
     expect(await page.locator('body').evaluate(body => body.style.overflow)).toBe('hidden');
-    for (const button of await dialog.locator('button').all()) {
+    for (const button of await dialog.locator('button:visible').all()) {
       const box = await button.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
@@ -306,13 +320,13 @@ test.describe('DEV-03 products', () => {
   test('captura catálogo DEV-03 @visual', async ({ page }, testInfo) => {
     await waitForCatalog(page);
     await noOverflow(page);
-    await page.screenshot({ path: testInfo.outputPath(`DEV-03-catalog-${testInfo.project.name}.png`), fullPage: false });
+    await page.screenshot({ path: testInfo.outputPath(`DEV-03B-catalog-${testInfo.project.name}.png`), fullPage: false });
     await page.getByRole('button', { name: 'Nuevo producto' }).click();
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
-    await dialog.screenshot({ path: testInfo.outputPath(`DEV-03-create-simple-${testInfo.project.name}.png`) });
+    await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-simple-${testInfo.project.name}.png`) });
     await dialog.getByRole('button', { name: 'Agregar variante' }).click();
-    await dialog.screenshot({ path: testInfo.outputPath(`DEV-03-create-variants-${testInfo.project.name}.png`) });
+    await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-variants-${testInfo.project.name}.png`) });
     await dialog.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
   });
 });

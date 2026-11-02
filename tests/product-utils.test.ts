@@ -21,4 +21,15 @@ describe('product presentation helpers', () => {
     ]);
     expect(errors).toEqual(expect.arrayContaining(['Variante 2: el SKU está repetido en este formulario.', 'Variante 1: stock debe ser un número no negativo.']));
   });
+
+  it('detects duplicate barcodes and reports promo as an informational client rule', () => {
+    const errors = validateProductDraft('Producto', 'c', [
+      { sku: 'one', barcode: 'ABC-1', cost: '1', price: '10', promoPrice: '10', stock: '0', lowStockThreshold: '1' },
+      { sku: 'two', barcode: ' abc-1 ', cost: '1', price: '10', promoPrice: '-2', stock: '0', lowStockThreshold: '1' },
+    ]);
+    expect(errors).toEqual(expect.arrayContaining([
+      'Variante 2: el barcode está repetido en este formulario.',
+      'Variante 2: promoción debe ser un número no negativo.',
+    ]));
+  });
 });
