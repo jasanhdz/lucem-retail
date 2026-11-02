@@ -8,6 +8,7 @@ export const ids = {
   centroCategory: 'dev-test-01-centro-category', norteCategory: 'dev-test-01-norte-category',
   centroZero: 'dev-test-01-centro-zero', centroLow: 'dev-test-01-centro-low', centroNormal: 'dev-test-01-centro-normal', norteProduct: 'dev-test-01-norte-product',
   centroSaleOne: 'dev-test-01-centro-sale-one', centroSaleTwo: 'dev-test-01-centro-sale-two',
+  centroAudit: 'dev-test-01-centro-audit', norteAudit: 'dev-test-01-norte-audit',
 };
 const emails = { admin: 'dev-test-01-admin@invalid.test', seller: 'dev-test-01-seller@invalid.test', inventory: 'dev-test-01-inventory@invalid.test' };
 
@@ -91,6 +92,10 @@ export async function seedE2e() {
       await tx.sale.create({ data: { id: ids.centroSaleTwo, businessId: ids.centro, userId: ids.seller, folio: 902, status: SaleStatus.CONFIRMED, paymentMethod: PaymentMethod.CASH, subtotal: 50, total: 50, receivedAmount: 50, changeAmount: 0, createdAt: later, lines: { create: { variantId: ids.centroLow, quantity: 1, unitPrice: 50, unitCost: 20, lineTotal: 50 } } } });
       await tx.productVariant.update({ where: { id: ids.centroNormal }, data: { stock: 8 } });
       await tx.productVariant.update({ where: { id: ids.centroLow }, data: { stock: 1 } });
+      await tx.auditLog.createMany({ data: [
+        { id: ids.centroAudit, businessId: ids.centro, userId: ids.admin, action: 'DEV_TEST', entityType: 'DEV-TEST-01', entityId: ids.centroAudit, metadata: { namespace: 'DEV-TEST-01', fixture: 'Centro' }, createdAt: new Date('2026-01-01T10:00:00.000Z') },
+        { id: ids.norteAudit, businessId: ids.norte, userId: ids.admin, action: 'DEV_TEST', entityType: 'DEV-TEST-01', entityId: ids.norteAudit, metadata: { namespace: 'DEV-TEST-01', fixture: 'Norte' }, createdAt: new Date('2026-01-01T11:00:00.000Z') },
+      ] });
     });
   } finally { await db.$disconnect(); }
 }

@@ -56,7 +56,7 @@ test('protected API handlers reject requests without cookies', async ({ request 
     { method: 'GET', endpoint: '/api/sales' }, { method: 'POST', endpoint: '/api/sales' }, { method: 'GET', endpoint: '/api/sales/DEV00-nonexistent' },
     { method: 'POST', endpoint: '/api/sales/DEV00-nonexistent/cancel' }, { method: 'GET', endpoint: '/api/returns' }, { method: 'POST', endpoint: '/api/returns' },
     { method: 'GET', endpoint: '/api/dashboard' }, { method: 'GET', endpoint: '/api/reports/sales' },
-    { method: 'GET', endpoint: '/api/reports/export.csv' }, { method: 'GET', endpoint: '/api/reports/export.xlsx' }, { method: 'GET', endpoint: '/api/audit' },
+    { method: 'GET', endpoint: '/api/reports/export.csv' }, { method: 'GET', endpoint: '/api/reports/export.xlsx' },
   ];
   for (const { method, endpoint } of requests) {
     const response = await request.fetch(endpoint, { method });

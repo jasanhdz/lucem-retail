@@ -13,6 +13,7 @@
     "e2e:prepare": "tsx scripts/e2e/prepare.ts",
     "e2e:cleanup": "tsx scripts/e2e/cleanup.ts",
     "test:e2e:auth": "playwright test --config=playwright.e2e.config.ts",
+    "test:e2e:security": "playwright test --config=playwright.security.config.ts",
     "test:e2e:visual": "playwright test --config=playwright.e2e.config.ts e2e/dev-test-01/visual.spec.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
