@@ -53,6 +53,10 @@ The legacy/global E2E suite was not run. Its protected-handler smoke previously 
 
 ## Commit
 
+El Planner commitó `637b3ba docs(spec): plan DEV-SEC-01 audit security fix`.
+El commit de implementación es `eae053c fix(security): remove sensitive fields from audit API`
+y el commit de documentación es `8cd92b4 docs(security): record audit API verification`.
+
 Required commit message: `fix(security): remove sensitive fields from audit API`
 
 ## DEV-SEC-01B — Verificación autenticada
