@@ -275,6 +275,12 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - `idempotencyKey` persistida en `Return` permite repetir el mismo payload sin crear otra devolución, movimiento o auditoría; reutilizarla con otro payload devuelve `409`.
 - La UI permite localizar ventas, revisar pendientes, seleccionar devolución parcial o total, capturar motivo, confirmar importe y consultar historial. SELLER conserva lectura sin controles de mutación.
 
+## DEV-07B — Auditoría atómica de devoluciones
+
+- La auditoría `CREATE Return` debe ejecutarse con el `Prisma.TransactionClient` dentro de la misma transacción que crea `Return`/`ReturnLine`, reintegra stock y escribe `RETURN`.
+- Si la auditoría falla, el endpoint responde `500` y no persiste devolución, líneas, stock, Kardex ni idempotency key. Un reintento posterior con el mismo payload puede crear una única operación completa.
+- La inyección `x-lucem-e2e-fail-audit` sólo está disponible fuera de producción para pruebas E2E controladas; nunca se acepta como mecanismo de negocio.
+
 ## DEV-06 — Apartados y cumplimiento
 
 - `GET /api/reservations` se limita al negocio activo; ADMIN, INVENTORY_MANAGER y SELLER consultan. Crear, liberar, vencer y completar requieren ADMIN o INVENTORY_MANAGER.

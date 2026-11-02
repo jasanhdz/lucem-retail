@@ -13,6 +13,8 @@
 
 `POST /api/returns` usa `Serializable`. Las lecturas de venta y devoluciones, validación de saldo, creación de `Return`/`ReturnLine`, incremento de stock y movimientos ocurren en una única transacción. Una colisión serializable o de clave única responde `409`; no se presenta como éxito ni deja efectos parciales.
 
+La auditoría `CREATE Return` se ejecuta con el mismo `Prisma.TransactionClient` antes de cerrar la transacción. Si la auditoría falla, la operación completa revierte: no queda `Return`, `ReturnLine`, aumento de stock, movimiento `RETURN` ni clave de idempotencia. El header `x-lucem-e2e-fail-audit` sólo provoca el fallo controlado fuera de producción y existe exclusivamente para probar este rollback.
+
 ## Matriz de resultados
 
 | Caso | HTTP | Stock | Kardex |

@@ -56,14 +56,15 @@ export async function POST(req: Request) {
         await tx.productVariant.update({ where: { id: line!.variantId }, data: { stock: { increment: quantity } } });
         await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: line!.variantId, userId: auth.user.id, type: 'RETURN', quantity, reason: body.reason.trim(), referenceType: 'Return', referenceId: created.id } });
       }
-      return { row: await tx.return.findUniqueOrThrow({ where: { id: created.id }, include: { lines: true } }), replay: false };
+      const row = await tx.return.findUniqueOrThrow({ where: { id: created.id }, include: { lines: true } });
+      await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Return', entityId: row.id }, tx, { failForTesting: process.env.NODE_ENV !== 'production' && req.headers.get('x-lucem-e2e-fail-audit') === '1' });
+      return { row, replay: false };
     }, { isolationLevel: 'Serializable' });
-    if (!result.replay) await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Return', entityId: result.row.id });
     return Response.json(serialize(result.row), { status: result.replay ? 200 : 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     const conflict = message === 'idempotency' || (error instanceof Error && 'code' in error && ['P2002', 'P2034'].includes(String((error as { code?: string }).code)));
     const text = message === 'quantity' ? 'La cantidad excede lo pendiente' : message === 'sale' ? 'Venta no encontrada o cancelada' : message === 'refund' ? 'El reembolso debe coincidir con el importe de las líneas' : conflict && message === 'idempotency' ? 'La clave de idempotencia ya fue usada con otro contenido' : conflict ? 'La devolución entró en conflicto; vuelve a consultar la venta' : 'No fue posible crear la devolucion';
-    return jsonError(text, message === 'sale' ? 404 : conflict ? 409 : 400);
+    return jsonError(text, message === 'sale' ? 404 : conflict ? 409 : ['quantity', 'refund'].includes(message) ? 400 : 500);
   }
 }

@@ -29,6 +29,7 @@ Las ventas convertidas desde Apartados son ventas ordinarias con `SaleLine`, por
 ## Evidencia
 
 - `CI=1 npm run test:e2e:returns -- --reporter=list`: PASS, 6/6, suite aislada PostgreSQL, login real y namespace DEV-TEST-01.
+- DEV-07B añade el escenario de auditoría inyectada: `500` y rollback completo; el mismo idempotency key reintenta después con una única devolución y una única auditoría. La suite actual pasa `7/7`.
 - Cobertura: listado, búsqueda, parcial, resto, sobredevolución, reembolso negativo/mayor/menor, motivo, línea duplicada, idempotencia, concurrencia, Kardex, stock, Apartados convertido, roles, 401, 403, aislamiento y responsive.
 - Capturas sanitizadas publicadas en `docs/ui-redesign/dev-07-visual-evidence/`, a 1440x900, 768x1024 y 390x844.
 - Evidencia visual: [desktop](./dev-07-visual-evidence/returns-desktop.png), [tablet](./dev-07-visual-evidence/returns-tablet.png) y [mobile](./dev-07-visual-evidence/returns-mobile.png). Sólo contiene fixtures DEV-TEST-01; no incluye cookies ni `storageState`.
@@ -36,5 +37,6 @@ Las ventas convertidas desde Apartados son ventas ordinarias con `SaleLine`, por
 ## Riesgos y límites
 
 - Los reembolsos registrados no prueban que el dinero haya sido entregado al cliente.
+- La auditoría de una devolución nueva se confirma dentro de la misma transacción comercial; un fallo de auditoría no puede dejar la devolución confirmada.
 - No existe estado separado de reembolso; `Return` representa la operación registrada e irreversible desde esta UI.
 - El precio histórico pertenece a `SaleLine`; no se recalcula con el precio actual del producto.
