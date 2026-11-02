@@ -161,3 +161,57 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 8. **PASS/FAIL** — Viewports 1440x900, 768x1024 y 390x844 cumplen la comparacion visual documentada, sin overflow horizontal ni scroll anidado no previsto.
 9. **PASS/FAIL** — E2E DEV-03 termina PASS contra DB aislada, o queda BLOCKED con la razon exacta y sin fallback; cleanup elimina solo sus recursos.
 10. **PASS/FAIL** — Lint, typecheck, tests, build y `git diff --check` terminan en cero; el diff no borra ni reescribe SPEC DEV-SEC-01.
+
+## DEV-03B — Refinamiento visual y calidad de Productos
+
+### Scope
+
+**Incluye**
+
+- Refinar exclusivamente la UI de `/productos`, sus componentes, utilidades y estilos existentes, sin cambiar el contrato de los endpoints.
+- Unificar el placeholder de imagen con el lenguaje visual de productos: bloque de proporción estable, icono/texto accesible, fondo y borde de los tokens existentes, y fallback seguro para imagen ausente o no cargable sin romper la tarjeta.
+- Fijar una altura/proporción consistente para imágenes y una altura mínima razonable para tarjetas; conservar una grilla estable en desktop y tarjetas compactas en mobile. Evitar que nombres, SKU, ubicación, precios o badges desplacen de forma impredecible las acciones.
+- Aplicar truncamiento visual controlado a nombre, SKU, ubicación y textos largos, con `title` o nombre accesible completo cuando el texto visible se recorte. No ocultar datos obligatorios del detalle.
+- Reordenar y agrupar los filtros en mobile para que búsqueda, categoría, estado, disponibilidad y limpieza sean operables a 390x844, con controles de al menos 44px y sin overflow horizontal. La limpieza debe resetear todos los filtros visibles.
+- Refinar detalle, carga, error, vacío y archivado: jerarquía de metadata, variantes, existencias, historial, feedback de archivado y estado `archived` cuando el contrato lo devuelva. No presentar un archivado como borrado físico ni dejar una tarjeta activa engañosa tras la acción.
+- Mostrar stock y disponibilidad sólo conforme al contrato: `stock` respalda existencias físicas y `available` equivale a stock disponible en este flujo; declarar que no se reportan apartados/reservas si se muestra esa distinción. No inventar kardex ni afirmar lectura independiente del movimiento `INITIAL`.
+- Añadir validación inline asociada a cada campo cuando sea posible y un resumen/alerta accesible para errores generales. Cubrir obligatorios, números no negativos, variante mínima, motivo de cambios comerciales y la regla cliente informativa de promoción sin convertirla en garantía server-side.
+- Detectar en cliente SKU duplicados dentro del draft y barcode duplicados dentro del draft si se decide exigir esa coherencia visual; normalizar la comparación y señalar los campos implicados. El SKU duplicado contra datos existentes debe mostrar el `409` real del backend. No afirmar unicidad server-side de barcode si el backend no la respalda ni crear una validación remota nueva.
+- Proteger el submit contra doble clic y carreras de estado: deshabilitar acciones durante guardado/subida, conservar nombre accesible de loading, impedir requests mutantes duplicados y no cerrar ni limpiar el draft antes de una respuesta exitosa. Mantener los errores recuperables en el formulario.
+- Mantener stock de variantes existentes como readonly, claramente etiquetado y fuera del payload `PUT`; sólo una variante nueva puede llevar stock inicial. No permitir que el modo visual sugiera ajuste de inventario.
+- Conservar y reforzar accesibilidad: nombre de dialogo, labels asociados, foco inicial y retorno al disparador, Escape, ciclo Tab/Shift+Tab, alertas/`aria-live`, foco visible, contraste y objetivos tactiles de 44px. Respetar `prefers-reduced-motion`.
+
+### Fuera de alcance y prohibiciones
+
+- No modificar APIs, handlers, servicios server, Prisma, migraciones, auth, permisos, reglas de negocio, contratos, `diseno/`, archivos fuera de productos ni la suite legacy.
+- No crear endpoints para disponibilidad, stock, kardex, validación remota, auto-SKU, barcode, archivado o imágenes; no cambiar payloads o respuestas existentes para obtener un resultado visual.
+- No implementar mutaciones de stock desde alta/edición, no editar stock existente, no convertir `available` en reservas, y no inventar movimientos o estados respaldados por datos que el API no devuelve.
+- No imponer unicidad de barcode en backend ni presentar como server-side una regla que sólo exista en cliente; no bloquear por una regla de promoción que el backend no valida.
+- No introducir una pantalla Stitch inexistente como referencia exacta ni exigir pixel-fidelity para catálogo, detalle, edición, archivado o errores sin PNG/HTML final dedicado.
+
+### Flujos y verificación
+
+1. En catálogo autenticado, capturar tarjeta con y sin imagen, nombres/SKU/ubicaciones largos, los tres estados de stock y producto archivado; comprobar proporción, truncamiento, texto accesible y ausencia de overflow.
+2. En 1440x900 y 390x844, usar búsqueda, categoría, estado, disponibilidad y limpiar filtros; comprobar que los controles siguen visibles, tienen objetivo tactil minimo de 44px y que la página no adquiere scroll horizontal.
+3. Abrir detalle y comprobar variantes, stock físico, disponibilidad, precio aplicado, historial y estado archivado conforme a respuestas reales; comprobar que cerrar, Escape y acción de edición devuelven el foco al disparador correcto.
+4. En alta y edición, provocar cada validación inline, SKU repetido en el mismo draft, barcode repetido en el mismo draft si se implementa esa comprobación y `409` de SKU del backend; comprobar que el campo queda señalado y el mensaje no depende sólo de color.
+5. En alta/edición, hacer doble activación de guardar y resolver una respuesta lenta; comprobar un solo request mutante, estado disabled/loading, draft intacto ante error y cierre sólo después de éxito. En edición, comprobar que stock existente sigue readonly y ausente del `PUT`.
+6. Capturar estados loading, error con reintento, vacío y archivado en la suite E2E enfocada. Usar PostgreSQL E2E aislado y contratos existentes; si la infraestructura imprescindible falta, registrar `BLOCKED: E2E PostgreSQL unavailable: ...` sin fallback.
+7. Generar capturas reproducibles de catálogo, formulario y detalle a `1440x900` y `390x844`; conservar también la comprobación de `768x1024` existente cuando aplique. Documentar cada captura y toda diferencia con las referencias exactas o cercanas del mapping.
+8. Ejecutar `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, E2E DEV-03 enfocado con `CI=1` y reporter list, cleanup y `git diff --check`, sin ejecutar suites globales/legacy como evidencia.
+
+### Documentación y criterios de aceptación binarios
+
+- Actualizar sólo la documentación de DEV-03B solicitada en `SPEC.md` y `docs/ui-redesign/DEV-03-DESIGN-MAPPING.md`; no modificar `DEV-03-PRODUCTS.md` como parte de este plan salvo que un ejecutor posterior lo requiera como evidencia separada.
+- Todos los criterios son binarios: `PASS` exige aserción reproducible y artefacto; `FAIL` contradice el comportamiento; `BLOCKED` sólo aplica a infraestructura E2E imprescindible y nunca cuenta como `PASS`.
+
+1. **PASS/FAIL** — Placeholder con y sin imagen conserva proporción, accesibilidad y fallback; tarjetas mantienen altura/proporción estable, acciones visibles y truncamiento no destructivo en desktop y mobile.
+2. **PASS/FAIL** — Catálogo a 1440x900, 768x1024 y 390x844 no tiene overflow horizontal; filtros mobile son operables, resetean completamente y todos sus controles accionables miden al menos 44px.
+3. **PASS/FAIL** — Detalle, loading, error/reintento, vacío y archivado muestran jerarquía coherente, estado textual y datos que coinciden con respuestas reales; no se presenta borrado físico.
+4. **PASS/FAIL** — Stock físico, `available`, estados y ausencia de reservas/kardex se explican sólo con el contrato; no se afirma una lectura independiente de `INITIAL` ni una disponibilidad inventada.
+5. **PASS/FAIL** — Validaciones inline cubren campos obligatorios, números, variantes, motivo y duplicados client-side; SKU duplicado del backend muestra su `409`, y barcode sólo se declara único donde exista soporte real.
+6. **PASS/FAIL** — Guardas de submit producen como máximo un request mutante por activación lógica, muestran loading/disabled, conservan el draft ante error y no cierran antes del éxito.
+7. **PASS/FAIL** — Stock de variantes existentes es readonly en UI y no aparece en `PUT`; sólo variantes nuevas pueden incluir stock inicial.
+8. **PASS/FAIL** — Dialogos y filtros cumplen labels, nombre accesible, foco inicial/visible/retorno, Tab/Shift+Tab, Escape, `aria-live`/`role=alert`, contraste suficiente, reduced motion y objetivos de 44px.
+9. **PASS/FAIL** — E2E enfocado verifica los flujos anteriores y produce capturas de `1440x900` y `390x844` (más tablet cuando corresponda), o queda `BLOCKED` con razón exacta y sin fallback; cleanup sólo elimina recursos DEV-03.
+10. **PASS/FAIL** — Lint, typecheck, tests, build y `git diff --check` terminan en cero; el diff queda limitado a UI/documentación de productos y no toca APIs, Prisma, auth, permisos, `diseno/` ni cambios preexistentes.

@@ -77,3 +77,9 @@ Fuente normativa: `diseno/retail_operational_clarity/DESIGN.md` y `diseno/retail
 ## Fuente de verificacion
 
 La base legacy contiene comprobaciones reales para filtros, vacio mobile, dialogos accesibles, overflow, columnas desktop, centrado, detalle, persistencia, edicion, historial, foto local, agregar variante, scroll interno y nav. Al estar omitida por `LEGACY UI`, DEV-03 debe crear una suite enfocada aislada y no presentar esa suite como evidencia final hasta reactivarla bajo el alcance de este plan.
+
+## DEV-03B — Refinamiento visual
+
+El refinamiento debe reutilizar los tokens ya mapeados: bosque `#102B2A`/`#001615`, acento `#176B55`, superficies `#FFFFFF`, fondo claro, bordes `#DCE4E1`, semantica success/warning/error con contraste, radios de 8/12-16px, gutters 24/16/12px, header 64/56px y objetivos tactiles de 44px. Placeholder, badges, alertas, foco y estados archivado deben conservar esa semantica y la jerarquia de `retail_operational_clarity`, sin duplicar tokens.
+
+Para formularios y variantes se toman como referencia los Stitch exactos de alta simple y alta con variantes desktop/mobile; para modal, stock y controles tactiles, la referencia secundaria es `pantalla_02_selecci_n_de_variantes_de_producto`. La lista compacta mobile puede tomar patrones cercanos de POS/inventario, pero no su contrato. No existe referencia PNG/HTML exacta para catalogo desktop/mobile, detalle, edicion, archivado ni validacion/errores: esas pantallas se validan contra contratos, accesibilidad, responsive y capturas documentadas, sin afirmar pixel-fidelity.
