@@ -13,6 +13,18 @@ enum Role {
   INVENTORY_MANAGER
 }
 
+enum BusinessGiro {
+  ROPA
+  PAPELERIA
+  ABARROTES
+  FERRETERIA
+  BELLEZA
+  HOGAR
+  ELECTRONICA
+  SERVICIOS
+  OTRO
+}
+
 enum MovementType {
   INITIAL
   PURCHASE
@@ -66,11 +78,14 @@ model User {
   returns      Return[]
   auditLogs    AuditLog[]
   priceHistory PriceCostHistory[]
+  businessCreationIdempotencies BusinessCreationIdempotency[]
 }
 
 model Business {
   id            String              @id @default(cuid())
   name          String
+  branchName    String              @default("Sucursal principal")
+  giro          BusinessGiro        @default(OTRO)
   timezone      String              @default("America/Mexico_City")
   currency      String              @default("MXN")
   createdAt     DateTime            @default(now())
@@ -86,6 +101,7 @@ model Business {
   auditLogs     AuditLog[]
   history       PriceCostHistory[]
   idempotencies SaleIdempotency[]
+  creationIdempotencies BusinessCreationIdempotency[]
 }
 
 model Membership {
@@ -112,6 +128,19 @@ model Session {
   createdAt        DateTime  @default(now())
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeBusiness   Business? @relation(fields: [activeBusinessId], references: [id])
+}
+
+model BusinessCreationIdempotency {
+  id         String   @id @default(cuid())
+  userId     String
+  key        String
+  requestHash String
+  businessId String   @unique
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
 }
 
 model Category {
