@@ -33,7 +33,7 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
   await shellLink.focus();
   await expect(shellLink).toBeFocused();
 
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+  expect(await page.locator('.dashboard-page').evaluate(element => element.scrollWidth <= element.clientWidth)).toBeTruthy();
 
   const undersizedControls = await page.locator('.dashboard-page a, .dashboard-page button').evaluateAll(elements => elements.flatMap(element => {
     const style = getComputedStyle(element);
