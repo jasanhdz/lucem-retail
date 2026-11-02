@@ -13,6 +13,7 @@
     "e2e:prepare": "tsx scripts/e2e/prepare.ts",
     "e2e:cleanup": "tsx scripts/e2e/cleanup.ts",
     "test:e2e:auth": "playwright test --config=playwright.e2e.config.ts",
+    "test:e2e:onboarding": "playwright test --config=playwright.onboarding.config.ts",
     "test:e2e:security": "playwright test --config=playwright.security.config.ts",
     "test:e2e:products": "playwright test --config=playwright.products.config.ts",
     "test:e2e:inventory": "playwright test --config=playwright.inventory.config.ts",

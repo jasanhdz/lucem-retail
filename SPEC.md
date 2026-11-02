@@ -71,6 +71,36 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 11. **Checks del proyecto** — `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` y `git diff --check` terminan con código 0; el E2E dirigido real termina PASS o queda BLOCKED con la razón exacta, sin convertir mocks en evidencia.
 12. **Evidencia y cierre** — `docs/security/DEV-SEC-01-AUDIT.md` registra comandos, resultados, cleanup, warning literal `GET /api/audit exposes passwordHash`, riesgo de producción, commit exacto `docs(spec): plan DEV-SEC-01 audit security fix`, y no contiene secretos; no se hace push ni merge.
 
+## DEV-08 — Registro y onboarding de negocio
+
+### Alcance
+
+- Implementar registro con validación de nombre, correo, contraseña, confirmación y términos.
+- Crear sesión real después del registro y dirigir a usuarios sin negocio al onboarding.
+- Crear negocios sólo para el usuario autenticado, con giro controlado, sucursal principal y membresía `ADMIN`.
+- Mantener aislamiento por membresía, selección segura de negocio e idempotencia persistida para evitar duplicados.
+- Verificar el flujo completo con PostgreSQL E2E dedicado, capturas responsive y regresión del proyecto.
+
+### Fuera de alcance
+
+- No simular ni agregar OAuth mientras Google/Facebook no estén configurados.
+- No modificar las referencias Stitch originales ni mezclar datos E2E con desarrollo/producción.
+- No iniciar módulos fuera de onboarding.
+
+### Rutas y contratos
+
+- `POST /api/auth/register` devuelve `201` y crea sesión; correo duplicado devuelve `409`.
+- `POST /api/auth/login` devuelve `/negocios/crear` para usuarios sin membresías.
+- `POST /api/businesses` exige `Idempotency-Key`, valida el giro y crea negocio, membresía ADMIN, sesión activa y auditoría dentro de una transacción serializable.
+- `GET /api/businesses` devuelve sólo negocios de las membresías del usuario autenticado.
+
+### Validación
+
+- Suite dirigida: `CI=1 npm run test:e2e:onboarding -- --reporter=list` con `E2E_DATABASE_URL` validada.
+- Regresión: lint, typecheck, tests, Prisma validate, build y `git diff --check`.
+- Evidencia visual: `docs/ui-redesign/dev-08-visual-evidence/` en 1440x900, 768x1024 y 390x844.
+- Resultado DEV-08B: E2E `1/1`, unitarias `24/24`, cleanup `0|0|0`; Docker Compose no disponible, se usó sólo Docker Engine con PostgreSQL E2E dedicado.
+
 ## DEV-03 — Catalogo de productos y variantes
 
 ### Scope
