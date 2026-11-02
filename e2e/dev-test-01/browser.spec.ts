@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 
 for (const role of ['admin', 'seller', 'inventory'] as const) {
   test(`${role} sees legitimate workspace permissions`, async ({ browser }) => {
-    const context = await browser.newContext({ storageState: `playwright/.auth/${role}.json` });
+    const state = role === 'admin' ? 'admin-centro' : role;
+    const context = await browser.newContext({ storageState: `playwright/.auth/${state}.json` });
     const page = await context.newPage();
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: 'Buenos días, aquí tienes el pulso de tu negocio.' })).toBeVisible();

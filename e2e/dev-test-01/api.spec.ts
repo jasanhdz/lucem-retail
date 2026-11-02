@@ -52,7 +52,7 @@ test('real role matrix protects write handlers without audit', async ({ browser,
 });
 
 test('dashboard and catalog data remain isolated across all existing APIs', async ({ browser }) => {
-  const context = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
+  const context = await browser.newContext({ storageState: 'playwright/.auth/admin-centro.json' });
   const page = await context.newPage();
   expect((await (await page.request.get('/api/products')).json()).map((item: { sku: string }) => item.sku)).toEqual(expect.arrayContaining(['DEV-TEST-01-ZERO', 'DEV-TEST-01-LOW', 'DEV-TEST-01-NORMAL']));
   expect((await (await page.request.get('/api/inventory')).json()).every((item: { businessId: string }) => item.businessId === ids.centro)).toBeTruthy();

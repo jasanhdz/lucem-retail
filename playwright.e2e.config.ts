@@ -20,10 +20,10 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:3101', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', testMatch: /(?:api|browser|dashboard-states)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
-    { name: 'visual-desktop', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 768 }, storageState: `${authDir}/admin.json` } },
-    { name: 'visual-desktop-wide', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: `${authDir}/admin.json` } },
-    { name: 'visual-tablet', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 }, storageState: `${authDir}/admin.json` } },
-    { name: 'visual-mobile', testMatch: /visual\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 }, storageState: `${authDir}/admin.json` } },
+    { name: 'visual-desktop', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 768 }, storageState: `${authDir}/admin-centro.json` } },
+    { name: 'visual-desktop-wide', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, storageState: `${authDir}/admin-centro.json` } },
+    { name: 'visual-tablet', testMatch: /visual\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 }, storageState: `${authDir}/admin-centro.json` } },
+    { name: 'visual-mobile', testMatch: /visual\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 }, storageState: `${authDir}/admin-centro.json` } },
   ],
   webServer: {
     command: 'npm run start -- --hostname 127.0.0.1 --port 3101',

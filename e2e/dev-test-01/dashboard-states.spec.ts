@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const realDashboard = { gross: '250.00', net: '250.00', units: 3, cogs: '100.00', profit: '150.00', outOfStock: 1, lowStock: 1, recent: [{ id: 'fixture-sale', folio: 901, total: '200.00', status: 'CONFIRMED', createdAt: new Date().toISOString() }] };
-test.use({ storageState: 'playwright/.auth/admin.json' });
+test.use({ storageState: 'playwright/.auth/admin-centro.json' });
 
 test('pending dashboard fixture shows skeleton without invented zeros', async ({ page }) => {
   let release!: () => void;
