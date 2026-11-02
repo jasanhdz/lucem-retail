@@ -266,6 +266,15 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - La clave de idempotencia se conserva durante un intento y cualquier reintento explícito con respuesta incierta debe repetir exactamente el mismo payload; React no puede declarar éxito sin respuesta persistida.
 - E2E debe usar PostgreSQL aislado, login real y cleanup seguro; no usar `DATABASE_URL`, cookies fabricadas, mocks permanentes ni suites legacy como evidencia.
 
+## DEV-07 — Devoluciones y reembolsos
+
+- `GET /api/returns` y `GET /api/sales` se limitan al negocio activo; ADMIN, INVENTORY_MANAGER y SELLER consultan. Crear devoluciones requiere ADMIN o INVENTORY_MANAGER.
+- Una devolución sólo puede vincularse a una venta confirmada del negocio activo y a sus `SaleLine` existentes. La cantidad solicitada más lo previamente devuelto no puede exceder la cantidad vendida.
+- `refundAmount` debe ser finito, no negativo y coincidir exactamente con el importe de las líneas seleccionadas a precio histórico. El sistema registra el reembolso; no ejecuta pagos externos.
+- Cada línea devuelta incrementa stock una vez y crea un movimiento `RETURN` con referencia `Return`. La operación usa transacción serializable.
+- `idempotencyKey` persistida en `Return` permite repetir el mismo payload sin crear otra devolución, movimiento o auditoría; reutilizarla con otro payload devuelve `409`.
+- La UI permite localizar ventas, revisar pendientes, seleccionar devolución parcial o total, capturar motivo, confirmar importe y consultar historial. SELLER conserva lectura sin controles de mutación.
+
 ## DEV-06 — Apartados y cumplimiento
 
 - `GET /api/reservations` se limita al negocio activo; ADMIN, INVENTORY_MANAGER y SELLER consultan. Crear, liberar, vencer y completar requieren ADMIN o INVENTORY_MANAGER.

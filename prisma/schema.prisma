@@ -274,11 +274,15 @@ model Return {
   userId       String
   reason       String
   refundAmount Decimal      @db.Decimal(12, 2)
+  idempotencyKey String?
+  requestHash    String?
   createdAt    DateTime     @default(now())
   business     Business     @relation(fields: [businessId], references: [id])
   sale         Sale         @relation(fields: [saleId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
   lines        ReturnLine[]
+
+  @@unique([businessId, idempotencyKey])
 }
 
 model ReturnLine {
