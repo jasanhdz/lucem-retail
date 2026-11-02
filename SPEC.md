@@ -265,3 +265,12 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - `stock` de Productos es la disponibilidad operativa para POS. No mostrar `physical`/`reserved` ni convertir apartados durante una venta ordinaria.
 - La clave de idempotencia se conserva durante un intento y cualquier reintento explícito con respuesta incierta debe repetir exactamente el mismo payload; React no puede declarar éxito sin respuesta persistida.
 - E2E debe usar PostgreSQL aislado, login real y cleanup seguro; no usar `DATABASE_URL`, cookies fabricadas, mocks permanentes ni suites legacy como evidencia.
+
+## DEV-06 — Apartados y cumplimiento
+
+- `GET /api/reservations` se limita al negocio activo; ADMIN, INVENTORY_MANAGER y SELLER consultan. Crear, liberar, vencer y completar requieren ADMIN o INVENTORY_MANAGER.
+- Crear una reserva decrementa `ProductVariant.stock` y registra `RESERVATION -quantity`; liberar o vencer incrementa stock y registra `RELEASE +quantity`.
+- Completar exige método de pago y crea una venta persistida en la misma transacción. Libera y vuelve a descontar la cantidad reservada, registra `RELEASE +quantity` y `SALE -quantity`, y conserva disponible neto mientras reduce físico y reservado.
+- `Reservation.saleId` es opcional y único para que repetir completar sea idempotente y no cree una segunda venta ni movimientos duplicados. Conversiones antiguas sin venta se reportan como conflicto de integridad.
+- DEV-06 no agrega anticipos, pagos parciales, deuda, clientes obligatorios ni vencimiento automático desde la interfaz.
+- La suite aislada `test:e2e:reservations` verifica saldos persistidos, sobre-reserva, concurrencia, doble liberación/completado, Kardex, permisos, aislamiento y capturas responsive.
