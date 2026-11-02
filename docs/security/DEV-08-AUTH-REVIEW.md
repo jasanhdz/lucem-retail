@@ -27,6 +27,6 @@ La validación usa PostgreSQL dedicado `lucem_retail_e2e`, usuario `lucem_e2e`, 
 
 ## Resultado DEV-08B
 
-`CI=1 npm run test:e2e:onboarding -- --reporter=list`: `1 passed`. La respuesta de registro no incluyó `passwordHash`; PostgreSQL confirmó un hash distinto de la contraseña, una membresía `ADMIN`, giro `PAPELERIA` y sucursal `Matriz DEV-08`. El replay con la misma key devolvió el negocio original sin duplicarlo y el correo repetido devolvió `409`.
+`CI=1 npm run test:e2e:onboarding -- --reporter=list`: `2 passed`. La respuesta de registro no incluyó `passwordHash`; PostgreSQL confirmó un hash distinto de la contraseña, una membresía `ADMIN`, giro `PAPELERIA` y sucursal `Matriz DEV-08`. El replay con la misma key devolvió el negocio original sin duplicarlo, el correo repetido devolvió `409` y dos usuarios concurrentes recibieron negocios distintos con sus propias membresías.
 
 El cleanup terminó con `0|0|0` para usuario, negocio y membresía del namespace, y los recursos Docker E2E fueron eliminados. No se publicaron contraseñas, cookies, storage states ni payloads sensibles.

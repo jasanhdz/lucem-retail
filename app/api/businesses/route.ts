@@ -33,7 +33,10 @@ export async function POST(req: Request) {
   if (!key || key.length > 100) return jsonError('Solicitud inválida.', 400);
   const requestHash = crypto.createHash('sha256').update(JSON.stringify({ name, branchName, giro })).digest('hex');
   try {
-    const result = await db.$transaction(async tx => {
+    let result;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        result = await db.$transaction(async tx => {
       const existing = await tx.businessCreationIdempotency.findUnique({ where: { userId_key: { userId: auth.user.id, key } }, include: { business: true } });
       if (existing) {
         if (existing.requestHash !== requestHash) throw new Error('IDEMPOTENCY_CONFLICT');
@@ -46,7 +49,13 @@ export async function POST(req: Request) {
       await tx.businessCreationIdempotency.create({ data: { userId: auth.user.id, key, requestHash, businessId: business.id } });
       await audit({ userId: auth.user.id, businessId: business.id, action: 'CREATE', entityType: 'Business', entityId: business.id, metadata: { giro } }, tx);
       return business;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        break;
+      } catch (error) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') || attempt === 2) throw error;
+      }
+    }
+    if (!result) return jsonError('No fue posible crear el negocio. Inténtalo de nuevo.', 500);
     return Response.json({ business: { id: result.id, name: result.name, branchName: result.branchName, giro, giroLabel: selected.label }, redirect: '/negocios/confirmacion' }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === 'IDEMPOTENCY_CONFLICT') return jsonError('La solicitud repetida contiene datos distintos.', 409);

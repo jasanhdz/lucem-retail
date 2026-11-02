@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, request, test } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 
 const email = `dev08-${Date.now()}@dev08.invalid.test`;
@@ -70,4 +70,25 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
     expect(user?.memberships[0].business.giro).toBe('PAPELERIA');
     expect(user?.memberships[0].business.branchName).toBe('Matriz DEV-08');
   } finally { await db.$disconnect(); }
+});
+
+test('dos usuarios crean negocios simultáneamente sin cruzar membresías', async () => {
+  const firstEmail = `dev08-concurrent-a-${Date.now()}@dev08.invalid.test`;
+  const secondEmail = `dev08-concurrent-b-${Date.now()}@dev08.invalid.test`;
+  const first = await request.newContext({ baseURL: 'http://127.0.0.1:3102' });
+  const second = await request.newContext({ baseURL: 'http://127.0.0.1:3102' });
+  try {
+    const registrations = await Promise.all([
+      first.post('/api/auth/register', { data: { name: 'DEV-08 Concurrent A', email: firstEmail, password, confirmation: password, terms: true } }),
+      second.post('/api/auth/register', { data: { name: 'DEV-08 Concurrent B', email: secondEmail, password, confirmation: password, terms: true } }),
+    ]);
+    expect(registrations.map(response => response.status()).sort()).toEqual([201, 201]);
+    const creations = await Promise.all([
+      first.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev08-concurrent-a' }, data: { name: 'DEV-08 Concurrent A Business', branchName: 'A', giro: 'servicios' } }),
+      second.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev08-concurrent-b' }, data: { name: 'DEV-08 Concurrent B Business', branchName: 'B', giro: 'hogar' } }),
+    ]);
+    expect(creations.map(response => response.status()).sort()).toEqual([201, 201]);
+    const firstBody = await creations[0].json(); const secondBody = await creations[1].json();
+    expect(firstBody.business.id).not.toBe(secondBody.business.id);
+  } finally { await first.dispose(); await second.dispose(); }
 });

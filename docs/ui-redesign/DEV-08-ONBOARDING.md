@@ -15,7 +15,7 @@ Registro, sesión automática, estado sin negocios, creación del primer negocio
 
 ## Evidencia
 
-La suite aislada `CI=1 npm run test:e2e:onboarding -- --reporter=list` pasó `1/1` contra PostgreSQL E2E real. Verificó directamente `User`, `Business`, `Membership`, giro, sucursal y rol `ADMIN`; también recorrió logout y login posterior. La suite comprobó duplicado de correo `409`, respuesta sin `passwordHash`, cookie `HttpOnly`/`SameSite=Lax`, hash no reversible y replay idempotente `201` sin duplicar negocio.
+La suite aislada `CI=1 npm run test:e2e:onboarding -- --reporter=list` pasó `2/2` contra PostgreSQL E2E real. Verificó directamente `User`, `Business`, `Membership`, giro, sucursal y rol `ADMIN`; también recorrió logout y login posterior. La suite comprobó duplicado de correo `409`, respuesta sin `passwordHash`, cookie `HttpOnly`/`SameSite=Lax`, hash no reversible, replay idempotente `201` sin duplicar negocio y dos usuarios creando negocios simultáneamente sin cruzar membresías.
 
 Capturas sanitizadas: `docs/ui-redesign/dev-08-visual-evidence/` en 1440x900, 768x1024 y 390x844 para registro, creación, giro, confirmación y Dashboard. Las referencias originales en `diseno/` no se modificaron.
 

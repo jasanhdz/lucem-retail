@@ -99,7 +99,7 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - Suite dirigida: `CI=1 npm run test:e2e:onboarding -- --reporter=list` con `E2E_DATABASE_URL` validada.
 - Regresión: lint, typecheck, tests, Prisma validate, build y `git diff --check`.
 - Evidencia visual: `docs/ui-redesign/dev-08-visual-evidence/` en 1440x900, 768x1024 y 390x844.
-- Resultado DEV-08B: E2E `1/1`, unitarias `24/24`, cleanup `0|0|0`; Docker Compose no disponible, se usó sólo Docker Engine con PostgreSQL E2E dedicado.
+- Resultado DEV-08B: E2E `2/2`, auth/isolation `15/15`, unitarias `24/24`, cleanup `0|0|0`; Docker Compose no disponible, se usó sólo Docker Engine con PostgreSQL E2E dedicado.
 
 ## DEV-03 — Catalogo de productos y variantes
 
