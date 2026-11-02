@@ -25,7 +25,7 @@ test.describe('DEV-05 POS', () => {
     await expect(page.getByRole('dialog', { name: 'DEV-TEST-01 Centro Catalog' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(page.getByRole('button', { name: /DEV-TEST-01-NORMAL/ })).toBeFocused();
+    await expect(page.getByRole('button', { name: /DEV-TEST-01-LOW/ })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
     await page.screenshot({ path: test.info().outputPath('pos-variants.png'), fullPage: false });

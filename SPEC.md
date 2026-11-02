@@ -101,6 +101,22 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - Evidencia visual: `docs/ui-redesign/dev-08-visual-evidence/` en 1440x900, 768x1024 y 390x844.
 - Resultado DEV-08B: E2E `2/2`, auth/isolation `15/15`, unitarias `24/24`, cleanup `0|0|0`; Docker Compose no disponible, se usó sólo Docker Engine con PostgreSQL E2E dedicado.
 
+## DEV-09 — Validación integral del recorrido comercial
+
+### Alcance
+
+- Validar con PostgreSQL E2E aislado el recorrido de comerciante nuevo desde registro hasta venta, apartado, conversión, devolución, Dashboard y re-login.
+- Comprobar persistencia, cantidades, Kardex, tickets, auditoría transaccional, idempotencia, concurrencia, permisos, aislamiento y responsive en los módulos ya implementados.
+- Corregir únicamente defectos de integración reproducibles; no agregar módulos ni rediseñar pantallas.
+
+### Resultado y rubric
+
+- DEV-09 integral debe pasar mediante `CI=1 npm run test:e2e:dev-09 -- --reporter=list` sin mocks ni base compartida.
+- Productos, inventario, POS, apartados y devoluciones deben conservar sus suites dirigidas PASS.
+- Cada balance debe satisfacer `physical = available + reserved`, sin saldos negativos ni movimientos duplicados.
+- El usuario nuevo debe obtener categoría `General`, negocio ADMIN, persistencia de operaciones y acceso posterior al mismo negocio.
+- Las capturas deben cubrir 1440x900, 768x1024 y 390x844 sin overflow horizontal.
+
 ## DEV-03 — Catalogo de productos y variantes
 
 ### Scope
