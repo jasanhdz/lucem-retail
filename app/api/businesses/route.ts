@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       }
       const business = await tx.business.create({ data: { name, branchName, giro: selected.value } });
       await tx.membership.create({ data: { userId: auth.user.id, businessId: business.id, role: Role.ADMIN } });
+      await tx.category.create({ data: { businessId: business.id, name: 'General' } });
       await tx.session.update({ where: { id: auth.session.id }, data: { activeBusinessId: business.id } });
       await tx.businessCreationIdempotency.create({ data: { userId: auth.user.id, key, requestHash, businessId: business.id } });
       await audit({ userId: auth.user.id, businessId: business.id, action: 'CREATE', entityType: 'Business', entityId: business.id, metadata: { giro } }, tx);
