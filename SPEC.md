@@ -215,3 +215,34 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 8. **PASS/FAIL** — Dialogos y filtros cumplen labels, nombre accesible, foco inicial/visible/retorno, Tab/Shift+Tab, Escape, `aria-live`/`role=alert`, contraste suficiente, reduced motion y objetivos de 44px.
 9. **PASS/FAIL** — E2E enfocado verifica los flujos anteriores y produce capturas de `1440x900` y `390x844` (más tablet cuando corresponda), o queda `BLOCKED` con razón exacta y sin fallback; cleanup sólo elimina recursos DEV-03.
 10. **PASS/FAIL** — Lint, typecheck, tests, build y `git diff --check` terminan en cero; el diff queda limitado a UI/documentación de productos y no toca APIs, Prisma, auth, permisos, `diseno/` ni cambios preexistentes.
+
+## DEV-04 — Inventario y kardex
+
+### Scope
+
+- Reemplazar el placeholder de `/inventario` con inventario real, detalle por variante y movimientos paginados, limitado al negocio activo.
+- Mantener `ProductVariant.stock` como disponible operacional. Derivar `reserved` de la suma de reservas `ACTIVE` y `physical` como disponible más reservado, sin Prisma ni migraciones.
+- Extender `GET /api/inventory` de forma aditiva con `physical`, `reserved` y `available` serializados como strings; agregar GET de movimientos con filtros `variantId`, `q`, `type`, `from`, `to`, paginación, usuario e identidad de producto/variante.
+- Mantener POST atómico, roles ADMIN/INVENTORY_MANAGER, motivo requerido, cantidades positivas y conflicto `409` para salida sin saldo; responder `movementId` y balances.
+- Mantener POS, Apartados, auth/session y módulos no relacionados fuera de alcance. No modificar `diseno/`.
+
+### Flujos y verificación
+
+1. Inventario muestra loading, error/reintento, vacío, búsqueda y tabla de variantes con físico, apartado y disponible reales.
+2. Detalle y kardex usan API real; movimientos soportan filtros de servidor y paginación.
+3. Compra y ajustes usan diálogo accesible con Escape, retorno de foco, Tab/Shift+Tab, motivo obligatorio y controles mínimos de 44px; SELLER es solo lectura.
+4. Tras éxito o conflicto se vuelve a consultar el inventario; no se fabrican reservas ni movimientos en frontend.
+5. `e2e/dev-04/` y `playwright.inventory.config.ts` son la suite aislada; si falta PostgreSQL E2E se documenta BLOCKED sin fallback ni suites legacy.
+6. Ejecutar `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, E2E DEV-04 enfocado y `git diff --check`.
+
+### Criterios binarios DEV-04
+
+1. **PASS/FAIL** — `/inventario` usa datos reales del negocio activo y muestra variante, SKU, ubicación, físico, apartado, disponible y estados disponible/bajo/agotado, con búsqueda y estados loading/empty/error/retry.
+2. **PASS/FAIL** — `physical = available + reserved`, donde `reserved` sólo suma reservas `ACTIVE`; la UI no recalcula ni inventa movimientos o reservas como autoridad.
+3. **PASS/FAIL** — El detalle por variante y el Kardex muestran identidad, balances, fecha, tipo, cantidad con signo, usuario, motivo, referencia y filtros/paginación del endpoint existente; no permiten editar históricos.
+4. **PASS/FAIL** — Entrada y ajustes requieren cantidad positiva, máximo dos decimales y motivo; el submit único registra un movimiento atómico, devuelve balances confirmados y actualiza la vista.
+5. **PASS/FAIL** — Una salida que no puede preservar el saldo disponible frente a reservas activas devuelve `409`, no deja movimiento parcial y la UI solicita datos actualizados.
+6. **PASS/FAIL** — ADMIN e INVENTORY_MANAGER pueden mutar, SELLER sólo lee; las APIs preservan `401`, `403`, aislamiento por negocio y no aceptan IDs cross-business.
+7. **PASS/FAIL** — Dialogos cumplen labels, foco inicial/retorno, Escape, Tab/Shift+Tab, alertas, loading/disabled y objetivos táctiles mínimos de 44px a 1440x900, 768x1024 y 390x844.
+8. **PASS/FAIL** — La suite E2E aislada cubre consulta, búsqueda, detalle, entrada, ajustes, reservas, conflicto, Kardex, permisos, aislamiento, doble submit y capturas reales; cleanup deja `0|0` y elimina sólo sus recursos.
+9. **PASS/FAIL** — Lint, typecheck, unit tests, build y `git diff --check` terminan con código 0; el diff no toca `diseno/`, migraciones, POS, Apartados, auth/session ni cambios preexistentes.
