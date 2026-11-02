@@ -54,3 +54,86 @@ The legacy/global E2E suite was not run. Its protected-handler smoke previously 
 ## Commit
 
 Required commit message: `fix(security): remove sensitive fields from audit API`
+
+## DEV-SEC-01B — Verificación autenticada
+
+Los resultados `BLOCKED` anteriores quedan reemplazados por la evidencia final
+de esta corrida aislada. El bloqueo histórico sólo describía la ausencia de
+`E2E_DATABASE_URL` en esa ejecución; no es el resultado de la verificación
+autenticada final.
+
+### Corrección verificada
+
+- `app/api/audit/route.ts` usa una selección explícita de `AuditLog` y `user`.
+- La respuesta sólo puede incluir `AuditLog.id`, `businessId`, `userId`,
+  `action`, `entityType`, `entityId`, `metadata`, `createdAt` y, para el actor,
+  `id`, `name`, `email`, `active`.
+- No se seleccionan ni serializan `passwordHash`, `tokenHash`, campos de
+  sesión, relaciones de `User` ni credenciales.
+- `getAuth()`, la guarda `ADMIN`, el filtro por negocio activo, el orden y el
+  límite de 100 registros permanecen vigentes.
+
+La causa raíz era `include: { user: true }`, que cargaba y serializaba el
+`User` relacionado completo. La advertencia literal `GET /api/audit exposes
+passwordHash` se conserva como declaración histórica del riesgo. En este
+commit, la respuesta del endpoint ya no expone `passwordHash`.
+
+### Infraestructura y reproducción
+
+Se provisionó PostgreSQL real y desechable con los nombres exactos
+`lucem-retail-dev-sec-01-db` y `lucem-retail-dev-sec-01-pg`, base
+`lucem_retail_e2e`, usuario `lucem_e2e` y puerto host `55432` hacia `5432`.
+La identidad se verificó con `psql`; la base de desarrollo y el puerto `5432`
+no fueron tocados.
+
+Reproducción con placeholders únicamente; no registrar ni compartir una
+contraseña real:
+
+```bash
+export E2E_DB_PASSWORD='<placeholder-password>'
+docker volume create lucem-retail-dev-sec-01-pg
+docker run -d --name lucem-retail-dev-sec-01-db \
+  -e POSTGRES_DB=lucem_retail_e2e \
+  -e POSTGRES_USER=lucem_e2e \
+  -e POSTGRES_PASSWORD="$E2E_DB_PASSWORD" \
+  -p 55432:5432 \
+  -v lucem-retail-dev-sec-01-pg:/var/lib/postgresql/data \
+  postgres:16
+
+export E2E_DATABASE_URL='postgresql://lucem_e2e:<placeholder-password>@127.0.0.1:55432/lucem_retail_e2e?schema=public'
+export E2E_DATABASE_USER='lucem_e2e'
+psql "$E2E_DATABASE_URL" -c 'select current_database(), current_user, inet_server_port();'
+npm run e2e:prepare
+CI=1 npm run test:e2e:security -- --reporter=list
+npm run e2e:cleanup
+docker rm -f lucem-retail-dev-sec-01-db
+docker volume rm lucem-retail-dev-sec-01-pg
+```
+
+### Resultados
+
+- `npm run e2e:prepare`: PASS; migración y seed aplicados en la base aislada.
+- `CI=1 npm run test:e2e:security -- --reporter=list`: PASS, 2/2.
+- La suite verificó `401` sin autenticación, `403` para `SELLER` e
+  `INVENTORY_MANAGER`, `200` para `ADMIN` en Centro y Norte, el escaneo
+  recursivo de claves sensibles y la separación de IDs entre negocios.
+- `npm test`: PASS, 6 archivos y 15 tests.
+- `npm run lint`, `npm run build` y `npm run typecheck` (repetido después del
+  build): PASS.
+- `git diff --check`: PASS.
+- La búsqueda confirmó que no hay llamadas a `/api/audit` fuera de la spec de
+  seguridad enfocada.
+- `npm run e2e:cleanup` dejó conteos `0|0|0`; el contenedor y volumen exactos
+  fueron eliminados.
+- No quedaron secretos, estados de storage ni recursos E2E retenidos.
+
+No se modificaron schema, migraciones ni contraseñas. La suite E2E global o
+legacy permanece intencionalmente excluida y no se presenta como evidencia.
+
+### Riesgos residuales
+
+La verificación autenticada no declara readiness para producción: todavía
+requiere despliegue y revisión de producción antes de declarar el endpoint
+listo. Permanecen los riesgos ordinarios de autorización, configuración y
+despliegue fuera de esta corrida aislada; no se realizaron cambios en API de
+auth, Prisma ni UI.
