@@ -70,3 +70,94 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 10. **Prohibición de suites** — La búsqueda y ejecución confirman que legacy/global no llama `GET /api/audit`; toda llamada existente del endpoint pertenece exclusivamente al E2E DEV-SEC contra la DB E2E.
 11. **Checks del proyecto** — `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` y `git diff --check` terminan con código 0; el E2E dirigido real termina PASS o queda BLOCKED con la razón exacta, sin convertir mocks en evidencia.
 12. **Evidencia y cierre** — `docs/security/DEV-SEC-01-AUDIT.md` registra comandos, resultados, cleanup, warning literal `GET /api/audit exposes passwordHash`, riesgo de producción, commit exacto `docs(spec): plan DEV-SEC-01 audit security fix`, y no contiene secretos; no se hace push ni merge.
+
+## DEV-03 — Catalogo de productos y variantes
+
+### Scope
+
+**Incluye**
+
+- Reemplazar el placeholder de `/productos` por catalogo responsive con busqueda, filtros, estados de carga/error/vacio, tarjetas/lista, detalle, alta simple, alta con variantes y edicion.
+- Reusar exclusivamente los contratos existentes: `GET /api/categories`; `GET,POST /api/products`; `GET,PUT,DELETE /api/products/:id`; `GET /api/products/:id/history`; `POST /api/products/image`; `GET /api/products/image/:filename`.
+- Mantener el shell, contexto de negocio, navegacion y roles existentes, con dialogos accesibles y adaptacion 1440x900, 768x1024 y 390x844.
+- Cubrir visualmente catalogo, formularios, variantes, detalle, edicion, validacion y errores con fuentes documentadas en `docs/ui-redesign/DEV-03-DESIGN-MAPPING.md`.
+
+**Fuera de alcance y prohibiciones**
+
+- No modificar `prisma/schema.prisma`, migraciones, seed, auth, permisos, contratos API, servicios server, reglas de negocio ni `docs/security/DEV-SEC-01-AUDIT.md`.
+- No crear endpoints nuevos para categorias, variantes, auto-SKU, sincronizacion, promociones temporales, margen, terminales o kárdex.
+- No hacer inventario operativo desde editar producto: el `PUT` actual no actualiza stock de variantes existentes. No implementar borrado fisico; `DELETE` archiva.
+- No mezclar la evidencia de `e2e/products.spec.ts` legacy con la nueva evidencia: la suite existente esta omitida por `LEGACY UI` y se conserva intacta.
+
+### Flujos ejecutables
+
+1. Sesion: autenticar por flujo real, seleccionar negocio y abrir `/productos`; sin sesion, la ruta redirige y las APIs devuelven `401`.
+2. Catalogo: cargar categorias y variantes, agrupar por `product.id`, mostrar nombre, SKU, categoria, ubicacion, precio, costo, stock y estado; probar busqueda por nombre/SKU/ubicacion, categoria y `available|low|out` segun contrato.
+3. Alta simple: abrir `Nuevo producto`, completar nombre, categoria y una variante con SKU, costo, precio y stock; enviar `POST /api/products`; comprobar `201`, tarjeta y persistencia tras recarga.
+4. Alta con variantes: agregar al menos dos variantes con talla/color, barcode opcional, costos/precios, promo opcional, stock y umbral; comprobar que `variants[]` llega al mismo POST, que se crean movimientos iniciales si hay stock y que cada SKU se refleja.
+5. Imagen: seleccionar una imagen local permitida, llamar `POST /api/products/image`, guardar el `photoPath`, mostrarla en tarjeta/detalle y comprobar error para tipo no permitido o mas de 5 MB.
+6. Detalle: abrir una tarjeta, llamar `GET /api/products/:id` y `/history`, mostrar variantes activas, existencias, precios/costos e historial; cerrar por boton y Escape y devolver foco.
+7. Edicion: abrir `Editar`, cambiar nombre, ubicacion y costo/precio/promo de una variante existente; enviar `PUT`, comprobar tarjeta actualizada e historial. No afirmar cambio de stock existente.
+8. Errores: comprobar vacio por busqueda, error de carga, categoria inexistente, SKU duplicado `409`, producto no encontrado `404`, falta de sesion `401` y rol insuficiente `403`; los mensajes deben derivar del contrato, no del texto Stitch.
+9. Aislamiento: con un negocio activo, no mostrar productos/categorias ni aceptar detalle, historial o mutacion de otro negocio; repetir una lectura en dos negocios de la DB E2E aislada.
+
+### Roles y contratos
+
+- `ADMIN` e `INVENTORY_MANAGER`: pueden crear, editar, archivar y subir imagen; `ADMIN` conserva todas las acciones visibles de administracion.
+- `SELLER`: puede consultar catalogo, categorias, detalle e historial segun sesion, pero recibe `403` en POST/PUT/DELETE de productos y POST de imagen.
+- Lecturas requieren `getAuth()` y negocio activo. Cada query y mutacion debe quedar limitada por `businessId` activo; no aceptar IDs ajenos.
+- `GET /api/products` devuelve variantes planas y soporta `q`, `categoryId`, `status=archived|out|low` y `available=true`; la UI agrupa y calcula la presentacion de producto.
+- `POST /api/products` requiere nombre, `categoryId`, SKU, costo y precio por variante; stock es opcional y por defecto cero. Categoria ajena o SKU duplicado terminan en el error de conflicto existente.
+- `PUT /api/products/:id` actualiza datos generales y campos de variante existentes, crea variantes sin `id` y registra historia de costo/precio/promo. `DELETE` marca `archived=true`.
+- `GET /api/products/:id/history` devuelve `field`, valores anterior/nuevo, razon, fecha y nombre de usuario. `GET /api/categories` devuelve categorias activas ordenadas.
+
+### Validaciones soportadas y no soportadas
+
+**Soportadas por contrato actual**
+
+- Campos obligatorios de alta: `name`, `categoryId`, `sku`, `cost`, `price`; numeros finitos no negativos para costo, precio y stock; unicidad de SKU por negocio; categoria activa del negocio.
+- Stock cero se representa como agotado y `available=true` lo excluye; `status=low` usa `lowStockThreshold` y stock mayor que cero.
+- Foto valida firma y MIME de JPEG, PNG, WebP o GIF y limite de 5 MB; el endpoint devuelve `photoPath`.
+- `404` para producto no visible por negocio, `409` para conflicto/datos invalidos en mutaciones y `401/403` segun sesion/rol.
+
+**No soportadas por contrato actual**
+
+- No existe validacion server-side de que `promoPrice < price`; el helper visual de los HTML no es contrato. Si se muestra, debe ser una validacion cliente informativa y no una garantia de servidor.
+- No existe validacion remota/autogeneracion de SKU, combinacion unica de talla/color, limite de variantes, formato de barcode, fecha de promocion ni moneda configurable.
+- `photoPath` se acepta como valor de producto en POST/PUT sin que esos handlers validen que apunte a una imagen previamente subida; no prometer una guarda mas estricta sin cambio API.
+- No existe endpoint para actualizar stock desde editar; usar inventario queda fuera de DEV-03.
+
+### E2E aislado
+
+- Crear una suite enfocada `e2e/dev-03/` sin reactivar ni editar `e2e/products.spec.ts`. Usar `playwright.e2e.config.ts`, login real, seleccion real de negocio, sesiones reales y solo `E2E_DATABASE_URL` validada contra PostgreSQL loopback/namespace DEV-03.
+- Preparar y limpiar exclusivamente recursos DEV-03 con los scripts existentes. Si falta la URL, Docker, migracion, credenciales ficticias o cleanup, registrar `BLOCKED: E2E PostgreSQL unavailable: ...`; nunca usar `DATABASE_URL`, mocks, cookies fabricadas, headers inventados ni datos de produccion.
+- Separar datos por negocio Centro/Norte o namespace equivalente existente; limpiar productos, variantes, historial, movimientos e imagenes creados por la suite aun tras fallos.
+- Cubrir API/browser: matriz ADMIN/INVENTORY_MANAGER/SELLER, `401/403/404/409`, aislamiento cross-business, persistencia, imagen, filtros, detalle, edicion, historia y mobile sin overflow.
+
+### Comparacion visual y checks
+
+- Comparar capturas reales a `1440x900`, `768x1024` y `390x844` contra las referencias exactas y cercanas listadas en el mapping. Registrar diferencias de estructura, no exigir pixeles de HTML Stitch cuando no existe referencia exacta.
+- Verificar en desktop al menos tres columnas, dialogos centrados, footer visible y sin overflow horizontal. En tablet verificar apilado y scroll local de matriz. En mobile verificar lista compacta, nav inferior, controles >=44px, una region interna de scroll, fondo bloqueado solo durante dialogo y retorno de foco.
+- Ejecutar, en este orden: `npm run lint`; `npm run typecheck`; `npm test`; `npm run build`; E2E DEV-03 enfocado con `CI=1` y reporter list; cleanup; `git diff --check`.
+- Inspeccionar que no cambien API, Prisma, auth, permisos, tests legacy, UI fuera de productos, `diseno/` ni la especificacion DEV-SEC-01.
+
+### Riesgos
+
+- La UI activa es placeholder y la cobertura productiva anterior esta omitida; el cambio debe preservar los contratos sin tratar la referencia legacy como implementacion actual.
+- La respuesta plana por variante puede duplicar tarjetas si la agrupacion UI es incorrecta; `status=low` y stock agregado requieren pruebas con varias variantes.
+- El backend acepta decimales, campos opcionales y errores genericos; mensajes visuales demasiado especificos pueden contradecir la respuesta real.
+- Los HTML contienen textos de auto-SKU, sincronizacion y validaciones que no existen en APIs; implementarlos como funcionalidad seria scope creep.
+- Las imagenes locales estan fuera del control de la suite si no se namespacean; no versionar nuevos blobs.
+
+### Criterios de aceptacion binarios
+
+1. **PASS/FAIL** — Solo se modifican las pantallas y estilos necesarios de productos; no hay cambios en APIs, Prisma, auth, permisos, `diseno/`, DEV-SEC-01 ni la suite legacy.
+2. **PASS/FAIL** — Catalogo autenticado carga por negocio, agrupa variantes y muestra nombre, SKU, categoria, ubicacion, precio, stock y los tres estados sin overflow en 390px.
+3. **PASS/FAIL** — Busqueda, categoria, estado, `available`, limpiar filtros, loading, error y vacio tienen evidencia HTTP/browser reproducible.
+4. **PASS/FAIL** — ADMIN/INVENTORY_MANAGER completan alta simple y alta con varias variantes, persisten tras recarga y reflejan stock inicial/movimiento; SELLER recibe `403` al mutar.
+5. **PASS/FAIL** — Imagen valida se guarda y se muestra; tipos invalidos y mas de 5 MB muestran error sin dejar un producto inconsistente.
+6. **PASS/FAIL** — Detalle y edicion funcionan con aislamiento, muestran variantes/existencias e historia, y no prometen editar stock existente.
+7. **PASS/FAIL** — Dialogos cumplen nombre accesible, labels, foco inicial, Tab/Shift+Tab, Escape, retorno de foco, alertas y controles tactiles de 44px.
+8. **PASS/FAIL** — Viewports 1440x900, 768x1024 y 390x844 cumplen la comparacion visual documentada, sin overflow horizontal ni scroll anidado no previsto.
+9. **PASS/FAIL** — E2E DEV-03 termina PASS contra DB aislada, o queda BLOCKED con la razon exacta y sin fallback; cleanup elimina solo sus recursos.
+10. **PASS/FAIL** — Lint, typecheck, tests, build y `git diff --check` terminan en cero; el diff no borra ni reescribe SPEC DEV-SEC-01.
