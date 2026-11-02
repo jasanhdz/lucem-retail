@@ -9,5 +9,20 @@ export function addToCart<T extends CartItem>(cart: T[], item: T): T[] {
 export function changeCartQuantity<T extends CartItem>(cart: T[], id: string, amount: number): T[] {
   return cart.map((item) => item.id === id ? { ...item, quantity: Math.max(0, Math.min(Number(item.stock), item.quantity + amount)) } : item).filter((item) => item.quantity > 0);
 }
-export const cartTotal = (cart: CartItem[]) => cart.reduce((sum, item) => sum + effectivePrice(item) * item.quantity, 0);
+export const cartTotal = (cart: CartItem[]) => Math.round(cart.reduce((sum, item) => sum + effectivePrice(item) * item.quantity, 0) * 100) / 100;
 export const cartUnits = (cart: CartItem[]) => cart.reduce((sum, item) => sum + item.quantity, 0);
+
+export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER';
+
+export function checkoutRequest(cart: CartItem[], paymentMethod: PaymentMethod, receivedAmount: number | null, idempotencyKey: string) {
+  return {
+    items: cart.map((item) => ({ variantId: item.id, quantity: item.quantity })),
+    paymentMethod,
+    ...(paymentMethod === 'CASH' ? { receivedAmount } : {}),
+    idempotencyKey,
+  };
+}
+
+export function cashChange(total: number, received: number) {
+  return Math.max(0, received - total);
+}

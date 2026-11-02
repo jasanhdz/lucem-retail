@@ -16,6 +16,7 @@
     "test:e2e:security": "playwright test --config=playwright.security.config.ts",
     "test:e2e:products": "playwright test --config=playwright.products.config.ts",
     "test:e2e:inventory": "playwright test --config=playwright.inventory.config.ts",
+    "test:e2e:pos": "playwright test --config=playwright.pos.config.ts",
     "test:e2e:visual": "playwright test --config=playwright.e2e.config.ts e2e/dev-test-01/visual.spec.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

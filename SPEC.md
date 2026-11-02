@@ -246,3 +246,22 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 7. **PASS/FAIL** — Dialogos cumplen labels, foco inicial/retorno, Escape, Tab/Shift+Tab, alertas, loading/disabled y objetivos táctiles mínimos de 44px a 1440x900, 768x1024 y 390x844.
 8. **PASS/FAIL** — La suite E2E aislada cubre consulta, búsqueda, detalle, entrada, ajustes, reservas, conflicto, Kardex, permisos, aislamiento, doble submit y capturas reales; cleanup deja `0|0` y elimina sólo sus recursos.
 9. **PASS/FAIL** — Lint, typecheck, unit tests, build y `git diff --check` terminan con código 0; el diff no toca `diseno/`, migraciones, POS, Apartados, auth/session ni cambios preexistentes.
+
+## DEV-05 — POS y ticket
+
+### Criterios binarios
+
+1. **PASS/FAIL** — `/pos` reemplaza el placeholder y consulta por negocio con búsqueda y categoría; puede mostrar variantes agotadas para bloquearlas explícitamente, agrupa productos sin perder `variantId` y no muestra físico/reservado.
+2. **PASS/FAIL** — El carrito aplica `promoPrice ?? price`, limita cantidades al stock operacional, conserva líneas en errores y soporta CASH, CARD y TRANSFER sin IVA, descuentos, clientes, crédito, terminal u offline queue.
+3. **PASS/FAIL** — CASH bloquea efectivo insuficiente; checkout deshabilita doble submit, usa una idempotency key estable, no auto-reintenta red incierta y conserva el carrito ante 400/409.
+4. **PASS/FAIL** — POST 201 navega al ticket persistido; el ticket mantiene auth y business scope y muestra folio, fecha, vendedor, SKU, líneas, precios, total, pago, recibido, cambio, imprimir y nueva venta.
+5. **PASS/FAIL** — POS cumple diálogos accesibles, targets de 44px, rail sticky desktop 1440x900, tablet 768 y resumen/checkout fijo mobile 390 sin overflow.
+6. **PASS/FAIL** — Unit tests cubren cart/price, agrupación, payload e idempotencia; E2E DEV-05 usa setup/database real, screenshots `fullPage:false` bajo `test-results/dev-05`, o queda BLOCKED sin fallback.
+7. **PASS/FAIL** — Lint, typecheck, tests, build y diff check pasan; no se modifican Prisma, migraciones, `diseno/`, Apartados, Devoluciones, Inventario, auth/session, docs protegidos ni suites legacy.
+
+### Scope y contratos DEV-05
+
+- Reutilizar `GET /api/products`, `POST /api/sales`, `GET /api/sales/:id`, `/tickets/:id` y `src/lib/pos-cart.ts`; no crear motor de ventas, endpoint de pago, proveedor externo ni cola offline.
+- `stock` de Productos es la disponibilidad operativa para POS. No mostrar `physical`/`reserved` ni convertir apartados durante una venta ordinaria.
+- La clave de idempotencia se conserva durante un intento y cualquier reintento explícito con respuesta incierta debe repetir exactamente el mismo payload; React no puede declarar éxito sin respuesta persistida.
+- E2E debe usar PostgreSQL aislado, login real y cleanup seguro; no usar `DATABASE_URL`, cookies fabricadas, mocks permanentes ni suites legacy como evidencia.

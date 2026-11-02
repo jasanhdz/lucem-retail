@@ -1,2 +1,2 @@
-import { PreparationPlaceholder } from '@/components/PreparationPlaceholder';
-export default PreparationPlaceholder;
+import { POSPage } from '@/components/pos/POSPage';
+export default function PointOfSalePage() { return <POSPage />; }

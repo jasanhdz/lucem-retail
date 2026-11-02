@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest';
+import { checkoutError, groupProducts } from '../src/components/pos/pos-utils';
+describe('POS catalog utilities', () => { it('groups variants without losing identities', () => { const rows = [1, 2].map((index) => ({ id: `v-${index}`, sku: `SKU-${index}`, price: 10, stock: 2, product: { id: 'p-1', name: 'Producto', location: 'A1' } })); const groups = groupProducts(rows); expect(groups).toHaveLength(1); expect(groups[0].variants.map((variant) => variant.id)).toEqual(['v-1', 'v-2']); }); it('keeps conflict and API errors actionable', () => { expect(checkoutError(409, {})).toContain('stock'); expect(checkoutError(400, { error: 'Carrito vacío' })).toBe('Carrito vacío'); }); });

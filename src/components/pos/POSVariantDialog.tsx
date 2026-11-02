@@ -1,0 +1,12 @@
+'use client';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
+import type { ProductGroup, ProductVariant } from './pos-utils';
+const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+export function POSVariantDialog({ product, onClose, onSelect, returnFocusRef }: { product: ProductGroup; onClose: () => void; onSelect: (variant: ProductVariant) => void; returnFocusRef: RefObject<HTMLButtonElement | null> }) {
+  const close = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useLayoutEffect(() => { const focusClose = () => close.current?.focus(); focusClose(); window.setTimeout(focusClose, 0); const key = (event: KeyboardEvent) => { if (event.key === 'Escape') onCloseRef.current(); if (event.key === 'Tab' && dialog.current) { const focusable = [...dialog.current.querySelectorAll<HTMLElement>('button:not([disabled])')]; if (focusable.length && event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); } else if (focusable.length && !event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0].focus(); } } }; document.addEventListener('keydown', key); return () => { document.removeEventListener('keydown', key); window.setTimeout(() => returnFocusRef.current?.focus(), 0); }; }, [returnFocusRef]);
+  return <div className="pos-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section ref={dialog} className="pos-dialog" role="dialog" aria-modal="true" aria-labelledby="variant-title"><header><div><span className="pos-kicker">Selecciona una opción</span><h2 id="variant-title">{product.name}</h2></div><button ref={(node) => { close.current = node; node?.focus(); }} autoFocus type="button" aria-label="Cerrar variantes" onClick={onClose}>×</button></header><div className="pos-variant-list">{product.variants.map((variant) => <button type="button" key={variant.id} disabled={Number(variant.stock) <= 0} onClick={() => onSelect(variant)}><span><strong>{variant.sku}</strong><small>{[variant.size, variant.color].filter(Boolean).join(' / ') || 'Presentación única'} · {variant.stock} disponibles</small></span><b>{currency.format(Number(variant.promoPrice ?? variant.price))}</b></button>)}</div></section></div>;
+}
