@@ -6,7 +6,7 @@ for (const role of ['admin', 'seller', 'inventory'] as const) {
     const page = await context.newPage();
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: 'Buenos días, aquí tienes el pulso de tu negocio.' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'DEV-TEST-01 Centro' })).toBeVisible();
+    await expect(page.locator('.business-context-label strong:visible, .topbar-switch span:visible').filter({ hasText: 'DEV-TEST-01 Centro' }).first()).toBeVisible();
     if (role === 'admin') {
       await expect(page.getByText('$250.00').first()).toBeVisible();
       await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
@@ -14,7 +14,7 @@ for (const role of ['admin', 'seller', 'inventory'] as const) {
       await expect(page.getByText('$150.00').first()).toBeVisible();
       await expect(page.getByText('Venta #901')).toBeVisible();
       await expect(page.getByText('Venta #902')).toBeVisible();
-      await expect(page.getByText('1 producto requiere atención')).toBeVisible();
+      await expect(page.locator('.dashboard-alert-list').getByText('1 producto requiere atención').first()).toBeVisible();
     }
     const auditLink = page.getByRole('link', { name: 'Auditoría' });
     if (role === 'admin') await expect(auditLink).toBeVisible();

@@ -30,7 +30,7 @@ test('dashboard error fixture retries the real response', async ({ page }) => {
       : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(realDashboard) });
   });
   await page.goto('/dashboard');
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.locator('.dashboard-error-card')).toBeVisible();
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await expect(page.getByText('$250.00').first()).toBeVisible();
   expect(attempts).toBe(2);
