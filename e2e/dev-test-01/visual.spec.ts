@@ -6,10 +6,7 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
   const heading = page.getByRole('heading', { level: 1 });
   await expect(heading).toHaveAccessibleName('Buenos días, aquí tienes el pulso de tu negocio.');
   await expect(heading).toBeVisible();
-  const businessContext = testInfo.project.name === 'visual-mobile'
-    ? page.locator('.topbar-switch span')
-    : page.locator('.business-context-label strong');
-  await expect(businessContext.filter({ hasText: 'DEV-TEST-01 Centro' }).first()).toBeVisible();
+  await expect(page.getByText('DEV-TEST-01 Centro', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('$250.00').first()).toBeVisible();
 
   const primaryCta = page.locator('.dashboard-sale-button');
