@@ -24,6 +24,7 @@ Se añadió `Reservation.saleId` opcional y único mediante la migración `0002_
 - `CI=1 npm run test:e2e:reservations -- --reporter=list`: PASS, 7/7.
 - Cobertura: creación/liberación, cantidades persistidas, sobre-reserva, concurrencia, cumplimiento, replay, Kardex, UI responsive, SELLER `403`, `401` y aislamiento Centro/Norte.
 - Capturas autenticadas: `test-results/dev-06/*reservations-{desktop,tablet,mobile}.png`, `fullPage:false`, 1440x900, 768x1024 y 390x844.
+- Evidencia visual publicada y sanitizada: [desktop](./dev-06-visual-evidence/reservations-desktop.png), [tablet](./dev-06-visual-evidence/reservations-tablet.png) y [mobile](./dev-06-visual-evidence/reservations-mobile.png). Sólo contiene datos DEV-TEST-01; no incluye cookies ni `storageState`.
 - Cleanup del namespace E2E: `0` reservas DEV-06 y `0` ventas con folio de fixture.
 
 ## Checks
