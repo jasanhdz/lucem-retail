@@ -16,6 +16,7 @@ export default async function setup(config: FullConfig) {
 
   const sessions = [
     { name: 'admin-centro', credential: credentials.admin, businessId: ids.centro, role: 'admin' },
+    { name: 'admin-isolation', credential: credentials.admin, businessId: ids.centro, role: 'admin' },
     { name: 'admin-norte', credential: credentials.admin, businessId: ids.norte, role: 'admin' },
     { name: 'seller', credential: credentials.seller, businessId: ids.centro, role: 'seller' },
     { name: 'inventory', credential: credentials.inventory, businessId: ids.centro, role: 'inventory' },
