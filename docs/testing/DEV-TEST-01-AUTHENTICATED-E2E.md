@@ -44,3 +44,75 @@ The setup and specs deliberately contain no `GET /api/audit` request. Required s
 If `E2E_DATABASE_URL` is absent, fails the loopback/name/port guard, PostgreSQL is unavailable, or migration fails, stop with `BLOCKED: E2E PostgreSQL unavailable`, retain the exact command/error in the run record, and do not use development credentials or `DATABASE_URL`. If the focused suite runs, execute cleanup afterward even after test failures. Never run cleanup with a different URL and never point it at the development or production database.
 
 The current status is `BLOCKED` until an explicitly provisioned E2E PostgreSQL database is available. Safe absent-URL checks must emit `BLOCKED: E2E PostgreSQL unavailable: E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.` No global Playwright run is performed by the safe verification workflow.
+
+## DEV-TEST-01B — Ejecución autenticada y evidencia visual
+
+### Provisionamiento y ejecución real
+
+Docker Engine `29.9.2` estaba operativo, pero el plugin Compose no estaba instalado (`docker compose` devolvía `unknown`). Por ese motivo se usó exclusivamente `docker run` para un PostgreSQL E2E desechable:
+
+- Contenedor: `lucem-retail-e2e-db`
+- Volumen: `lucem-retail-e2e-pg`
+- Imagen: PostgreSQL 16
+- Base de datos: `lucem_retail_e2e`
+- Usuario: `lucem_e2e`
+- Puerto host: `55432` hacia el puerto PostgreSQL `5432`
+
+El contenedor de desarrollo existente en el puerto `5432` no se tocó. La identidad del servidor E2E se verificó con `psql` antes de ejecutar la suite.
+
+La migración y el seed reales se ejecutaron con `npm run e2e:prepare`. El dataset verificado contiene 2 negocios, 3 usuarios y 2 ventas. La ejecución cubrió login real, selección de negocio, roles, aislamiento entre negocios, dashboard y logout. Las fixtures de `dashboard-states` son únicamente de UI y no se cuentan como datos autenticados.
+
+La primera ejecución de Playwright expuso un error de configuración del setup; se corrigió mediante global setup en `a5fc623`. Las aserciones de tests se corrigieron en `cb27d27` y la corrección visual de tablet en `96dedcb`. La ejecución final exacta fue `15/15` Playwright; los tests unitarios fueron `13/13`; lint, typecheck y build terminaron en `PASS`. Ninguna ejecución realizó una solicitud a `/api/audit`.
+
+### Evidencia visual
+
+Las capturas quedaron bajo la ruta ignorada `test-results/dev-test-01/...` para estas viewport:
+
+- `1440x768`
+- `1440x900`
+- `768x1024`
+- `390x844`
+
+Los estados de autenticación de Playwright fueron eliminados por el teardown. No se embebieron secretos en capturas ni en documentación.
+
+La comparación con Stitch confirmó que el dashboard real conserva el shell, el CTA, el acceso rápido, las métricas, los paneles de inventario y ventas recientes, además de la navegación responsive. La captura de `768x1024` confirmó un problema de tablet: grid desktop estrecho/recortado y título clipped. Se corrigió únicamente en el CSS del dashboard para `<=1023`, apilando heading/CTA y quick links; desktop y mobile se conservaron. No hubo cambios en `diseno/`.
+
+Persisten diferencias visuales y de contenido frente a Stitch C/D: Stitch incluye el hero ilustrado de estación, apartados/tasks y métricas demo. No se copiaron porque no existen datos ni endpoints autorizados correspondientes y no se pueden inventar métricas.
+
+### Reproducción y apagado
+
+Usar valores de entorno locales de ejemplo, nunca una contraseña real en este documento:
+
+```bash
+export E2E_DB_PASSWORD='<placeholder-password>'
+docker volume create lucem-retail-e2e-pg
+docker run -d --name lucem-retail-e2e-db \
+  -e POSTGRES_DB=lucem_retail_e2e \
+  -e POSTGRES_USER=lucem_e2e \
+  -e POSTGRES_PASSWORD="$E2E_DB_PASSWORD" \
+  -p 55432:5432 \
+  -v lucem-retail-e2e-pg:/var/lib/postgresql/data \
+  postgres:16
+
+export E2E_DATABASE_URL='postgresql://lucem_e2e:<placeholder-password>@127.0.0.1:55432/lucem_retail_e2e'
+set -a; source .env.e2e; set +a
+npm run e2e:prepare
+npm run test:e2e:auth
+npm run test:e2e:visual
+npm run e2e:cleanup
+```
+
+La limpieza se ejecutó con `npm run e2e:cleanup`; los conteos `psql` de todas las tablas del namespace E2E fueron 0. Después se ejecutaron únicamente estos recursos E2E:
+
+```bash
+docker rm -f lucem-retail-e2e-db
+docker volume rm lucem-retail-e2e-pg
+```
+
+No se tocó la base de desarrollo. El estado actual es: artefactos E2E y capturas locales ignorados, ninguna base de datos E2E ejecutándose; repetir la prueba requiere volver a provisionar el contenedor y el volumen.
+
+### Advertencia de seguridad
+
+`GET /api/audit exposes passwordHash`
+
+El sistema no está listo para producción.
