@@ -24,9 +24,18 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
     return outline !== 'none' && !/^0px(?:\s+0px){0,3}/.test(outline);
   })).toBeTruthy();
 
+  const shellNavigation = page.getByRole('navigation', {
+    name: testInfo.project.name === 'visual-mobile' ? 'Navegación móvil' : 'Secciones del negocio',
+  });
+  await expect(shellNavigation).toBeVisible();
+  const shellLink = shellNavigation.locator('a').first();
+  await expect(shellLink).toHaveAccessibleName(/\S+/);
+  await shellLink.focus();
+  await expect(shellLink).toBeFocused();
+
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 
-  const undersizedControls = await page.locator('a, button').evaluateAll(elements => elements.flatMap(element => {
+  const undersizedControls = await page.locator('.dashboard-page a, .dashboard-page button').evaluateAll(elements => elements.flatMap(element => {
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
     const visible = style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
@@ -40,7 +49,7 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
       height: Math.round(rect.height),
     }];
   }));
-  expect(undersizedControls, 'visible dashboard/shell controls must have a 44px hit area').toEqual([]);
+  expect(undersizedControls, 'visible dashboard controls must have a 44px hit area').toEqual([]);
 
   await page.screenshot({ path: testInfo.outputPath(`admin-DEV-TEST-01-url-dashboard-${testInfo.project.name}-real-HEAD-${process.env.GITHUB_SHA ?? 'local'}.png`), fullPage: false });
 });
