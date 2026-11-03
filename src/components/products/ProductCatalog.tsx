@@ -28,6 +28,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
+  Fragment,
 } from "react";
 import {
   amount,
@@ -84,6 +85,16 @@ const currency = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
 });
+function variantColorSwatch(color: string) {
+  const value = color.toLowerCase();
+  if (value.includes("negro")) return "#001615";
+  if (value.includes("blanco")) return "#fff";
+  if (value.includes("rojo")) return "#ba1a1a";
+  if (value.includes("azul")) return "#315d74";
+  if (value.includes("verde")) return "#88a78e";
+  if (value.includes("gris")) return "#c4ceca";
+  return "#dcefe9";
+}
 
 async function readResponse(response: Response) {
   const body = await response.json().catch(() => ({}));
@@ -635,6 +646,7 @@ function ProductForm({
   const [showValidation, setShowValidation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(product.photoPath ?? "");
+  const [expandedVariantIndexes, setExpandedVariantIndexes] = useState<Set<number>>(() => new Set([0]));
   const isEdit = Boolean(product.id);
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -651,6 +663,15 @@ function ProductForm({
     draft.variants,
     isEdit,
   );
+  const promoIsInvalid = (variant: DraftVariant) => Boolean(
+    variant.promoPrice && variant.price && Number(variant.promoPrice) > Number(variant.price),
+  );
+  const configuredVariantCount = draft.variants.filter((variant, index) =>
+    !validationErrors.some((error) => error.startsWith(`Variante ${index + 1}:`)),
+  ).length;
+  const correctionCount = showValidation
+    ? Math.max(0, draft.variants.length - configuredVariantCount)
+    : draft.variants.filter(promoIsInvalid).length;
   const changedPrice =
     isEdit &&
     draft.variants.some((variant, index) => {
@@ -675,6 +696,15 @@ function ProductForm({
         item === index ? { ...variant, [field]: value } : variant,
       ),
     }));
+  function removeVariant(index: number) {
+    setDraft((current) => ({
+      ...current,
+      variants: current.variants.filter((_, item) => item !== index),
+    }));
+    setExpandedVariantIndexes((current) => new Set(
+      [...current].filter((item) => item !== index).map((item) => item > index ? item - 1 : item),
+    ));
+  }
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || saving) return;
@@ -843,10 +873,10 @@ function ProductForm({
           onChange={(event) =>
             updateVariant(index, "promoPrice", event.target.value)
           }
-          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: promoción`))}
+          aria-invalid={promoIsInvalid(variant) || showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: promoción`))}
           aria-describedby={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`}
         />
-        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: promoción`)} id={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`} />}
+        {(showValidation || promoIsInvalid(variant)) && !(mobile && promoIsInvalid(variant)) && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: promoción`)} id={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         {isEdit && variant.id ? "Stock físico (solo lectura)" : "Stock inicial"}
@@ -886,12 +916,7 @@ function ProductForm({
           className="button button-quiet variant-delete"
           type="button"
           aria-label={`Eliminar variante ${index + 1}`}
-          onClick={() =>
-            setDraft((current) => ({
-              ...current,
-              variants: current.variants.filter((_, item) => item !== index),
-            }))
-          }
+          onClick={() => removeVariant(index)}
         >
           <Trash2 size={16} /> Eliminar variante
         </button>
@@ -901,39 +926,36 @@ function ProductForm({
   const variantTableRow = (variant: DraftVariant, index: number) => {
     const errorId = (key: string) => `variant-${index}-${key}-desktop`;
     const fieldError = (label: string) => firstError(validationErrors, `Variante ${index + 1}: ${label}`);
+    const promoInvalid = promoIsInvalid(variant);
+    const variantLabel = [variant.size, variant.color].filter(Boolean).join(" / ") || `Variante ${index + 1}`;
+    const promoError = `Variante ${variantLabel} — Precio promocional (${currency.format(Number(variant.promoPrice))} MXN) no puede ser mayor al precio normal (${currency.format(Number(variant.price))} MXN).`;
     return (
-      <tr key={variant.id ?? index}>
-        <td><input aria-label={`Talla variante ${index + 1}`} value={variant.size} onChange={(event) => updateVariant(index, "size", event.target.value)} /></td>
-        <td><input aria-label={`Color variante ${index + 1}`} value={variant.color} onChange={(event) => updateVariant(index, "color", event.target.value)} /></td>
-        <td>
-          <input aria-label={`SKU variante ${index + 1}`} value={variant.sku} onChange={(event) => updateVariant(index, "sku", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el SKU"))} aria-describedby={errorId("sku")} />
-          {showValidation && <FieldError message={fieldError("el SKU")} id={errorId("sku")} />}
-        </td>
-        <td>
-          <input aria-label={`Barcode variante ${index + 1}`} value={variant.barcode} onChange={(event) => updateVariant(index, "barcode", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el barcode"))} aria-describedby={errorId("barcode")} />
-          {showValidation && <FieldError message={fieldError("el barcode")} id={errorId("barcode")} />}
-        </td>
-        <td>
-          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Costo variante ${index + 1}`} value={variant.cost} onChange={(event) => updateVariant(index, "cost", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("costo"))} aria-describedby={errorId("cost")} /></div>
-          {showValidation && <FieldError message={fieldError("costo")} id={errorId("cost")} />}
-        </td>
-        <td>
-          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Precio variante ${index + 1}`} value={variant.price} onChange={(event) => updateVariant(index, "price", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("precio"))} aria-describedby={errorId("price")} /></div>
-          {showValidation && <FieldError message={fieldError("precio")} id={errorId("price")} />}
-        </td>
-        <td>
-          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Promoción variante ${index + 1}`} value={variant.promoPrice} onChange={(event) => updateVariant(index, "promoPrice", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("promoción"))} aria-describedby={errorId("promo")} /></div>
-          {showValidation && <FieldError message={fieldError("promoción")} id={errorId("promo")} />}
-        </td>
-        <td>
-          <input type="number" min="0" step="any" aria-label={`Stock variante ${index + 1}`} value={variant.stock} readOnly={Boolean(isEdit && variant.id)} onChange={(event) => updateVariant(index, "stock", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("stock"))} aria-describedby={errorId("stock")} />
-          {isEdit && variant.id && <small>Solo lectura</small>}
-        </td>
-        <td><input type="number" min="0" step="any" aria-label={`Umbral variante ${index + 1}`} value={variant.lowStockThreshold} onChange={(event) => updateVariant(index, "lowStockThreshold", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("umbral"))} aria-describedby={errorId("threshold")} />
-          {showValidation && <FieldError message={fieldError("umbral")} id={errorId("threshold")} />}
-        </td>
-        <td className="variant-delete-cell"><button type="button" aria-label={`Eliminar variante ${index + 1}`} onClick={() => setDraft((current) => ({ ...current, variants: current.variants.filter((_, item) => item !== index) }))} disabled={draft.variants.length === 1}><Trash2 size={16} /></button></td>
-      </tr>
+      <Fragment key={variant.id ?? index}>
+        <tr className={promoInvalid ? "variant-row-invalid" : "variant-row-valid"}>
+          <td><input aria-label={`Talla variante ${index + 1}`} value={variant.size} onChange={(event) => updateVariant(index, "size", event.target.value)} /></td>
+          <td><div className="variant-color-cell">{variant.color.trim() && <span aria-hidden="true" style={{ backgroundColor: variantColorSwatch(variant.color) }} />}<input aria-label={`Color variante ${index + 1}`} value={variant.color} onChange={(event) => updateVariant(index, "color", event.target.value)} /></div></td>
+          <td>
+            <div className="variant-sku-cell"><input aria-label={`SKU variante ${index + 1}`} value={variant.sku} onChange={(event) => updateVariant(index, "sku", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el SKU"))} aria-describedby={errorId("sku")} />{variant.sku.trim() && !fieldError("el SKU") && <CheckCircle2 size={15} aria-label="SKU válido" />}</div>
+            {showValidation && <FieldError message={fieldError("el SKU")} id={errorId("sku")} />}
+          </td>
+          <td><input aria-label={`Barcode variante ${index + 1}`} value={variant.barcode} onChange={(event) => updateVariant(index, "barcode", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el barcode"))} aria-describedby={errorId("barcode")} />{showValidation && <FieldError message={fieldError("el barcode")} id={errorId("barcode")} />}</td>
+          <td><div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Costo variante ${index + 1}`} value={variant.cost} onChange={(event) => updateVariant(index, "cost", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("costo"))} aria-describedby={errorId("cost")} /></div>{showValidation && <FieldError message={fieldError("costo")} id={errorId("cost")} />}</td>
+          <td><div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Precio variante ${index + 1}`} value={variant.price} onChange={(event) => updateVariant(index, "price", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("precio"))} aria-describedby={errorId("price")} /></div>{showValidation && <FieldError message={fieldError("precio")} id={errorId("price")} />}</td>
+          <td><div className={`products-variant-money ${promoInvalid ? "products-variant-money-invalid" : ""}`}><span>$</span><input type="number" min="0" step="any" placeholder="-" aria-label={`Promoción variante ${index + 1}`} value={variant.promoPrice} onChange={(event) => updateVariant(index, "promoPrice", event.target.value)} aria-invalid={promoInvalid || showValidation && Boolean(fieldError("promoción"))} aria-describedby={promoInvalid ? errorId("promo-row") : errorId("promo")} /></div>{showValidation && !promoInvalid && <FieldError message={fieldError("promoción")} id={errorId("promo")} />}</td>
+          <td>
+            <div className="variant-stock-cell"><input type="number" min="0" step="any" aria-label={`Stock variante ${index + 1}`} value={variant.stock} readOnly={Boolean(isEdit && variant.id)} onChange={(event) => updateVariant(index, "stock", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("stock"))} aria-describedby={errorId("stock")} /><small>pzas</small>
+              <details className="variant-threshold-control" open={showValidation && Boolean(fieldError("umbral")) || undefined}>
+                <summary aria-label={`Editar umbral de stock bajo de variante ${index + 1}`} title="Umbral de stock bajo"><SlidersHorizontal size={13} aria-hidden="true"/><span className="sr-only">Umbral</span></summary>
+                <input type="number" min="0" step="any" aria-label={`Umbral variante ${index + 1}`} value={variant.lowStockThreshold} onChange={(event) => updateVariant(index, "lowStockThreshold", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("umbral"))} aria-describedby={errorId("threshold")} />
+                {showValidation && <FieldError message={fieldError("umbral")} id={errorId("threshold")} />}
+              </details>
+            </div>
+            {isEdit && variant.id && <small>Solo lectura</small>}
+          </td>
+          <td className="variant-delete-cell"><button type="button" aria-label={`Eliminar variante ${index + 1}`} onClick={() => removeVariant(index)} disabled={draft.variants.length === 1}><Trash2 size={16} /></button></td>
+        </tr>
+        {promoInvalid && <tr className="variant-inline-error"><td colSpan={9}><div className="variant-inline-error-content"><CircleAlert size={16} aria-hidden="true"/><span id={errorId("promo-row")} role="alert">{promoError}</span><small>(Ajusta a un monto inferior a {currency.format(Number(variant.price))} MXN o déjalo vacío)</small></div></td></tr>}
+      </Fragment>
     );
   };
   return (
@@ -1162,8 +1184,7 @@ function ProductForm({
                   <th>Costo *</th>
                   <th>Precio *</th>
                   <th>Promo</th>
-                  <th>Stock</th>
-                  <th>Umbral</th>
+                  <th>Existencia *</th>
                   <th>Acción</th>
                 </tr>
               </thead>
@@ -1177,26 +1198,32 @@ function ProductForm({
               <details
                 className="variant-card"
                 key={variant.id ?? index}
-                open={index === 0}
+                open={expandedVariantIndexes.has(index)}
+                onToggle={(event) => {
+                  const isOpen = event.currentTarget.open;
+                  setExpandedVariantIndexes((current) => {
+                    if (current.has(index) === isOpen) return current;
+                    const next = new Set(current);
+                    if (isOpen) next.add(index);
+                    else next.delete(index);
+                    return next;
+                  });
+                }}
               >
                 <summary>
                   <span>Variante {index + 1}</span>
+                  {promoIsInvalid(variant) && <span className="variant-validation-badge">Error en precio</span>}
                   <ChevronDown size={18} aria-hidden="true" />
                 </summary>
                 {variantFields(variant, index, true)}
+                {promoIsInvalid(variant) && <p className="variant-mobile-error" role="alert">Variante {variant.color} / {variant.size}: Precio promocional no puede ser mayor al precio normal.</p>}
               </details>
             ))}
           </div>}
           {variantMode === "multiple" && (
             <div className="variants-summary" aria-live="polite">
-              <strong>
-                {draft.variants.filter((variant) =>
-                  variant.sku.trim() && variant.cost !== "" && variant.price !== "",
-                ).length} variantes configuradas
-              </strong>
-              <span aria-hidden="true">•</span>
-              <span>{draft.variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)} unidades de existencia inicial total</span>
-              <small>Moneda base: MXN (Neto)</small>
+              <span className="variants-summary-main"><strong>{configuredVariantCount} {configuredVariantCount === 1 ? "variante válida" : "variantes válidas"}</strong><span aria-hidden="true">•</span><span>{draft.variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)} unidades de existencia</span>{correctionCount > 0 && <span className="variants-correction-count"><CircleAlert size={15} aria-hidden="true"/>{correctionCount} {correctionCount === 1 ? "variante requiere corrección" : "variantes requieren corrección"}</span>}</span>
+              <span className="variants-currency-label">Moneda base: <strong>MXN</strong></span>
             </div>
           )}
           {isEdit && (
@@ -1232,7 +1259,7 @@ function ProductForm({
           <button
             className={`button products-primary ${variantMode === "multiple" ? "products-variant-save" : ""}`}
             type="submit"
-            disabled={saving}
+            disabled={saving || (variantMode === "multiple" && draft.variants.some(promoIsInvalid))}
           >
             {saving && (
               <LoaderCircle className="spin" size={17} aria-hidden="true" />

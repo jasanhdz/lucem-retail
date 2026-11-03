@@ -83,6 +83,7 @@ export function validateProductDraft(name: string, categoryId: string, variants:
       if (value === '' || !Number.isFinite(Number(value)) || Number(value) < 0) errors.push(`${label}: ${field} debe ser un número no negativo.`);
     }
     if (variant.promoPrice !== undefined && variant.promoPrice !== '' && (!Number.isFinite(Number(variant.promoPrice)) || Number(variant.promoPrice) < 0)) errors.push(`${label}: promoción debe ser un número no negativo.`);
+    if (variant.promoPrice !== undefined && variant.promoPrice !== '' && variant.price !== '' && Number.isFinite(Number(variant.promoPrice)) && Number.isFinite(Number(variant.price)) && Number(variant.promoPrice) > Number(variant.price)) errors.push(`${label}: promoción no puede ser mayor que el precio normal.`);
   });
   if (editing && !variants.length) errors.push('Conserva o agrega una variante.');
   return errors;

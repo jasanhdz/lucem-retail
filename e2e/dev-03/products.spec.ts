@@ -148,21 +148,40 @@ test.describe('DEV-03 products', () => {
     }
   });
 
-  test('promo inválida se comprueba sólo si la UI comunica validación', async ({ page }) => {
+  test('promo superior al precio normal resalta la fila, actualiza resumen y deshabilita guardado', async ({ page }) => {
     await waitForCatalog(page);
     await page.getByRole('button', { name: 'Nuevo producto' }).click();
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
-    const promo = dialog.locator('.variants-table tbody tr').first().locator('input').nth(6);
-    if (await promo.count()) {
-      await promo.fill('-1');
-      await dialog.locator('button[type="submit"]').click();
-      const alert = dialog.locator('.products-form-alert');
-      if (await alert.count()) {
-        const message = await alert.textContent();
-        if (/promocion|promoción|precio|numero|número/i.test(message ?? '')) await expect(alert).toContainText(/promocion|promoción|precio|numero|número/i);
-      }
-    }
+    await dialog.locator('.variant-mode label').nth(1).click();
+    await dialog.getByLabel('Nombre del producto').fill('DEV-03 promo inválida');
+    await dialog.getByLabel('Categoría').selectOption({ index: 1 });
+    await dialog.getByRole('button', { name: 'Agregar variante' }).click();
+    const rows = dialog.locator('.variants-table tbody tr');
+    const validRow = rows.nth(0);
+    await validRow.getByLabel('Talla variante 1').fill('M');
+    await validRow.getByLabel('Color variante 1').fill('Negro');
+    await validRow.getByLabel('SKU variante 1').fill('DEV03-VALID-M-NEG');
+    await validRow.getByLabel('Costo variante 1').fill('120');
+    await validRow.getByLabel('Precio variante 1').fill('249');
+    await validRow.getByLabel('Stock variante 1').fill('14');
+    await validRow.locator('.variant-threshold-control summary').click();
+    await validRow.getByLabel('Umbral variante 1').fill('10');
+    const invalidRow = rows.nth(1);
+    await invalidRow.getByLabel('Talla variante 2').fill('XG');
+    await invalidRow.getByLabel('Color variante 2').fill('Verde Olivo');
+    await invalidRow.getByLabel('SKU variante 2').fill('DEV03-INVALID-XG-VER');
+    await invalidRow.getByLabel('Costo variante 2').fill('120');
+    await invalidRow.getByLabel('Precio variante 2').fill('249');
+    await invalidRow.getByLabel('Promoción variante 2').fill('279');
+    await invalidRow.getByLabel('Stock variante 2').fill('0');
+    await invalidRow.locator('.variant-threshold-control summary').click();
+    await invalidRow.getByLabel('Umbral variante 2').fill('10');
+    await expect(invalidRow).toHaveClass(/variant-row-invalid/);
+    await expect(dialog.locator('.variant-inline-error')).toContainText('Precio promocional');
+    await expect(dialog.locator('.variants-summary')).toContainText('1 variante válida');
+    await expect(dialog.locator('.variants-correction-count')).toContainText('1 variante requiere corrección');
+    await expect(dialog.getByRole('button', { name: 'Guardar producto con variantes' })).toBeDisabled();
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
   });
 

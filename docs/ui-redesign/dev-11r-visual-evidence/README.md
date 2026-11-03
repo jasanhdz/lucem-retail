@@ -9,3 +9,5 @@ Las capturas corregidas se generaron contra el runtime real con PostgreSQL E2E, 
 | Runtime corregido | [captura](products-simple-corrected-desktop.png) | [captura](products-variants-corrected-desktop.png) | [captura](products-simple-corrected-mobile.png) | [captura](products-variants-corrected-mobile.png) |
 
 El baseline histórico de este repositorio sólo capturaba el catálogo, no el formulario abierto; por eso se referencia como tal y no se presenta como una captura falsa del modal anterior. Las capturas corregidas cubren el nuevo formulario de viewport completo, selector simple/variantes, matriz de variantes, footer sticky y composición responsive.
+
+La captura de variantes usa valores sintéticos E2E de presentación (3 válidas y 1 con promoción superior al precio normal) para documentar la fila de error, el resumen y el botón deshabilitado; no se guardan en el catálogo.

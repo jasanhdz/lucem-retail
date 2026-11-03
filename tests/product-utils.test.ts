@@ -32,4 +32,11 @@ describe('product presentation helpers', () => {
       'Variante 2: promoción debe ser un número no negativo.',
     ]));
   });
+
+  it('rejects a promotional price greater than the regular variant price', () => {
+    const errors = validateProductDraft('Playera', 'c', [
+      { sku: 'PLY-BAS-XG-VER', cost: '120', price: '249', promoPrice: '279', stock: '0', lowStockThreshold: '1' },
+    ]);
+    expect(errors).toContain('Variante 1: promoción no puede ser mayor que el precio normal.');
+  });
 });
