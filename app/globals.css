@@ -6,6 +6,7 @@
 @import './styles/mobile.css';
 @import './styles/products.css';
 @import './styles/products-accessibility.css';
+@import './styles/products-catalog.css';
 @import './styles/inventory.css';
 @import './styles/pos.css';
 @import './styles/reservations.css';

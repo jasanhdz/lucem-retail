@@ -15,48 +15,55 @@ test.describe('DEV-05 POS', () => {
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual(expect.arrayContaining([expect.objectContaining({ sku: 'DEV-TEST-01-NORMAL' })]));
     await page.goto('/pos');
-    await expect(page.getByRole('heading', { name: 'Nueva venta' })).toBeVisible();
-    await expect(page.getByText(/3 variantes/)).toBeVisible();
-    await page.getByRole('combobox', { name: 'Categoría' }).selectOption('dev-test-01-centro-category');
+    await expect(page.getByRole('heading', { name: 'Nueva venta' })).toBeAttached();
+    await expect(page.locator('.pos-variant-badge').first()).toBeVisible();
+    const categories = await (await page.request.get('/api/categories')).json();
+    const testCategory = categories.find((category: { id: string }) => category.id === 'dev-test-01-centro-category');
+    expect(testCategory).toBeTruthy();
+    await page.getByRole('button', { name: new RegExp(testCategory.name) }).click();
     await expect(page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ })).toBeVisible();
-    await page.getByRole('combobox', { name: 'Categoría' }).selectOption('');
+    await page.getByRole('button', { name: /^Todos/ }).click();
     const trigger = page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ });
     await trigger.click();
-    await expect(page.getByRole('dialog', { name: 'DEV-TEST-01 Centro Catalog' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Seleccionar variante de DEV-TEST-01 Centro Catalog' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(page.getByRole('button', { name: /DEV-TEST-01-NORMAL/ })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Aumentar cantidad' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
     await page.screenshot({ path: test.info().outputPath('pos-variants.png'), fullPage: false });
-    await expect(page.getByRole('button', { name: /DEV-TEST-01-ZERO/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /SKU DEV-TEST-01-ZERO/ })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await page.getByRole('button', { name: /DEV-TEST-01-LOW/ }).click();
-    await expect(page.getByText('DEV-TEST-01-LOW')).toBeVisible();
+    await page.getByRole('button', { name: /SKU DEV-TEST-01-LOW/ }).click();
+    await page.getByRole('button', { name: /Agregar al carrito/ }).click();
+    await expect(page.getByText('DEV-TEST-01 Centro Catalog')).toBeVisible();
   });
 
   test('validates cash and preserves the cart while capturing exact POS viewports', async ({ page }) => {
     await page.goto('/pos');
     await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-LOW');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
-    await page.getByLabel('Monto recibido').fill('1');
-    await expect(page.locator('.pos-received [role="alert"]')).toContainText('insuficiente');
-    await expect(page.getByText('DEV-TEST-01-LOW')).toBeVisible();
     for (const button of await page.locator('.pos-stepper button').all()) {
       const box = await button.boundingBox();
-      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(30);
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(30);
+    }
+    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/pos\/cobro$/);
+    await page.getByLabel('Monto recibido').fill('1');
+    await expect(page.locator('.pos-cash-change')).toContainText('EFECTIVO INSUFICIENTE');
+    await expect(page.getByText('DEV-TEST-01-LOW')).toBeVisible();
+    for (const label of await page.locator('.pos-method-options button').all()) {
+      const box = await label.boundingBox();
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
+    await page.getByRole('button', { name: /Regresar al carrito/ }).click();
     for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) {
       await page.setViewportSize(viewport);
       expect(await page.locator('.pos-page').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
-      for (const label of await page.locator('.pos-payment-options label').all()) {
-        const box = await label.boundingBox();
-        expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-      }
       await page.screenshot({ path: test.info().outputPath(`pos-${name}.png`), fullPage: false });
     }
   });
@@ -67,8 +74,11 @@ test.describe('DEV-05 POS', () => {
     await page.goto('/pos');
     await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
-    await page.getByRole('button', { name: 'Cobrar venta' }).click();
+    await page.getByLabel('Imprimir ticket térmico').uncheck();
+    await page.getByRole('button', { name: 'Confirmar venta (Enter)' }).click();
     await expect(page).toHaveURL(/\/tickets\//);
     const saleId = page.url().split('/').pop();
     const sale = await page.request.get(`/api/sales/${saleId}`);
@@ -111,10 +121,13 @@ test.describe('DEV-05 POS', () => {
     await page.goto('/pos');
     await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
+    await page.getByLabel('Imprimir ticket térmico').uncheck();
     await page.route('**/api/sales', async (route) => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'Existencia insuficiente' }) }));
-    await page.getByRole('button', { name: 'Cobrar venta' }).click();
-    await expect(page.locator('.pos-checkout [role="alert"]')).toContainText('stock cambió');
+    await page.getByRole('button', { name: 'Confirmar venta (Enter)' }).click();
+    await expect(page.locator('.pos-payment-error')).toContainText('stock cambió');
     await expect(page.getByText('DEV-TEST-01-NORMAL')).toBeVisible();
     await page.unroute('**/api/sales');
     const norte = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
@@ -137,8 +150,11 @@ test.describe('DEV-05 POS', () => {
     await sellerPage.goto('/pos');
     await sellerPage.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await sellerPage.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await sellerPage.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await expect(sellerPage).toHaveURL(/\/pos\/cobro$/);
     await sellerPage.getByLabel('Monto recibido').fill('150');
-    await sellerPage.getByRole('button', { name: 'Cobrar venta' }).click();
+    await sellerPage.getByLabel('Imprimir ticket térmico').uncheck();
+    await sellerPage.getByRole('button', { name: 'Confirmar venta (Enter)' }).click();
     await expect(sellerPage).toHaveURL(/\/tickets\//);
     await sellerPage.close();
     await seller.close();

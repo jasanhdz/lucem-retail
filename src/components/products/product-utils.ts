@@ -12,6 +12,7 @@ export type ProductVariant = {
 };
 
 export type ProductRow = ProductVariant & {
+  createdAt?: string;
   businessId: string;
   productId: string;
   product: { id: string; name: string; photoPath?: string | null; location?: string | null; category?: { id: string; name: string } | null };

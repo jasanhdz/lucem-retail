@@ -1,10 +1,89 @@
 'use client';
-import { useRef, useState } from 'react';
-import { addToCart, checkoutRequest, type PaymentMethod, type CartItem } from '@/lib/pos-cart';
-import { POSCatalog } from './POSCatalog'; import { POSCart } from './POSCart'; import { POSVariantDialog } from './POSVariantDialog'; import type { ProductGroup, ProductVariant } from './pos-utils'; import { checkoutError, toCartItem } from './pos-utils'; import { useRouter } from 'next/navigation';
-type Line = CartItem & { name: string; sku: string; size?: string | null; color?: string | null };
-export function POSPage() { const router = useRouter(); const [cart, setCart] = useState<Line[]>([]); const [selected, setSelected] = useState<ProductGroup | null>(null); const [method, setMethod] = useState<PaymentMethod>('CASH'); const [received, setReceived] = useState(''); const [error, setError] = useState(''); const [submitting, setSubmitting] = useState(false); const key = useRef<string | null>(null); const payloadSignature = useRef(''); const variantTrigger = useRef<HTMLButtonElement | null>(null);
-  function choose(variant: ProductVariant, product: ProductGroup) { if (product.variants.length > 1 && !selected) { variantTrigger.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null; setSelected(product); return; } setCart(addToCart(cart, toCartItem(variant)) as Line[]); setSelected(null); }
-  async function submit() { if (submitting || !cart.length) return; const total = Math.round(cart.reduce((sum, item) => sum + Number(item.promoPrice ?? item.price) * item.quantity, 0) * 100) / 100; if (method === 'CASH' && (!Number.isFinite(Number(received)) || Number(received) < total)) return; const payload = checkoutRequest(cart, method, method === 'CASH' ? Number(received) : null, 'pending'); const signature = JSON.stringify(payload); if (signature !== payloadSignature.current) { key.current = crypto.randomUUID(); payloadSignature.current = signature; } const bodyPayload = checkoutRequest(cart, method, method === 'CASH' ? Number(received) : null, key.current ?? crypto.randomUUID()); setSubmitting(true); setError(''); try { const response = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); const body = await response.json(); if (response.status === 201) { router.push(`/tickets/${body.id}`); return; } setError(checkoutError(response.status, body)); if (response.status === 409) window.dispatchEvent(new Event('pos-refresh-catalog')); } catch { setError('No se confirmó la venta. Verifica la conexión antes de reintentarlo.'); } finally { setSubmitting(false); } }
-  return <div className="pos-page"><POSCatalog onVariant={choose} /><POSCart cart={cart} setCart={setCart} method={method} received={received} onMethod={(value) => { setMethod(value); if (value !== 'CASH') setReceived(''); }} onReceived={setReceived} onSubmit={() => void submit()} disabled={submitting} error={error} />{selected && <POSVariantDialog product={selected} returnFocusRef={variantTrigger} onClose={() => setSelected(null)} onSelect={(variant) => choose(variant, selected)} />}</div>;
+
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { POSCatalog } from './POSCatalog';
+import { POSCart } from './POSCart';
+import { POSVariantDialog } from './POSVariantDialog';
+import type { POSLine, ProductGroup, ProductVariant } from './pos-utils';
+import { toCartItem } from './pos-utils';
+
+const CART_DRAFT_KEY = 'lucem-pos-cart-draft';
+
+export function POSPage() {
+  const router = useRouter();
+  const [cart, setCart] = useState<POSLine[]>([]);
+  const [cartReady, setCartReady] = useState(false);
+  const [selected, setSelected] = useState<ProductGroup | null>(null);
+  const variantTrigger = useRef<HTMLButtonElement | null>(null);
+  const checkoutRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(CART_DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCart(parsed as POSLine[]);
+      }
+    } catch {
+      window.localStorage.removeItem(CART_DRAFT_KEY);
+    } finally {
+      setCartReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartReady) return;
+    if (cart.length) window.localStorage.setItem(CART_DRAFT_KEY, JSON.stringify(cart));
+    else window.localStorage.removeItem(CART_DRAFT_KEY);
+  }, [cart, cartReady]);
+
+  function choose(variant: ProductVariant, product: ProductGroup, requestedQuantity = 1) {
+    if (product.variants.length > 1 && !selected) {
+      variantTrigger.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+      setSelected(product);
+      return;
+    }
+    const item = toCartItem(variant);
+    setCart((current) => {
+      const existing = current.find((line) => line.id === item.id);
+      const quantity = Math.min(Number(item.stock), Math.max(1, requestedQuantity));
+      if (existing) return current.map((line) => line.id === item.id ? { ...line, quantity: Math.min(Number(line.stock), line.quantity + quantity) } : line);
+      return Number(item.stock) > 0 ? [...current, { ...item, quantity }] as POSLine[] : current;
+    });
+    setSelected(null);
+  }
+
+  function openCheckout() {
+    if (!cart.length) return;
+    window.localStorage.setItem(CART_DRAFT_KEY, JSON.stringify(cart));
+    router.push('/pos/cobro');
+  }
+  checkoutRef.current = openCheckout;
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.key === 'F1') {
+        event.preventDefault();
+        window.dispatchEvent(new Event('pos:new-sale'));
+        setCart([]);
+      } else if (event.key === 'F3') {
+        event.preventDefault();
+        window.dispatchEvent(new Event('pos:focus-search'));
+      } else if (event.key === 'F4') {
+        event.preventDefault();
+        checkoutRef.current();
+      }
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, []);
+
+  return (
+    <div className="pos-page">
+      <POSCatalog onVariant={choose} />
+      <POSCart cart={cart} setCart={setCart} onCheckout={openCheckout} />
+      {selected && <POSVariantDialog product={selected} returnFocusRef={variantTrigger} onClose={() => setSelected(null)} onSelect={(variant, quantity) => choose(variant, selected, quantity)} />}
+    </div>
+  );
 }

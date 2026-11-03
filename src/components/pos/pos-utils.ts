@@ -14,6 +14,7 @@ export type ProductVariant = {
 
 export type ProductGroup = { id: string; name: string; photoPath?: string | null; category?: { id: string; name: string } | null; variants: ProductVariant[] };
 export type Category = { id: string; name: string };
+export type POSLine = CartItem & { name: string; sku: string; size?: string | null; color?: string | null };
 
 export function groupProducts(rows: ProductVariant[]): ProductGroup[] {
   const groups = new Map<string, ProductGroup>();

@@ -45,7 +45,8 @@ async function waitForCatalog(page: Page) {
 }
 
 async function noOverflow(page: Page) {
-  expect(await page.locator('.products-page').evaluate(element => element.scrollWidth <= element.clientWidth)).toBeTruthy();
+  const overflow = await page.locator('.products-page').evaluate(element => ({ width: element.scrollWidth, client: element.clientWidth, elements: [...element.querySelectorAll<HTMLElement>('*')].filter(child => child.scrollWidth > child.clientWidth + 1 && !child.classList.contains('sr-only')).slice(0, 20).map(child => ({ tag: child.tagName, className: String(child.className), scrollWidth: child.scrollWidth, clientWidth: child.clientWidth })) }));
+  expect(overflow.width <= overflow.client, `Products has horizontal overflow: ${JSON.stringify(overflow)}`).toBeTruthy();
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -81,7 +82,7 @@ test.describe('DEV-03 products', () => {
       await expect(page.getByText(sku, { exact: false })).toBeVisible();
     }
     await status.selectOption('all');
-    await page.getByRole('checkbox', { name: 'Sólo disponibles' }).check();
+    await status.selectOption('available');
     await expect(page.getByText('DEV-TEST-01-ZERO', { exact: false })).toHaveCount(0);
     await page.getByRole('button', { name: 'Limpiar filtros' }).click();
     await page.locator('.product-card').first().getByRole('button', { name: 'Ver detalle', exact: true }).click();
@@ -91,14 +92,14 @@ test.describe('DEV-03 products', () => {
     await noOverflow(page);
   });
 
-  test('DEV-03B conserva placeholder, tarjeta compacta y truncamiento accesible', async ({ page }) => {
+  test('DEV-03B conserva imagen de producto, composición de catálogo y truncamiento accesible', async ({ page }) => {
     await waitForCatalog(page);
     const card = page.locator('.product-card').first();
     await expect(card.locator('.product-placeholder')).toContainText('Sin fotografía');
     await expect(card.locator('h2')).toHaveAttribute('title', /.+/);
     const cardHeight = await card.evaluate(element => element.getBoundingClientRect().height);
-    expect(cardHeight).toBeGreaterThan(140);
-    expect(cardHeight).toBeLessThan(320);
+    expect(cardHeight).toBeGreaterThan(400);
+    expect(cardHeight).toBeLessThan(700);
     await noOverflow(page);
   });
 
@@ -151,6 +152,7 @@ test.describe('DEV-03 products', () => {
   test('promo superior al precio normal resalta la fila, actualiza resumen y deshabilita guardado', async ({ page }) => {
     await waitForCatalog(page);
     await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    await expect(page).toHaveURL(/\/productos\/nuevo$/);
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
     await dialog.locator('.variant-mode label').nth(1).click();
@@ -183,6 +185,7 @@ test.describe('DEV-03 products', () => {
     await expect(dialog.locator('.variants-correction-count')).toContainText('1 variante requiere corrección');
     await expect(dialog.getByRole('button', { name: 'Guardar producto con variantes' })).toBeDisabled();
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page).toHaveURL(/\/productos$/);
   });
 
   test('SELLER lee catálogo y no puede mutar producto ni subir imagen', async ({ browser }) => {
@@ -319,6 +322,7 @@ test.describe('DEV-03 products', () => {
     await expect(trigger).toBeFocused();
     await expect(page.locator('.products-page')).toHaveCSS('overflow-x', 'hidden');
     await trigger.click();
+    await expect(page).toHaveURL(/\/productos\/nuevo$/);
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByLabel('Nombre del producto')).toHaveAttribute('aria-invalid', 'false');
@@ -345,6 +349,8 @@ test.describe('DEV-03 products', () => {
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
     expect(await page.locator('body').evaluate(body => body.style.overflow)).toBe('');
+    await page.goto('/productos/nuevo');
+    await expect(page.getByRole('dialog', { name: 'Nuevo producto' })).toBeVisible();
   });
 
   test('captura catálogo DEV-03 @visual', async ({ page }, testInfo) => {

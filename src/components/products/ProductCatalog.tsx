@@ -2,24 +2,38 @@
 
 import {
   ArrowLeft,
+  Barcode,
+  ChevronLeft,
+  ChevronRight,
   Archive,
+  ArrowDownWideNarrow,
   ChevronDown,
   CircleAlert,
   CheckCircle2,
+  Download,
+  Eye,
+  FilterX,
   ImagePlus,
   Info,
   Layers,
   LoaderCircle,
+  Mic,
+  MapPin,
+  MoreVertical,
   PackageOpen,
   Pencil,
   Plus,
+  QrCode,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Tag,
+  TriangleAlert,
   Trash2,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
   useEffect,
   useRef,
@@ -125,7 +139,8 @@ function normalizeDetail(detail: ProductDetail): ProductDetail {
   };
 }
 
-export function ProductCatalog({ role }: { role: Role }) {
+export function ProductCatalog({ role, businessName = "", initialCreate = false }: { role: Role; businessName?: string; initialCreate?: boolean }) {
+  const router = useRouter();
   const canMutate = role !== "SELLER";
   const [rows, setRows] = useState<ProductRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -133,14 +148,27 @@ export function ProductCatalog({ role }: { role: Role }) {
   const [categoryId, setCategoryId] = useState("");
   const [status, setStatus] = useState("all");
   const [available, setAvailable] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<"all" | "single" | "multiple">("all");
+  const [sortBy, setSortBy] = useState("recent");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [advancedFilters, setAdvancedFilters] = useState(false);
+  const [shownMobileProducts, setShownMobileProducts] = useState(6);
   const [loading, setLoading] = useState(true);
   const productLoadId = useRef(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [dialog, setDialog] = useState<"form" | "detail" | null>(null);
+  const [dialog, setDialog] = useState<"form" | "detail" | null>(() => initialCreate ? "form" : null);
   const [selected, setSelected] = useState<ProductGroup | null>(null);
-  const [editing, setEditing] = useState<ProductDetail | null>(null);
+  const [editing, setEditing] = useState<ProductDetail | null>(() => initialCreate ? {
+    id: "",
+    name: "",
+    categoryId: "",
+    location: "",
+    variants: [emptyVariant()],
+  } : null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const catalogSearchRef = useRef<HTMLInputElement | null>(null);
 
   async function loadProducts() {
     const loadId = ++productLoadId.current;
@@ -180,18 +208,34 @@ export function ProductCatalog({ role }: { role: Role }) {
       );
   }, []);
   useEffect(() => {
-    void loadProducts();
-  }, [query, categoryId, status, available]);
+    if (initialCreate || window.sessionStorage.getItem("products-return-focus-new") !== "1") return;
+    window.sessionStorage.removeItem("products-return-focus-new");
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>('[aria-label="Nuevo producto"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialCreate]);
+  useEffect(() => {
+    if (!initialCreate) void loadProducts();
+  }, [query, categoryId, status, available, initialCreate]);
   useEffect(() => {
     const syncSearch = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
-      if (typeof value === "string") setQuery(value);
+      if (typeof value === "string") {
+        setQuery(value);
+        setShownMobileProducts(6);
+      }
     };
     window.addEventListener("products:search", syncSearch);
     return () => window.removeEventListener("products:search", syncSearch);
   }, []);
 
   function closeDialog() {
+    if (initialCreate) {
+      window.sessionStorage.setItem("products-return-focus-new", "1");
+      router.push("/productos");
+      return;
+    }
     setDialog(null);
     setEditing(null);
     window.setTimeout(() => {
@@ -199,7 +243,7 @@ export function ProductCatalog({ role }: { role: Role }) {
         triggerRef.current.focus();
         return;
       }
-      document.querySelector<HTMLButtonElement>('.products-page > .products-heading .products-primary')?.focus();
+      document.querySelector<HTMLButtonElement>('.products-page .products-catalog-heading .products-primary')?.focus();
     }, 0);
   }
   function openForm(product?: ProductGroup) {
@@ -252,9 +296,69 @@ export function ProductCatalog({ role }: { role: Role }) {
     setCategoryId("");
     setStatus("all");
     setAvailable(false);
+    setTypeFilter("all");
+    setSortBy("recent");
+    setShownMobileProducts(6);
+    window.dispatchEvent(new CustomEvent("products:search-sync", { detail: "" }));
+  }
+  function applyQuickFilter(filter: "all" | "available" | "low" | "out" | "multiple" | "single") {
+    setCategoryId("");
+    setAvailable(filter === "available");
+    setStatus(filter === "low" || filter === "out" ? filter : "all");
+    setTypeFilter(filter === "multiple" || filter === "single" ? filter : "all");
+    setShownMobileProducts(6);
+  }
+  function handleFilterChange(updateFilter: () => void) {
+    updateFilter();
+    setShownMobileProducts(6);
+  }
+  function exportCatalog() {
+    const fields = ["Producto", "Categoría", "SKU", "Código de barras", "Talla", "Color", "Costo", "Precio", "Precio promocional", "Stock", "Umbral", "Ubicación"];
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const data = [fields, ...rows.map((row) => [row.product.name, row.product.category?.name, row.sku, row.barcode, row.size, row.color, row.cost, row.price, row.promoPrice, row.stock, row.lowStockThreshold, row.product.location])];
+    const blob = new Blob([`\uFEFF${data.map((line) => line.map(escapeCsv).join(",")).join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "catalogo-productos.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
+  useEffect(() => {
+    const shortcut = (event: globalThis.KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        catalogSearchRef.current?.focus();
+        catalogSearchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  }, []);
+  useEffect(() => setPage(1), [query, categoryId, status, available, typeFilter, sortBy, pageSize]);
+
   const products = groupProductRows(rows);
+  const totalSkus = rows.length;
+  const availableSkus = rows.filter((row) => amount(row.stock) > 0).length;
+  const lowStockSkus = rows.filter((row) => amount(row.stock) > 0 && amount(row.stock) <= amount(row.lowStockThreshold)).length;
+  const outOfStockSkus = rows.filter((row) => amount(row.stock) === 0).length;
+  const filteredProducts = products
+    .filter((product) => typeFilter === "all" || (typeFilter === "multiple" ? product.variants.length > 1 : product.variants.length === 1))
+    .sort((left, right) => {
+      if (sortBy === "name") return left.name.localeCompare(right.name, "es");
+      if (sortBy === "price-high") return amount(right.variants[0]?.promoPrice ?? right.variants[0]?.price) - amount(left.variants[0]?.promoPrice ?? left.variants[0]?.price);
+      if (sortBy === "price-low") return amount(left.variants[0]?.promoPrice ?? left.variants[0]?.price) - amount(right.variants[0]?.promoPrice ?? right.variants[0]?.price);
+      if (sortBy === "stock-high") return right.stock - left.stock;
+      if (sortBy === "stock-low") return left.stock - right.stock;
+      const leftDate = Date.parse(String(left.variants[0]?.createdAt ?? "")) || 0;
+      const rightDate = Date.parse(String(right.variants[0]?.createdAt ?? "")) || 0;
+      return rightDate - leftDate || left.name.localeCompare(right.name, "es");
+    });
+  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
+  const pageStart = filteredProducts.length ? (page - 1) * pageSize + 1 : 0;
+  const pageEnd = Math.min(page * pageSize, filteredProducts.length);
   return (
     <section
       className={`products-page ${dialog === "form" ? "products-editor-page" : ""}`}
@@ -262,83 +366,52 @@ export function ProductCatalog({ role }: { role: Role }) {
     >
       {dialog !== "form" && (
         <>
-      <header className="products-heading">
-        <div>
-          <p className="products-kicker">Inventario</p>
-          <h1 id="products-title">Catálogo de productos</h1>
-          <p>Consulta tus artículos, existencias y precios por negocio.</p>
+      <div className="products-master-page">
+      <header className="products-catalog-heading">
+        <div className="products-catalog-title">
+          <div className="products-catalog-title-line"><h1 id="products-title" aria-label="Catálogo de productos">Productos</h1><span>Catálogo Master</span></div>
+          <p className="products-catalog-description">Organiza, consulta y administra los productos de tu negocio.</p>
+          <p className="products-catalog-business"><i aria-hidden="true"/>{businessName}</p>
         </div>
-        {canMutate && (
-          <button
-            className="button products-primary"
-            type="button"
-            onClick={() => openForm()}
-          >
-            <Plus size={18} aria-hidden="true" /> Nuevo producto
-          </button>
-        )}
+        <div className="products-catalog-actions">
+          <button className="products-export-button" type="button" onClick={exportCatalog}><Download size={18} aria-hidden="true"/><span>Exportar catálogo</span></button>
+         {canMutate && <button className="button products-primary" type="button" aria-label="Nuevo producto" onClick={() => router.push("/productos/nuevo")}><Plus size={18} aria-hidden="true"/><span className="products-new-desktop">Nuevo producto</span><span className="products-new-mobile">Nuevo</span></button>}
+        </div>
       </header>
-      <div
-        className="products-filters"
-        role="region"
-        aria-label="Filtros de productos"
-      >
-        <label className="products-search">
-          <Search size={18} aria-hidden="true" />
-          <span className="sr-only">Buscar productos</span>
-          <input
-            aria-label="Buscar productos"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nombre, SKU o ubicación"
-          />
-        </label>
-        <label>
-          <span>Categoría</span>
-          <select
-            aria-label="Filtrar por categoría"
-            value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Estado</span>
-          <select
-            aria-label="Filtrar por estado"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="all">Todos</option>
-            <option value="low">Por agotarse</option>
-            <option value="out">Agotado</option>
-          </select>
-        </label>
-        <label className="products-check">
-          <input
-            type="checkbox"
-            checked={available}
-            onChange={(event) => setAvailable(event.target.checked)}
-          />{" "}
-          Sólo disponibles
-        </label>
-        <button
-          className="button button-quiet"
-          type="button"
-          onClick={clearFilters}
-        >
-          Limpiar filtros
-        </button>
-      </div>
-      <div className="products-feedback" aria-live="polite">
-        {notice}
-      </div>
+      <section className="products-metrics" aria-label="Resumen del catálogo">
+        <article className="products-metric"><div><span>Total de productos</span><strong>{totalSkus}<small>SKUs</small></strong><p><span className="products-metric-desktop-copy">En catálogo activo</span><span className="products-metric-mobile-copy">Total</span></p></div><span className="products-metric-icon"><Archive size={24}/></span></article>
+        <article className="products-metric products-metric-available"><div><span>Disponibles</span><strong>{availableSkus}<small>{totalSkus ? `${((availableSkus / totalSkus) * 100).toFixed(1)}%` : "0%"}</small></strong><p><span className="products-metric-desktop-copy">Listos para venta</span><span className="products-metric-mobile-copy">Listos</span></p></div><span className="products-metric-icon"><CheckCircle2 size={24}/></span></article>
+        <article className="products-metric products-metric-low"><div><span>Stock bajo</span><strong>{lowStockSkus}<small>Atención</small></strong><p><span className="products-metric-desktop-copy">Menos de su umbral mínimo</span><span className="products-metric-mobile-copy">Stock bajo</span></p></div><span className="products-metric-icon"><TriangleAlert size={24}/></span></article>
+        <article className="products-metric products-metric-out"><div><span>Agotados</span><strong>{outOfStockSkus}<small>Crítico</small></strong><p><span className="products-metric-desktop-copy">Sin existencias en tienda</span><span className="products-metric-mobile-copy">Agotados</span></p></div><span className="products-metric-icon"><PackageOpen size={24}/></span></article>
+      </section>
+      <section className="products-master-filters" role="region" aria-label="Filtros de productos">
+        <div className="products-master-filter-row">
+          <label className="products-search">
+            <Search size={20} aria-hidden="true"/><span className="sr-only">Buscar productos</span>
+            <input ref={catalogSearchRef} aria-label="Buscar productos" value={query} onChange={(event) => { setQuery(event.target.value); setShownMobileProducts(6); window.dispatchEvent(new CustomEvent("products:search-sync", { detail: event.target.value })); }} placeholder="Buscar por producto, SKU o código de barras..." />
+            <kbd>⌘K</kbd>
+            <Mic className="products-voice-search" size={17} aria-hidden="true"/>
+          </label>
+          <button className="products-barcode-search" type="button" aria-label="Buscar código de barras" title="Escribe o escanea el código en el campo de búsqueda" onClick={() => catalogSearchRef.current?.focus()}><Barcode size={22} aria-hidden="true"/></button>
+          <div className="products-master-filter-controls">
+             <label className="products-select-filter"><span className="sr-only">Categoría</span><select aria-label="Filtrar por categoría" value={categoryId} onChange={(event) => handleFilterChange(() => setCategoryId(event.target.value))}><option value="">Todas las categorías</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><ChevronDown size={17} aria-hidden="true"/></label>
+             <label className="products-select-filter"><span className="sr-only">Estado</span><select aria-label="Filtrar por estado" value={available ? "available" : status} onChange={(event) => handleFilterChange(() => { setAvailable(event.target.value === "available"); setStatus(event.target.value === "available" ? "all" : event.target.value); })}><option value="all">Estado: Todos</option><option value="available">Disponible</option><option value="low">Stock bajo</option><option value="out">Agotado</option></select><ChevronDown size={17} aria-hidden="true"/></label>
+             <label className="products-select-filter"><span className="sr-only">Tipo</span><select aria-label="Filtrar por tipo" value={typeFilter} onChange={(event) => handleFilterChange(() => setTypeFilter(event.target.value as "all" | "single" | "multiple"))}><option value="all">Tipo: Todos</option><option value="single">Simple</option><option value="multiple">Con variantes</option></select><ChevronDown size={17} aria-hidden="true"/></label>
+             <label className="products-select-filter products-sort-filter"><span className="sr-only">Ordenar por</span><select aria-label="Ordenar productos" value={sortBy} onChange={(event) => handleFilterChange(() => setSortBy(event.target.value))}><option value="recent">Ordenar por: Recientes</option><option value="name">Nombre (A-Z)</option><option value="price-high">Precio: Mayor a menor</option><option value="price-low">Precio: Menor a mayor</option><option value="stock-high">Mayor existencia</option><option value="stock-low">Menor existencia</option></select><ArrowDownWideNarrow size={17} aria-hidden="true"/></label>
+             <button className="products-clear-filter-button" type="button" onClick={clearFilters}><FilterX size={17} aria-hidden="true"/><span>Limpiar filtros</span></button>
+          </div>
+          <button className="products-advanced-filter-toggle" type="button" aria-expanded={advancedFilters} onClick={() => setAdvancedFilters((open) => !open)}><SlidersHorizontal size={20} aria-hidden="true"/><span className="sr-only">Filtros avanzados</span><span className="products-filter-dot" aria-hidden="true"/></button>
+        </div>
+        <div className="products-quick-filters" role="group" aria-label="Filtros rápidos">
+          <button type="button" className={!available && status === "all" && typeFilter === "all" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("all")}>Todos <span>({totalSkus})</span></button>
+          <button type="button" className={available ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("available")}><i className="quick-dot quick-dot-available"/>Disponibles <span>({availableSkus})</span></button>
+          <button type="button" className={status === "low" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("low")}><i className="quick-dot quick-dot-low"/>Stock bajo <span>({lowStockSkus})</span></button>
+          <button type="button" className={status === "out" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("out")}><i className="quick-dot quick-dot-out"/>Agotados <span>({outOfStockSkus})</span></button>
+          <button type="button" className={typeFilter === "multiple" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("multiple")}><Layers size={14} aria-hidden="true"/>Con variantes <span>({products.filter((product) => product.variants.length > 1).length})</span></button>
+          <button type="button" className={typeFilter === "single" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("single")}><PackageOpen size={14} aria-hidden="true"/>Productos simples <span>({products.filter((product) => product.variants.length === 1).length})</span></button>
+        </div>
+      </section>
+      <div className="products-feedback" aria-live="polite">{notice}</div>
       {error && (
         <div className="products-alert" role="alert">
           <CircleAlert size={18} aria-hidden="true" />
@@ -359,25 +432,37 @@ export function ProductCatalog({ role }: { role: Role }) {
           ))}
           <span>Cargando catálogo…</span>
         </div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="products-empty">
           <PackageOpen size={38} aria-hidden="true" />
           <h2>No encontramos productos</h2>
           <p>Prueba otra búsqueda o limpia los filtros.</p>
         </div>
       ) : (
-        <div className="products-grid">
-          {products.map((product) => (
+        <div className={`products-grid products-master-grid ${shownMobileProducts > 6 ? "products-mobile-show-more" : ""}`}>
+          {pageProducts.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
               canMutate={canMutate}
               onOpen={() => openDetail(product)}
               onEdit={() => openForm(product)}
+              mobileHidden={index >= shownMobileProducts}
             />
           ))}
         </div>
       )}
+      {!loading && filteredProducts.length > 0 && (
+        <>
+          <footer className="products-catalog-pagination">
+            <span>Mostrando <strong>{pageStart}–{pageEnd}</strong> de <strong>{filteredProducts.length}</strong> productos</span>
+            <label>Mostrar por página <select aria-label="Productos por página" value={pageSize} onChange={(event) => handleFilterChange(() => setPageSize(Number(event.target.value)))}><option value="6">6</option><option value="12">12</option><option value="24">24</option><option value="48">48</option></select></label>
+            <nav aria-label="Paginación del catálogo"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft size={16}/>Anterior</button>{Array.from({ length: pageCount }, (_, index) => index + 1).slice(0, 3).map((pageNumber) => <button key={pageNumber} type="button" aria-current={pageNumber === page ? "page" : undefined} onClick={() => setPage(pageNumber)}>{pageNumber}</button>)}{pageCount > 3 && <span>…</span>}<button type="button" disabled={page >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Siguiente<ChevronRight size={16}/></button></nav>
+          </footer>
+          <footer className="products-mobile-load-more"><div><span style={{ width: `${filteredProducts.length ? Math.min(100, (Math.min((page - 1) * pageSize + shownMobileProducts, filteredProducts.length) / filteredProducts.length) * 100) : 0}%` }}/></div><span>Mostrando {Math.min((page - 1) * pageSize + shownMobileProducts, filteredProducts.length)} de {filteredProducts.length} productos registrados</span>{(page * pageSize < filteredProducts.length || shownMobileProducts < pageProducts.length) && <button type="button" onClick={() => { if (shownMobileProducts < pageProducts.length) setShownMobileProducts((count) => Math.min(count + 6, pageProducts.length)); else { setPage((current) => current + 1); setShownMobileProducts(6); } }}><ChevronDown size={18}/>Cargar más productos</button>}</footer>
+        </>
+      )}
+      </div>
         </>
       )}
       {dialog === "form" && editing && (
@@ -395,7 +480,7 @@ export function ProductCatalog({ role }: { role: Role }) {
           }}
           onSaved={() => {
             closeDialog();
-            void loadProducts();
+            if (!initialCreate) void loadProducts();
           }}
         />
       )}
@@ -423,75 +508,56 @@ function ProductCard({
   canMutate,
   onOpen,
   onEdit,
+  mobileHidden,
 }: {
   product: ProductGroup;
   canMutate: boolean;
   onOpen: () => void;
   onEdit: () => void;
+  mobileHidden: boolean;
 }) {
   const first = product.variants[0];
+  const productType = product.variants.length === 1 ? "Producto simple" : `${product.variants.length} variantes`;
   return (
-    <article className="product-card">
+    <article className={`product-card products-master-card ${mobileHidden ? "products-card-mobile-hidden" : ""}`}>
       <button
         className="product-card-main"
         type="button"
         onClick={onOpen}
         aria-label={`Ver detalle de ${product.name}`}
       >
-        <ProductImage path={product.photoPath} name={product.name} />
+        <div className="products-card-image-frame">
+          <ProductImage path={product.photoPath} name={product.name} />
+          <div className="products-card-badges"><StockBadge state={product.state}/><span className="products-variant-count">{productType}</span></div>
+          {first.barcode && <span className="products-barcode-badge"><QrCode size={14} aria-hidden="true"/>{first.barcode.slice(0, 12)}</span>}
+        </div>
         <div className="product-card-body">
-          <div className="product-card-top">
-            <StockBadge state={product.state} />
-            <span>
-              {product.variants.length}{" "}
-              {product.variants.length === 1 ? "variante" : "variantes"}
-            </span>
+          <div className="products-card-name-row">
+            <div className="products-card-name-group"><span className="product-category" title={product.category?.name ?? "Sin categoría"}>{product.category?.name ?? "Sin categoría"}</span><h2 title={product.name}>{product.name}</h2></div>
+            <MoreVertical size={18} className="products-card-more" aria-hidden="true"/>
+            <span className="products-mobile-stock-status"><StockBadge state={product.state}/></span>
           </div>
-          <h2 title={product.name}>{product.name}</h2>
-          <p
-            className="product-category"
-            title={product.category?.name ?? "Sin categoría"}
-          >
-            {product.category?.name ?? "Sin categoría"}
-          </p>
-          <p className="product-sku" title={`SKU ${first.sku}`}>
-            SKU {first.sku}
-            {product.variants.length > 1
-              ? ` · +${product.variants.length - 1}`
-              : ""}
-          </p>
-          <div className="product-meta">
-            <span title={product.location}>
-              Ubicación <strong>{product.location}</strong>
-            </span>
-            <span>
-              Existencias <strong>{product.stock}</strong>
-            </span>
-          </div>
-          <div className="product-price">
-            <strong>
-              {currency.format(amount(first.promoPrice ?? first.price))}
-            </strong>
-            {first.promoPrice != null && (
-              <del>{currency.format(amount(first.price))}</del>
-            )}
-            <small>Precio aplicado</small>
+          <div className="products-card-identifiers"><span className="products-card-mobile-category">{product.category?.name ?? "Sin categoría"}</span><span className="product-sku" title={`SKU ${first.sku}`}><Tag size={14} aria-hidden="true"/>{first.sku}{product.variants.length > 1 ? ` · +${product.variants.length - 1}` : ""}</span><span className="products-identifier-divider">•</span><span className="products-card-location" title={product.location}><MapPin size={14} aria-hidden="true"/>{product.location}</span></div>
+          <div className={`products-card-stock-panel products-card-stock-${product.state}`}>
+            <div className="products-card-stock-primary"><div className="product-price"><strong>{currency.format(amount(first.promoPrice ?? first.price))}</strong>{first.promoPrice != null && <del>{currency.format(amount(first.price))}</del>}<small>MXN</small></div><span>{product.stock} pzas disponibles</span></div>
+            <div className="products-card-stock-detail"><span>Física: <strong>{product.stock}</strong></span><span>Mínimo: <strong>{product.threshold}</strong></span></div>
           </div>
         </div>
       </button>
       <div className="product-card-actions">
+        <button className="products-card-detail" type="button" onClick={onOpen}>
+          <Eye size={16} aria-hidden="true"/><span className="products-detail-desktop">Ver detalle</span><span className="products-detail-mobile">Detalle</span>
+        </button>
         {canMutate && (
           <button
+            className="products-card-edit"
             type="button"
             data-product-edit={product.id}
             onClick={onEdit}
           >
-            <Pencil size={16} aria-hidden="true" /> Editar
+            <Pencil size={16} aria-hidden="true" /> <span>Editar</span>
           </button>
         )}
-        <button type="button" onClick={onOpen}>
-          Ver detalle
-        </button>
       </div>
     </article>
   );
@@ -529,9 +595,9 @@ function StockBadge({ state }: { state: ProductGroup["state"] }) {
   return (
     <span className={`stock-badge stock-${state}`}>
       {state === "stock"
-        ? "En stock"
+        ? "Disponible"
         : state === "low"
-          ? "Por agotarse"
+          ? "Stock bajo"
           : "Agotado"}
     </span>
   );
@@ -984,14 +1050,14 @@ function ProductForm({
         <div className="products-form-body">
           <div className="products-editor-hero">
             <div>
-              <p className="products-editor-breadcrumb">Productos <span aria-hidden="true">›</span> {isEdit ? "Editar producto" : "Nuevo producto"}</p>
+              <Breadcrumbs items={[{ label: "Productos", href: "/productos", onClick: () => window.sessionStorage.setItem("products-return-focus-new", "1") }, { label: isEdit ? "Editar producto" : "Nuevo producto" }]} />
               <div className="products-editor-title-line"><h1 id="products-editor-title">{isEdit ? "Editar producto" : variantMode === "multiple" ? <><span className="editor-title-desktop">Crear Producto con Variantes</span><span className="editor-title-mobile">Crear Producto</span></> : "Crear Producto"}</h1>{!isEdit && variantMode === "single" && <span className="products-title-context">Mostrador directo</span>}</div>
               <p>{variantMode === "multiple" ? <><span className="editor-copy-desktop">Control manual explícito de combinaciones, códigos SKU únicos y existencia inicial en tienda.</span><span className="editor-copy-mobile">Varias opciones: Artículos con tallas o colores (ej. Ropa, Calzado).</span></> : "Registra artículos con precio neto final y disponibilidad inmediata para venta física."}</p>
             </div>
             <span className="products-editor-status">{variantMode === "multiple" ? "Validación de códigos en tiempo real" : "Captura Rápida de Inventario"}</span>
           </div>
           <fieldset className="variant-mode">
-            <legend>Presentación</legend>
+            <legend className="sr-only">Tipo de producto</legend>
             <label className={variantMode !== "single" ? "products-mode-inactive" : ""}>
               <input
                 type="radio"

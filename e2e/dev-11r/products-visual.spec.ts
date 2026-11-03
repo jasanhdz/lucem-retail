@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFile, unlink } from 'node:fs/promises';
+import path from 'node:path';
 
 const sizes = { desktop: { width: 1533, height: 1600 }, mobile: { width: 390, height: 1600 } } as const;
 
@@ -55,5 +57,55 @@ test('captures corrected dedicated product creation surfaces', async ({ page }) 
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/products-variants-corrected-${name}.png`, fullPage: true });
     await form.getByRole('button', { name: 'Cancelar' }).click();
+  }
+});
+
+test('captures the Stitch product catalog for desktop and mobile', async ({ page }) => {
+  const prefix = `DEV11R-CATALOG-${Date.now()}`;
+  const categoriesResponse = await page.request.get('/api/categories');
+  expect(categoriesResponse.ok()).toBeTruthy();
+  const categories = await categoriesResponse.json() as { id: string }[];
+  const categoryId = categories[0]?.id;
+  expect(categoryId).toBeTruthy();
+  const products = [
+    { name: 'Playera Básica Algodón', image: 'playera', variants: [{ sku: `${prefix}-PLY-CH`, size: 'CH', color: 'Negro', cost: 120, price: 249, stock: 14, lowStockThreshold: 5 }, { sku: `${prefix}-PLY-M`, size: 'M', color: 'Negro', cost: 120, price: 249, stock: 18, lowStockThreshold: 5 }, { sku: `${prefix}-PLY-G`, size: 'G', color: 'Blanco', cost: 120, price: 249, stock: 12, lowStockThreshold: 5 }, { sku: `${prefix}-PLY-XG`, size: 'XG', color: 'Verde', cost: 120, price: 249, stock: 0, lowStockThreshold: 5 }] },
+    { name: 'Jeans Denim Regular Fit', image: 'jeans', variants: Array.from({ length: 3 }, (_, index) => ({ sku: `${prefix}-JNS-${index}`, size: ['CH', 'M', 'G'][index], color: 'Azul', cost: 300, price: 599, stock: index === 0 ? 8 : 4, lowStockThreshold: 10 })) },
+    { name: 'Cuaderno Profesional Raya 100 H', image: 'cuaderno', variants: [{ sku: `${prefix}-CUA`, cost: 28.5, price: 45, stock: 45, lowStockThreshold: 15 }] },
+    { name: 'Tenis Urbanos Classic', image: 'tenis', variants: Array.from({ length: 3 }, (_, index) => ({ sku: `${prefix}-TEN-${index}`, size: String(24 + index), color: 'Blanco', cost: 450, price: 899, stock: 12, lowStockThreshold: 8 })) },
+    { name: 'Sudadera Oversize Capucha', variants: [{ sku: `${prefix}-SUD`, size: 'G', color: 'Verde', cost: 250, price: 450, stock: 0, lowStockThreshold: 10 }] },
+    { name: 'Gorra Trucker Bordada', image: 'gorra', variants: [{ sku: `${prefix}-GOR`, color: 'Negro', cost: 80, price: 180, stock: 19, lowStockThreshold: 5 }, { sku: `${prefix}-GOR-2`, color: 'Azul', cost: 80, price: 180, stock: 8, lowStockThreshold: 5 }] },
+  ];
+  const createdIds: string[] = [];
+  const uploadedFiles: string[] = [];
+  try {
+    const photos: Record<string, string> = {};
+    for (const photoName of ['playera', 'jeans', 'cuaderno', 'tenis', 'gorra']) {
+      const buffer = await readFile(path.join(process.cwd(), 'e2e/dev-11r/fixtures', `${photoName}.png`));
+      const response = await page.request.post('/api/products/image', { multipart: { file: { name: `dev-11r-${photoName}.png`, mimeType: 'image/png', buffer } } });
+      expect(response.status()).toBe(201);
+      const photoPath = (await response.json()).photoPath as string;
+      const filename = photoPath.split('/').pop() ?? '';
+      expect(filename).toMatch(/^[0-9a-f-]{36}\.png$/);
+      uploadedFiles.push(filename);
+      photos[photoName] = photoPath;
+    }
+    for (const product of [...products].reverse()) {
+      const { image, ...data } = product;
+      const response = await page.request.post('/api/products', { data: { ...data, photoPath: image ? photos[image] : null, categoryId, location: 'Pasillo 2, Anaquel C-01' } });
+      expect(response.status()).toBe(201);
+      createdIds.push((await response.json()).id as string);
+    }
+    for (const [name, viewport] of Object.entries({ desktop: { width: 1450, height: 1600 }, mobile: { width: 394, height: 1600 } })) {
+      await page.setViewportSize(viewport);
+      await page.goto('/productos');
+      await page.getByRole('textbox', { name: 'Buscar productos' }).fill(prefix);
+      await expect(page.locator('.product-card')).toHaveCount(6);
+      await page.locator('.products-card-image-frame img').evaluateAll((images) => Promise.all(images.map((image) => (image as HTMLImageElement).decode().catch(() => undefined))));
+      console.log(`catalog ${name} images:`, await page.locator('.products-card-image-frame img').evaluateAll((images) => images.map((image) => ({ src: (image as HTMLImageElement).getAttribute('src'), complete: (image as HTMLImageElement).complete, width: (image as HTMLImageElement).naturalWidth }))));
+      await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/catalog-corrected-${name}.png`, fullPage: true });
+    }
+  } finally {
+    for (const id of createdIds) await page.request.delete(`/api/products/${id}`);
+    for (const filename of uploadedFiles) await unlink(path.resolve('public/uploads/products', filename));
   }
 });
