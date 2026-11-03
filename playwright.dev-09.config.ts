@@ -15,5 +15,5 @@ export default defineConfig({
   outputDir: 'test-results/dev-09',
   use: { baseURL: 'http://127.0.0.1:3109', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: { command: 'npm run dev -- --hostname 127.0.0.1 --port 3109', url: 'http://127.0.0.1:3109/login', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, E2E_AUDIT_FAILURES: '1', DATABASE_URL: databaseUrl } },
+  webServer: { command: 'npm run dev -- --hostname 127.0.0.1 --port 3109', url: 'http://127.0.0.1:3109/login', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, E2E_AUDIT_FAILURES: '1', DATABASE_URL: databaseUrl, NEXT_DIST_DIR: '.next-e2e' } },
 });

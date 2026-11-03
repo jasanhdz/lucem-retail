@@ -23,6 +23,6 @@ export default defineConfig({
     url: 'http://127.0.0.1:3103/login',
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl },
+    env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl, NEXT_DIST_DIR: '.next-e2e' },
   },
 });

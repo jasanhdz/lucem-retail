@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const sizes = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } } as const;
+const sizes = { desktop: { width: 1533, height: 1600 }, mobile: { width: 390, height: 1600 } } as const;
 
 test('captures corrected dedicated product creation surfaces', async ({ page }) => {
   await page.goto('/productos');
@@ -10,10 +10,12 @@ test('captures corrected dedicated product creation surfaces', async ({ page }) 
     await page.getByRole('button', { name: 'Nuevo producto' }).click();
     const form = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(form.getByRole('heading', { name: 'Crear Producto' })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/products-simple-corrected-${name}.png`, fullPage: true });
-    await form.getByLabel('Varias opciones').check();
-    await form.getByRole('button', { name: 'Agregar variante' }).click();
+    await form.locator('.variant-mode label').nth(1).click();
+    await form.getByRole('button', { name: /^Agregar/ }).click();
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/products-variants-corrected-${name}.png`, fullPage: true });
-    await form.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
+    await form.getByRole('button', { name: 'Cancelar' }).click();
   }
 });

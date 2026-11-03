@@ -1,6 +1,6 @@
 # DEV-11R Lote A: evidencia visual de Productos
 
-Las capturas corregidas se generaron contra el runtime real con PostgreSQL E2E, en viewport desktop `1440x900` y mobile `390x844`.
+Las capturas corregidas se generaron contra el runtime real con PostgreSQL E2E, en viewport desktop `1533x1600` y mobile `390x1600`. Las comparaciones están normalizadas por ancho; las diferencias de altura se rellenan con el fondo del canvas. Se actualizan por cada ronda tomando como referencia principal los cuatro HTML/PNG de creación, y la captura simple más reciente compartida por el usuario.
 
 | Estado | Alta simple desktop | Alta con variantes desktop | Alta simple mobile | Alta con variantes mobile |
 | --- | --- | --- | --- | --- |

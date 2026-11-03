@@ -14,5 +14,5 @@ export default defineConfig({
   outputDir: 'test-results/dev-11r',
   use: { baseURL: 'http://127.0.0.1:3112', storageState: 'playwright/.auth/admin-centro.json' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: { command: 'npm run dev -- --hostname 127.0.0.1 --port 3112', url: 'http://127.0.0.1:3112/login', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl } },
+  webServer: { command: 'npm run dev -- --hostname 127.0.0.1 --port 3112', url: 'http://127.0.0.1:3112/login', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl, NEXT_DIST_DIR: '.next-e2e' } },
 });

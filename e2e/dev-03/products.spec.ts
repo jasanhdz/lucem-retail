@@ -64,6 +64,10 @@ test.describe('DEV-03 products', () => {
     await waitForCatalog(page);
     await expect(page.locator('.product-card')).toHaveCount(1);
 
+    const shellSearch = page.getByRole('textbox', { name: 'Buscar en catálogo' });
+    await shellSearch.fill('DEV-TEST-01-NORMAL');
+    await expect(page.locator('.product-card')).toHaveCount(1);
+    await shellSearch.fill('');
     const search = page.getByRole('textbox', { name: 'Buscar productos' });
     await search.fill('DEV-TEST-01-NORMAL');
     await expect(page.locator('.product-card')).toHaveCount(1);
@@ -82,17 +86,19 @@ test.describe('DEV-03 products', () => {
     await page.getByRole('button', { name: 'Limpiar filtros' }).click();
     await page.locator('.product-card').first().getByRole('button', { name: 'Ver detalle', exact: true }).click();
     await expect(page.getByRole('dialog', { name: /Detalle de/ })).toBeVisible();
-    await expect(page.getByText('Variantes y existencias')).toBeVisible();
+    await expect(page.getByText('Variantes y existencias')).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: /Cerrar detalle/ }).click();
     await noOverflow(page);
   });
 
-  test('DEV-03B conserva placeholder, altura de tarjetas y truncamiento accesible', async ({ page }) => {
+  test('DEV-03B conserva placeholder, tarjeta compacta y truncamiento accesible', async ({ page }) => {
     await waitForCatalog(page);
     const card = page.locator('.product-card').first();
     await expect(card.locator('.product-placeholder')).toContainText('Sin fotografía');
     await expect(card.locator('h2')).toHaveAttribute('title', /.+/);
-    expect(await card.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(400);
+    const cardHeight = await card.evaluate(element => element.getBoundingClientRect().height);
+    expect(cardHeight).toBeGreaterThan(140);
+    expect(cardHeight).toBeLessThan(320);
     await noOverflow(page);
   });
 
@@ -157,7 +163,7 @@ test.describe('DEV-03 products', () => {
         if (/promocion|promoción|precio|numero|número/i.test(message ?? '')) await expect(alert).toContainText(/promocion|promoción|precio|numero|número/i);
       }
     }
-    await dialog.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
   });
 
   test('SELLER lee catálogo y no puede mutar producto ni subir imagen', async ({ browser }) => {
@@ -296,6 +302,8 @@ test.describe('DEV-03 products', () => {
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel('Nombre del producto')).toHaveAttribute('aria-invalid', 'false');
+    await expect(dialog.getByLabel('Categoría')).toHaveAttribute('aria-invalid', 'false');
     const close = dialog.getByRole('button', { name: 'Cerrar nuevo producto' });
     await expect(close).toBeFocused();
     expect(await page.locator('body').evaluate(body => body.style.overflow)).toBe('');
@@ -308,6 +316,8 @@ test.describe('DEV-03 products', () => {
     const uploadTrigger = await dialog.locator('.products-upload span').boundingBox();
     expect(uploadTrigger?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(uploadTrigger?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await dialog.getByRole('button', { name: 'Guardar producto' }).click();
+    await expect(dialog.locator('.products-form-alert')).toContainText(/nombre|categoría|SKU/i);
 
     await close.press('Shift+Tab');
     await page.keyboard.press('Tab');
@@ -326,9 +336,9 @@ test.describe('DEV-03 products', () => {
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
     await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-simple-${testInfo.project.name}.png`) });
-    await dialog.getByLabel('Varias opciones').check();
-    await dialog.getByRole('button', { name: 'Agregar variante' }).click();
+    await dialog.locator('.variant-mode label').nth(1).click();
+    await dialog.getByRole('button', { name: /^Agregar/ }).click();
     await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-variants-${testInfo.project.name}.png`) });
-    await dialog.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
   });
 });

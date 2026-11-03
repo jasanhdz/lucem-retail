@@ -1,15 +1,20 @@
 "use client";
 
 import {
+  ArrowLeft,
   Archive,
   ChevronDown,
   CircleAlert,
+  CheckCircle2,
   ImagePlus,
+  Layers,
   LoaderCircle,
   PackageOpen,
   Pencil,
   Plus,
   Search,
+  SlidersHorizontal,
+  Tag,
   Trash2,
   X,
 } from "lucide-react";
@@ -70,7 +75,7 @@ const emptyVariant = (): DraftVariant => ({
   cost: "",
   price: "",
   promoPrice: "",
-  stock: "0",
+  stock: "",
   lowStockThreshold: "1",
 });
 const currency = new Intl.NumberFormat("es-MX", {
@@ -116,6 +121,7 @@ export function ProductCatalog({ role }: { role: Role }) {
   const [status, setStatus] = useState("all");
   const [available, setAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
+  const productLoadId = useRef(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [dialog, setDialog] = useState<"form" | "detail" | null>(null);
@@ -124,6 +130,7 @@ export function ProductCatalog({ role }: { role: Role }) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   async function loadProducts() {
+    const loadId = ++productLoadId.current;
     setLoading(true);
     setError("");
     const params = new URLSearchParams();
@@ -132,33 +139,44 @@ export function ProductCatalog({ role }: { role: Role }) {
     if (status !== "all") params.set("status", status);
     if (available) params.set("available", "true");
     try {
-      setRows(await readResponse(await fetch(`/api/products?${params}`)));
+      const nextRows = await readResponse(await fetch(`/api/products?${params}`));
+      if (loadId === productLoadId.current) setRows(nextRows);
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "No se pudieron cargar los productos.",
-      );
+      if (loadId === productLoadId.current) {
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudieron cargar los productos.",
+        );
+      }
     } finally {
-      setLoading(false);
+      if (loadId === productLoadId.current) setLoading(false);
     }
   }
 
   useEffect(() => {
-    void Promise.all([
-      fetch("/api/categories")
-        .then(readResponse)
-        .then(setCategories)
-        .catch((reason) =>
-          setError(
-            reason instanceof Error
-              ? reason.message
-              : "No se pudieron cargar las categorías.",
-          ),
+    fetch("/api/categories")
+      .then(readResponse)
+      .then(setCategories)
+      .catch((reason) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "No se pudieron cargar las categorías.",
         ),
-      loadProducts(),
-    ]);
+      );
+  }, []);
+  useEffect(() => {
+    void loadProducts();
   }, [query, categoryId, status, available]);
+  useEffect(() => {
+    const syncSearch = (event: Event) => {
+      const value = (event as CustomEvent<string>).detail;
+      if (typeof value === "string") setQuery(value);
+    };
+    window.addEventListener("products:search", syncSearch);
+    return () => window.removeEventListener("products:search", syncSearch);
+  }, []);
 
   function closeDialog() {
     setDialog(null);
@@ -612,6 +630,7 @@ function ProductForm({
   );
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
+  const [showValidation, setShowValidation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(product.photoPath ?? "");
   const isEdit = Boolean(product.id);
@@ -675,6 +694,7 @@ function ProductForm({
   async function save(event: FormEvent) {
     event.preventDefault();
     if (saving) return;
+    setShowValidation(true);
     setMessage("");
     const errors = validateProductDraft(
       draft.name,
@@ -741,30 +761,6 @@ function ProductForm({
   ) => (
     <div className="variant-fields">
       <label>
-        SKU *
-        <input
-          aria-label={`SKU variante ${index + 1}`}
-          value={variant.sku}
-          onChange={(event) => updateVariant(index, "sku", event.target.value)}
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: el SKU`))}
-          aria-describedby={`variant-${index}-sku-${mobile ? "mobile" : "desktop"}`}
-        />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: el SKU`)} id={`variant-${index}-sku-${mobile ? "mobile" : "desktop"}`} />
-      </label>
-      <label>
-        Barcode
-        <input
-          aria-label={`Barcode variante ${index + 1}`}
-          value={variant.barcode}
-          onChange={(event) =>
-            updateVariant(index, "barcode", event.target.value)
-          }
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: el barcode`))}
-          aria-describedby={`variant-${index}-barcode-${mobile ? "mobile" : "desktop"}`}
-        />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: el barcode`)} id={`variant-${index}-barcode-${mobile ? "mobile" : "desktop"}`} />
-      </label>
-      <label>
         Talla
         <input
           aria-label={`Talla variante ${index + 1}`}
@@ -777,10 +773,32 @@ function ProductForm({
         <input
           aria-label={`Color variante ${index + 1}`}
           value={variant.color}
-          onChange={(event) =>
-            updateVariant(index, "color", event.target.value)
-          }
+          onChange={(event) => updateVariant(index, "color", event.target.value)}
         />
+      </label>
+      <label>
+        SKU *
+        <input
+          aria-label={`SKU variante ${index + 1}`}
+          value={variant.sku}
+          onChange={(event) => updateVariant(index, "sku", event.target.value)}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: el SKU`))}
+          aria-describedby={`variant-${index}-sku-${mobile ? "mobile" : "desktop"}`}
+        />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: el SKU`)} id={`variant-${index}-sku-${mobile ? "mobile" : "desktop"}`} />}
+      </label>
+      <label>
+        Barcode
+        <input
+          aria-label={`Barcode variante ${index + 1}`}
+          value={variant.barcode}
+          onChange={(event) =>
+            updateVariant(index, "barcode", event.target.value)
+          }
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: el barcode`))}
+          aria-describedby={`variant-${index}-barcode-${mobile ? "mobile" : "desktop"}`}
+        />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: el barcode`)} id={`variant-${index}-barcode-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         Costo *
@@ -791,10 +809,10 @@ function ProductForm({
           aria-label={`Costo variante ${index + 1}`}
           value={variant.cost}
           onChange={(event) => updateVariant(index, "cost", event.target.value)}
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: costo`))}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: costo`))}
           aria-describedby={`variant-${index}-cost-${mobile ? "mobile" : "desktop"}`}
         />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: costo`)} id={`variant-${index}-cost-${mobile ? "mobile" : "desktop"}`} />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: costo`)} id={`variant-${index}-cost-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         Precio *
@@ -807,10 +825,10 @@ function ProductForm({
           onChange={(event) =>
             updateVariant(index, "price", event.target.value)
           }
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: precio`))}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: precio`))}
           aria-describedby={`variant-${index}-price-${mobile ? "mobile" : "desktop"}`}
         />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: precio`)} id={`variant-${index}-price-${mobile ? "mobile" : "desktop"}`} />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: precio`)} id={`variant-${index}-price-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         Promo
@@ -823,10 +841,10 @@ function ProductForm({
           onChange={(event) =>
             updateVariant(index, "promoPrice", event.target.value)
           }
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: promoción`))}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: promoción`))}
           aria-describedby={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`}
         />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: promoción`)} id={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`} />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: promoción`)} id={`variant-${index}-promo-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         {isEdit && variant.id ? "Stock físico (solo lectura)" : "Stock inicial"}
@@ -840,10 +858,10 @@ function ProductForm({
           onChange={(event) =>
             updateVariant(index, "stock", event.target.value)
           }
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: stock`))}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: stock`))}
           aria-describedby={`variant-${index}-stock-${mobile ? "mobile" : "desktop"}`}
         />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: stock`)} id={`variant-${index}-stock-${mobile ? "mobile" : "desktop"}`} />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: stock`)} id={`variant-${index}-stock-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       <label>
         Umbral
@@ -856,10 +874,10 @@ function ProductForm({
           onChange={(event) =>
             updateVariant(index, "lowStockThreshold", event.target.value)
           }
-          aria-invalid={Boolean(firstError(validationErrors, `Variante ${index + 1}: umbral`))}
+          aria-invalid={showValidation && Boolean(firstError(validationErrors, `Variante ${index + 1}: umbral`))}
           aria-describedby={`variant-${index}-threshold-${mobile ? "mobile" : "desktop"}`}
         />
-        <FieldError message={firstError(validationErrors, `Variante ${index + 1}: umbral`)} id={`variant-${index}-threshold-${mobile ? "mobile" : "desktop"}`} />
+        {showValidation && <FieldError message={firstError(validationErrors, `Variante ${index + 1}: umbral`)} id={`variant-${index}-threshold-${mobile ? "mobile" : "desktop"}`} />}
       </label>
       {mobile && (
         <button
@@ -878,9 +896,47 @@ function ProductForm({
       )}
     </div>
   );
+  const variantTableRow = (variant: DraftVariant, index: number) => {
+    const errorId = (key: string) => `variant-${index}-${key}-desktop`;
+    const fieldError = (label: string) => firstError(validationErrors, `Variante ${index + 1}: ${label}`);
+    return (
+      <tr key={variant.id ?? index}>
+        <td><input aria-label={`Talla variante ${index + 1}`} value={variant.size} onChange={(event) => updateVariant(index, "size", event.target.value)} /></td>
+        <td><input aria-label={`Color variante ${index + 1}`} value={variant.color} onChange={(event) => updateVariant(index, "color", event.target.value)} /></td>
+        <td>
+          <input aria-label={`SKU variante ${index + 1}`} value={variant.sku} onChange={(event) => updateVariant(index, "sku", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el SKU"))} aria-describedby={errorId("sku")} />
+          {showValidation && <FieldError message={fieldError("el SKU")} id={errorId("sku")} />}
+        </td>
+        <td>
+          <input aria-label={`Barcode variante ${index + 1}`} value={variant.barcode} onChange={(event) => updateVariant(index, "barcode", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("el barcode"))} aria-describedby={errorId("barcode")} />
+          {showValidation && <FieldError message={fieldError("el barcode")} id={errorId("barcode")} />}
+        </td>
+        <td>
+          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Costo variante ${index + 1}`} value={variant.cost} onChange={(event) => updateVariant(index, "cost", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("costo"))} aria-describedby={errorId("cost")} /></div>
+          {showValidation && <FieldError message={fieldError("costo")} id={errorId("cost")} />}
+        </td>
+        <td>
+          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Precio variante ${index + 1}`} value={variant.price} onChange={(event) => updateVariant(index, "price", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("precio"))} aria-describedby={errorId("price")} /></div>
+          {showValidation && <FieldError message={fieldError("precio")} id={errorId("price")} />}
+        </td>
+        <td>
+          <div className="products-variant-money"><span>$</span><input type="number" min="0" step="any" aria-label={`Promoción variante ${index + 1}`} value={variant.promoPrice} onChange={(event) => updateVariant(index, "promoPrice", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("promoción"))} aria-describedby={errorId("promo")} /></div>
+          {showValidation && <FieldError message={fieldError("promoción")} id={errorId("promo")} />}
+        </td>
+        <td>
+          <input type="number" min="0" step="any" aria-label={`Stock variante ${index + 1}`} value={variant.stock} readOnly={Boolean(isEdit && variant.id)} onChange={(event) => updateVariant(index, "stock", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("stock"))} aria-describedby={errorId("stock")} />
+          {isEdit && variant.id && <small>Solo lectura</small>}
+        </td>
+        <td><input type="number" min="0" step="any" aria-label={`Umbral variante ${index + 1}`} value={variant.lowStockThreshold} onChange={(event) => updateVariant(index, "lowStockThreshold", event.target.value)} aria-invalid={showValidation && Boolean(fieldError("umbral"))} aria-describedby={errorId("threshold")} />
+          {showValidation && <FieldError message={fieldError("umbral")} id={errorId("threshold")} />}
+        </td>
+        <td className="variant-delete-cell"><button type="button" aria-label={`Eliminar variante ${index + 1}`} onClick={() => setDraft((current) => ({ ...current, variants: current.variants.filter((_, item) => item !== index) }))} disabled={draft.variants.length === 1}><Trash2 size={16} /></button></td>
+      </tr>
+    );
+  };
   return (
     <section
-      className="products-editor-surface"
+      className={`products-editor-surface ${variantMode === "multiple" ? "products-editor-multiple" : ""}`}
       role="dialog"
       aria-modal="false"
       aria-label={isEdit ? "Editar producto" : "Nuevo producto"}
@@ -893,11 +949,11 @@ function ProductForm({
           aria-label={`Cerrar ${isEdit ? "edición de producto" : "nuevo producto"}`}
           onClick={onClose}
         >
-          <X size={18} aria-hidden="true" />
+          <ArrowLeft size={18} aria-hidden="true" />
           <span>Productos</span>
         </button>
         <span className="products-editor-header-status">
-          {isEdit ? "Editar producto" : "Nuevo producto"}
+          {isEdit ? "Edición" : "Nuevo registro"}
         </span>
       </header>
       <form className="products-form" onSubmit={save} noValidate>
@@ -905,10 +961,10 @@ function ProductForm({
           <div className="products-editor-hero">
             <div>
               <p className="products-editor-breadcrumb">Productos <span aria-hidden="true">›</span> {isEdit ? "Editar producto" : "Nuevo producto"}</p>
-              <h1 id="products-editor-title">{isEdit ? "Editar producto" : "Crear Producto"}</h1>
-              <p>{variantMode === "multiple" ? "Registra combinaciones, códigos únicos y existencia inicial por variante." : "Registra artículos con precio final y disponibilidad inmediata para venta física."}</p>
+              <div className="products-editor-title-line"><h1 id="products-editor-title">{isEdit ? "Editar producto" : variantMode === "multiple" ? <><span className="editor-title-desktop">Crear Producto con Variantes</span><span className="editor-title-mobile">Crear Producto</span></> : "Crear Producto"}</h1>{!isEdit && variantMode === "single" && <span className="products-title-context">Mostrador directo</span>}</div>
+              <p>{variantMode === "multiple" ? <><span className="editor-copy-desktop">Control manual explícito de combinaciones, códigos SKU únicos y existencia inicial en tienda.</span><span className="editor-copy-mobile">Varias opciones: Artículos con tallas o colores (ej. Ropa, Calzado).</span></> : "Registra artículos con precio neto final y disponibilidad inmediata para venta física."}</p>
             </div>
-            <span className="products-editor-status">{isEdit ? "Edición de catálogo" : "Alta de producto"}</span>
+            <span className="products-editor-status">Captura Rápida de Inventario</span>
           </div>
           <fieldset className="variant-mode">
             <legend>Presentación</legend>
@@ -918,7 +974,8 @@ function ProductForm({
                 checked={variantMode === "single"}
                 onChange={() => setVariantMode("single")}
               />{" "}
-              Una sola presentación
+              <span className="products-mode-icon" aria-hidden="true">✓</span>
+              <span className="products-mode-copy"><strong>Una sola presentación{variantMode === "single" && <span className="products-recommended">Recomendado</span>}</strong><small>Artículos estándar sin tallas ni colores (ej. Cuaderno, Botella de agua).</small></span>
             </label>
             <label>
               <input
@@ -926,116 +983,143 @@ function ProductForm({
                 checked={variantMode === "multiple"}
                 onChange={() => setVariantMode("multiple")}
               />{" "}
-              Varias opciones
+              <span className="products-mode-icon" aria-hidden="true"><Layers size={18} /></span>
+              <span className="products-mode-copy"><strong>Varias opciones</strong><small>Para artículos con múltiples atributos como talla o color (ej. Playeras, Calzado).</small></span>
             </label>
           </fieldset>
-          <section className="products-data-section">
+          <section className={`products-data-section ${variantMode === "multiple" ? "products-data-multiple" : ""}`}>
           <div className="products-section-heading products-main-heading">
             <div>
-              <h2>{variantMode === "multiple" ? "Datos generales del producto" : "Datos principales"}</h2>
+              <div className="products-main-heading-title"><span className="products-section-icon"><Archive size={18} aria-hidden="true" /></span><h2>{variantMode === "multiple" ? <><span className="data-heading-desktop">Datos generales del producto</span><span className="data-heading-mobile">Datos generales</span></> : "Datos principales"}</h2></div>
               <p>{variantMode === "multiple" ? "Información base compartida por todas las variantes en catálogo." : "Campos requeridos para habilitar el artículo en el punto de venta."}</p>
             </div>
             <span>{variantMode === "multiple" ? "Paso 1 de 2" : "Requerido"}</span>
           </div>
           <div className="products-form-grid">
             <label>
-              Nombre del producto
+              <span className="products-field-label">Nombre del producto <em>*</em></span>
               <input
                 aria-label="Nombre del producto"
                 value={draft.name}
+                placeholder="ej: Cuaderno Profesional Raya 100 Hojas"
                 onChange={(event) => update("name", event.target.value)}
-                aria-invalid={!draft.name.trim()}
+                aria-invalid={showValidation && !draft.name.trim()}
                 aria-describedby="product-name-error"
                 required
               />
-              <FieldError message={firstError(validationErrors, "El nombre")} id="product-name-error" />
+              {showValidation && <FieldError message={firstError(validationErrors, "El nombre")} id="product-name-error" />}
             </label>
             <label>
-              Categoría
+              <span className="products-field-label">Categoría <em>*</em></span>
               <select
                 aria-label="Categoría"
                 value={draft.categoryId}
                 onChange={(event) => update("categoryId", event.target.value)}
-                aria-invalid={!draft.categoryId}
+                aria-invalid={showValidation && !draft.categoryId}
                 aria-describedby="product-category-error"
                 required
               >
-                <option value="">Seleccionar categoría</option>
+                <option value="">Selecciona una categoría...</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
-              <FieldError message={firstError(validationErrors, "Selecciona una categoría")} id="product-category-error" />
+              {showValidation && <FieldError message={firstError(validationErrors, "Selecciona una categoría")} id="product-category-error" />}
             </label>
+            {variantMode === "single" && draft.variants[0] && (
+              <label className="products-sku-field">
+                <span className="products-field-label">Código SKU <em>*</em></span>
+                <input
+                  aria-label="SKU"
+                  value={draft.variants[0].sku}
+                  placeholder="EJ: PAP-CUA-100R"
+                  onChange={(event) => updateVariant(0, "sku", event.target.value)}
+                  aria-invalid={showValidation && Boolean(firstError(validationErrors, "Variante 1: el SKU"))}
+                  aria-describedby="variant-0-sku-desktop"
+                />
+                {showValidation && <FieldError message={firstError(validationErrors, "Variante 1: el SKU")} id="variant-0-sku-desktop" />}
+                <small>Identificador único ingresado manualmente.</small>
+              </label>
+            )}
+            {variantMode === "multiple" && (
+              <>
+                <label>
+                  Ubicación en tienda
+                  <input value={draft.location} onChange={(event) => update("location", event.target.value)} placeholder="Ej. Pasillo 2, Anaquel C-01" />
+                </label>
+                <label className="products-upload">
+                  Fotografía referencial
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} />
+                  <span><ImagePlus size={18} /> {preview ? "Cambiar imagen" : "Seleccionar imagen"}</span>
+                </label>
+              </>
+            )}
           </div>
-          <details className="products-optional-section">
-            <summary>
-              <span>
-                <strong>Información opcional</strong>
-                <small>Fotografía, ubicación en anaquel y datos complementarios</small>
-              </span>
-              <ChevronDown size={18} aria-hidden="true" />
-            </summary>
-            <div className="products-extra-grid">
-              <label>
-                Ubicación en tienda
-                <input
-                  value={draft.location}
-                  onChange={(event) => update("location", event.target.value)}
-                  placeholder="Ej. A-01"
-                />
-              </label>
-              <label className="products-upload">
-                Foto del producto
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={upload}
-                />
-                <span>
-                  <ImagePlus size={18} />{" "}
-                  {preview ? "Cambiar imagen" : "Seleccionar imagen"}
-                </span>
-              </label>
-              {preview && (
-                <img
-                  className="products-preview"
-                  src={preview}
-                  alt="Vista previa de la foto del producto"
-                />
-              )}
-            </div>
-          </details>
           {variantMode === "single" && draft.variants[0] && (
             <div className="products-simple-values">
               <div className="products-value-grid">
                 <label>
-                  SKU <span aria-hidden="true">*</span>
-                  <input aria-label="SKU" value={draft.variants[0].sku} onChange={(event) => updateVariant(0, "sku", event.target.value)} />
+                  <span className="products-field-label">Costo <em>*</em></span>
+                  <span className="products-money-input"><span aria-hidden="true">$</span><input aria-label="Costo" type="number" min="0" step="0.01" placeholder="28.50" value={draft.variants[0].cost} onChange={(event) => updateVariant(0, "cost", event.target.value)} /><small>MXN</small></span>
+                  <small>Costo directo pagado.</small>
                 </label>
                 <label>
-                  Costo <span aria-hidden="true">*</span>
-                  <input aria-label="Costo" type="number" min="0" step="0.01" value={draft.variants[0].cost} onChange={(event) => updateVariant(0, "cost", event.target.value)} />
+                  <span className="products-field-label">Precio de venta <em>*</em></span>
+                  <span className="products-money-input products-money-sale"><span aria-hidden="true">$</span><input aria-label="Precio de venta" type="number" min="0" step="0.01" placeholder="45.00" value={draft.variants[0].price} onChange={(event) => updateVariant(0, "price", event.target.value)} /><small>MXN</small></span>
+                  <small className="products-sale-price-helper"><Tag size={14} aria-hidden="true" /> Precio final al público</small>
                 </label>
                 <label>
-                  Precio de venta <span aria-hidden="true">*</span>
-                  <input aria-label="Precio de venta" type="number" min="0" step="0.01" value={draft.variants[0].price} onChange={(event) => updateVariant(0, "price", event.target.value)} />
-                </label>
-                <label>
-                  Existencia inicial <span aria-hidden="true">*</span>
-                  <input aria-label="Existencia inicial" type="number" min="0" step="0.01" value={draft.variants[0].stock} onChange={(event) => updateVariant(0, "stock", event.target.value)} />
+                  <span className="products-field-label">Existencia inicial <em>*</em></span>
+                  <span className="products-stock-input"><input aria-label="Existencia inicial" type="number" min="0" step="0.01" placeholder="50.00" value={draft.variants[0].stock} readOnly={Boolean(isEdit && draft.variants[0].id)} onChange={(event) => updateVariant(0, "stock", event.target.value)} /><small>pzas</small><span className="products-stock-stepper"><button type="button" aria-label="Disminuir existencia" disabled={Boolean(isEdit && draft.variants[0].id)} onClick={() => updateVariant(0, "stock", String(Math.max(0, (Number(draft.variants[0].stock) || 0) - 1)))}>−</button><button type="button" aria-label="Aumentar existencia" disabled={Boolean(isEdit && draft.variants[0].id)} onClick={() => updateVariant(0, "stock", String((Number(draft.variants[0].stock) || 0) + 1))}>+</button></span></span>
+                  <small>{isEdit ? "Stock físico de sólo lectura" : "Hasta 2 decimales permitidos."}</small>
                 </label>
               </div>
             </div>
           )}
           </section>
+          {variantMode === "single" && (
+            <details className="products-optional-section">
+              <summary>
+              <span>
+                  <SlidersHorizontal className="products-optional-icon" size={20} aria-hidden="true" />
+                  <span className="products-optional-title"><strong>Información opcional</strong><span className="products-optional-count">5 campos opcionales</span></span>
+                  <small>Fotografía, código de barras, ubicación en anaquel y precio promocional.</small>
+                </span>
+                <ChevronDown size={18} aria-hidden="true" />
+              </summary>
+              <div className="products-extra-grid">
+                <label>
+                  Código de barras
+                  <input aria-label="Código de barras" value={draft.variants[0]?.barcode ?? ""} onChange={(event) => updateVariant(0, "barcode", event.target.value)} />
+                </label>
+                <label>
+                  Ubicación en tienda
+                  <input value={draft.location} onChange={(event) => update("location", event.target.value)} placeholder="Ej. Pasillo 2, Anaquel C-01" />
+                </label>
+                <label>
+                  Precio promocional
+                  <input aria-label="Precio promocional" type="number" min="0" step="0.01" value={draft.variants[0]?.promoPrice ?? ""} onChange={(event) => updateVariant(0, "promoPrice", event.target.value)} />
+                </label>
+                <label>
+                  Alerta de existencia baja
+                  <input aria-label="Alerta de existencia baja" type="number" min="0" step="any" value={draft.variants[0]?.lowStockThreshold ?? "1"} onChange={(event) => updateVariant(0, "lowStockThreshold", event.target.value)} />
+                </label>
+                <label className="products-upload">
+                  Fotografía del producto
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} />
+                  <span><ImagePlus size={18} /> {preview ? "Cambiar imagen" : "Seleccionar imagen"}</span>
+                </label>
+                {preview && <img className="products-preview" src={preview} alt="Vista previa de la foto del producto" />}
+              </div>
+            </details>
+          )}
           {variantMode === "multiple" && (
             <>
               <div className="variants-heading">
                 <div>
-                  <h3>Variantes del producto</h3>
+                  <h3><span className="variant-heading-desktop">Variantes del producto</span><span className="variant-heading-mobile">Variantes</span></h3>
                   <p>Agrega cada combinación vendible con su SKU, precio y existencia inicial.</p>
                 </div>
                 <button
@@ -1048,7 +1132,7 @@ function ProductForm({
                     }))
                   }
                 >
-                  <Plus size={16} /> Agregar variante
+                  <Plus size={16} /> <span className="variant-add-desktop">Agregar variante</span><span className="variant-add-mobile">Agregar</span>
                 </button>
               </div>
             </>
@@ -1063,10 +1147,10 @@ function ProductForm({
             <table className="variants-table" role="presentation">
               <thead>
                 <tr>
-                  <th>SKU *</th>
-                  <th>Barcode</th>
                   <th>Talla</th>
                   <th>Color</th>
+                  <th>SKU manual *</th>
+                  <th>Cód. barras</th>
                   <th>Costo *</th>
                   <th>Precio *</th>
                   <th>Promo</th>
@@ -1076,30 +1160,7 @@ function ProductForm({
                 </tr>
               </thead>
               <tbody>
-                {draft.variants.map((variant, index) => (
-                  <tr key={variant.id ?? index}>
-                    <td colSpan={9}>
-                      {variantFields(variant, index)}
-                    </td>
-                    <td className="variant-delete-cell">
-                      <button
-                        type="button"
-                        aria-label={`Eliminar variante ${index + 1}`}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            variants: current.variants.filter(
-                              (_, item) => item !== index,
-                            ),
-                          }))
-                        }
-                        disabled={draft.variants.length === 1}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {draft.variants.map((variant, index) => variantTableRow(variant, index))}
               </tbody>
             </table>
           </div>}
@@ -1118,6 +1179,18 @@ function ProductForm({
               </details>
             ))}
           </div>}
+          {variantMode === "multiple" && (
+            <div className="variants-summary" aria-live="polite">
+              <strong>
+                {draft.variants.filter((variant) =>
+                  variant.sku.trim() && variant.cost !== "" && variant.price !== "",
+                ).length} variantes configuradas
+              </strong>
+              <span aria-hidden="true">•</span>
+              <span>{draft.variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)} unidades de existencia inicial total</span>
+              <small>Moneda base: MXN (Neto)</small>
+            </div>
+          )}
           {isEdit && (
             <label className="reason-field">
               Motivo de cambios de costo, precio o promoción
@@ -1128,10 +1201,12 @@ function ProductForm({
               />
             </label>
           )}
-          <p className="products-contract-note">
-            Disponibles = stock en este contrato; no se reportan apartados ni
-            movimientos independientes en este formulario.
-          </p>
+          {isEdit && (
+            <p className="products-contract-note">
+              Disponibles = stock en este contrato; no se reportan apartados ni
+              movimientos independientes en este formulario.
+            </p>
+          )}
         </div>
         <footer className="products-modal-actions">
           <button
@@ -1140,6 +1215,7 @@ function ProductForm({
             onClick={onClose}
             disabled={saving}
           >
+            <ArrowLeft size={18} aria-hidden="true" />
             Cancelar
           </button>
           <button
@@ -1150,6 +1226,7 @@ function ProductForm({
             {saving && (
               <LoaderCircle className="spin" size={17} aria-hidden="true" />
             )}
+            {!saving && <CheckCircle2 size={18} aria-hidden="true" />}
             {saving ? "Guardando…" : "Guardar producto"}
           </button>
         </footer>
