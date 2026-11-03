@@ -105,9 +105,12 @@ test('merchant completes authenticated commercial journey with persisted balance
     const dashboard = await body(await api.get('/api/dashboard?from=2020-01-01&to=2030-01-01'));
     expect(Number(dashboard.gross)).toBeGreaterThan(0); expect(Number(dashboard.net)).toBeLessThan(Number(dashboard.gross));
 
-    await api.post('/api/auth/logout');
-    await page.goto('/login');
-    await page.getByLabel('Correo electrónico').fill(email); await page.locator('#password').fill(password); await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+     await api.post('/api/auth/logout');
+     await page.goto('/login');
+     await page.getByLabel('Correo electrónico').fill(email); await page.locator('#password').fill(password);
+     const loginResponse = page.waitForResponse(response => response.url().endsWith('/api/auth/login'));
+     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+     expect((await loginResponse).status()).toBe(200);
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole('button', { name: 'DEV-09 Comercio' })).toBeVisible();
     for (const [path, name] of [['/dashboard', 'dashboard'], ['/productos', 'productos'], ['/inventario', 'inventario'], ['/pos', 'pos'], ['/apartados', 'apartados'], ['/devoluciones', 'devoluciones'], [`/tickets/${sale.id}`, 'ticket']] as const) { await page.goto(path); await capture(page, name); }

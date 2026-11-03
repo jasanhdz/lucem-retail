@@ -117,6 +117,21 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - El usuario nuevo debe obtener categoría `General`, negocio ADMIN, persistencia de operaciones y acceso posterior al mismo negocio.
 - Las capturas deben cubrir 1440x900, 768x1024 y 390x844 sin overflow horizontal.
 
+## DEV-10 — Estabilización de sesiones y consistencia de auditoría comercial
+
+### Alcance
+
+- Mantener una política de sesión sliding idle de 30 minutos con renovación sólo desde Route Handlers, umbral de cinco minutos, cookie `HttpOnly`/`SameSite=Lax`/`Secure` en producción y validación de usuario, sesión y membresía.
+- Hacer atómicas las auditorías de ventas, inventario, apartados, productos, cancelaciones, creación de negocio y devoluciones usando el `Prisma.TransactionClient` existente.
+- Probar fallos de auditoría sólo con PostgreSQL E2E dedicado y controles explícitos; no exponer inyección de fallos en producción.
+
+### Resultado y rubric
+
+- DEV-10 debe pasar `npm run test:e2e:dev-10` con cookie y `Session.expiresAt` coherentes, sin renovar sesiones revocadas y con logout efectivo.
+- Un fallo de auditoría debe revertir completamente la operación comercial, stock, Kardex, reservas, auditoría e idempotencia aplicables; el retry debe ser seguro y no duplicar movimientos.
+- Deben pasar DEV-09, suites dirigidas de productos/inventario/POS/apartados/devoluciones, auth, unit tests, lint, typecheck, Prisma validate, build y `git diff --check`.
+- Contratos y riesgos quedan documentados en `docs/security/DEV-10-SESSION-LIFECYCLE.md` y `docs/security/DEV-10-COMMERCIAL-AUDIT.md`.
+
 ## DEV-03 — Catalogo de productos y variantes
 
 ### Scope
