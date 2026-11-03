@@ -132,6 +132,20 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - Deben pasar DEV-09, suites dirigidas de productos/inventario/POS/apartados/devoluciones, auth, unit tests, lint, typecheck, Prisma validate, build y `git diff --check`.
 - Contratos y riesgos quedan documentados en `docs/security/DEV-10-SESSION-LIFECYCLE.md` y `docs/security/DEV-10-COMMERCIAL-AUDIT.md`.
 
+## DEV-11 — Auditoría y cierre visual contra Google Stitch
+
+### Alcance
+
+- Inventariar recursivamente todos los pares `screen.png`/`code.html` de `diseno/` sin modificar las referencias originales.
+- Comparar runtime real en 1440x900, 768x1024 y 390x844 contra Stitch; corregir diferencias visuales P0/P1 reproducibles sin agregar módulos ni alterar reglas comerciales.
+- Mantener fuera de alcance Reportes, Administración de empleados y configuraciones nuevas; Dashboard, Apartados y Devoluciones sólo se capturan como superficies MVP cuando no exista referencia Stitch dedicada.
+
+### Resultado y rubric
+
+- DEV-11 debe entregar `docs/ui-redesign/DEV-11-STITCH-FINAL-AUDIT.md`, `DEV-11-VIEW-COVERAGE.md` y evidencia runtime sanitizada en `docs/ui-redesign/dev-11-visual-evidence/`.
+- La matriz debe declarar el total real de referencias, equivalentes implementados, N/A justificados y P0/P1/P2 abiertos; no afirmar cobertura total si una referencia queda fuera del alcance aprobado.
+- Deben pasar DEV-09, las suites dirigidas de las pantallas modificadas, unitarias, lint, typecheck, Prisma validate, build y `git diff --check`.
+
 ## DEV-03 — Catalogo de productos y variantes
 
 ### Scope
