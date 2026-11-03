@@ -2,7 +2,7 @@ import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function GET(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const p = new URL(req.url).searchParams;
   const from = p.get('from') ? new Date(`${p.get('from')}T00:00:00.000Z`) : undefined;

@@ -1,10 +1,10 @@
 import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { audit } from '@/lib/audit';
+import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
 
 export async function GET(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const params = new URL(req.url).searchParams;
   const q = params.get('q')?.trim() ?? '';
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const body = await req.json();
@@ -43,9 +43,9 @@ export async function POST(req: Request) {
         const variant = await tx.productVariant.create({ data: { businessId: auth.business!.id, productId: created.id, sku: input.sku.trim(), barcode: input.barcode?.trim() || null, cost: input.cost, price: input.price, promoPrice: input.promoPrice || null, stock: input.stock || 0, size: input.size || null, color: input.color || null, lowStockThreshold: input.lowStockThreshold || 1 } });
         if (Number(input.stock) > 0) await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, type: 'INITIAL', quantity: input.stock, reason: 'Alta de producto' } });
       }
+      await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Product', entityId: created.id }, tx, auditOptionsForRequest(req));
       return created;
     });
-    await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Product', entityId: product.id });
-    return Response.json(product, { status: 201 });
+     return Response.json(product, { status: 201 });
   } catch { return jsonError('SKU duplicado o datos invalidos', 409); }
 }

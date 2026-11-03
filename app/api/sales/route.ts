@@ -1,10 +1,10 @@
 import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { audit } from '@/lib/audit';
+import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { PaymentMethod } from '@prisma/client';
 
 export async function GET(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const search = new URL(req.url).searchParams.get('search')?.trim();
   const sales = await db.sale.findMany({ where: { businessId: auth.business.id, ...(search ? { OR: [{ id: search }, { folio: Number.isNaN(Number(search)) ? undefined : Number(search) }] } : {}) }, include: { lines: { include: { variant: { include: { product: true } }, returnLines: true } } }, orderBy: { createdAt: 'desc' }, take: 50 });
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const body = await req.json();
   if (!Array.isArray(body.items) || !body.items.length) return jsonError('El carrito esta vacio');
@@ -49,11 +49,11 @@ export async function POST(req: Request) {
          if (changed.count !== 1) throw new Error('stock');
         await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: line.variant.id, userId: auth.user.id, type: 'SALE', quantity: -line.quantity, referenceType: 'Sale', referenceId: created.id } });
       }
-      if (body.idempotencyKey) await tx.saleIdempotency.create({ data: { businessId: auth.business!.id, key: body.idempotencyKey, saleId: created.id, requestHash: JSON.stringify(body) } });
-      return created;
+       if (body.idempotencyKey) await tx.saleIdempotency.create({ data: { businessId: auth.business!.id, key: body.idempotencyKey, saleId: created.id, requestHash: JSON.stringify(body) } });
+       await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Sale', entityId: created.id }, tx, auditOptionsForRequest(req));
+       return created;
      }, { isolationLevel: 'Serializable' });
-    await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Sale', entityId: sale.id });
-    return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: 201 });
+     return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: 201 });
     } catch (error) {
       const conflict = error instanceof Error && (['stock', 'idempotency'].includes(error.message) || 'code' in error && error.code === 'P2034');
       return jsonError(error instanceof Error && error.message === 'idempotency' ? 'La clave de idempotencia ya fue usada con otro contenido' : conflict ? 'Existencia insuficiente' : 'No fue posible registrar la venta', conflict ? 409 : 400);

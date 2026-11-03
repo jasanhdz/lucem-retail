@@ -8,7 +8,7 @@ function serialize(row: any) {
 }
 
 export async function GET(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const search = new URL(req.url).searchParams.get('search')?.trim();
   const numericSearch = search && Number.isFinite(Number(search)) ? Number(search) : undefined;
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const body = await req.json();

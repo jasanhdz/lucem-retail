@@ -1,12 +1,12 @@
 import { getAuth, jsonError, permitted } from '@/lib/auth';
-import { audit } from '@/lib/audit';
+import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
 
 const roles = [Role.ADMIN, Role.INVENTORY_MANAGER];
 
 export async function GET() {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const rows = await db.reservation.findMany({
     where: { businessId: auth.business.id },
@@ -17,7 +17,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, roles)) return jsonError('No autorizado', 403);
   const body = await req.json();
@@ -32,10 +32,10 @@ export async function POST(req: Request) {
       if (changed.count !== 1) throw new Error('stock');
       const created = await tx.reservation.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, quantity, customerName: body.customerName?.trim() || null, expiresAt, deposit: body.deposit == null || body.deposit === '' ? null : body.deposit, notes: body.notes?.trim() || null } });
       await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, type: 'RESERVATION', quantity: -quantity, reason: 'Apartado', referenceType: 'Reservation', referenceId: created.id } });
+      await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Reservation', entityId: created.id }, tx, auditOptionsForRequest(req));
       return created;
     });
-    await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'CREATE', entityType: 'Reservation', entityId: reservation.id });
-    return Response.json({ ...reservation, quantity: reservation.quantity.toString(), deposit: reservation.deposit?.toString() ?? null }, { status: 201 });
+     return Response.json({ ...reservation, quantity: reservation.quantity.toString(), deposit: reservation.deposit?.toString() ?? null }, { status: 201 });
   } catch (error) {
     return jsonError(error instanceof Error && error.message === 'stock' ? 'Existencia insuficiente' : 'No fue posible crear el apartado', error instanceof Error && error.message === 'stock' ? 409 : 400);
   }

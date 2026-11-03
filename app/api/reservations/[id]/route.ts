@@ -1,10 +1,10 @@
 import { getAuth, jsonError, permitted } from '@/lib/auth';
-import { audit } from '@/lib/audit';
+import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { PaymentMethod, Role, ReservationStatus } from '@prisma/client';
 
 async function change(req: Request, id: string, action: 'release' | 'expire' | 'convert') {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const body = await req.json().catch(() => ({}));
@@ -39,14 +39,15 @@ async function change(req: Request, id: string, action: 'release' | 'expire' | '
         const changed = await tx.productVariant.updateMany({ where: { id: variant.id, businessId: auth.business!.id, stock: { gte: reservation.quantity } }, data: { stock: { decrement: reservation.quantity } } });
         if (changed.count !== 1) throw new Error('stock');
         await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, type: 'SALE', quantity: -Number(reservation.quantity), reason: 'Venta de apartado', referenceType: 'Reservation', referenceId: reservation.id } });
+        await audit({ businessId: auth.business!.id, userId: auth.user.id, action: action.toUpperCase(), entityType: 'Reservation', entityId: id }, tx, auditOptionsForRequest(req));
         return { reservation: updated, saleId: sale.id };
       }
       await tx.productVariant.update({ where: { id: reservation.variantId }, data: { stock: { increment: reservation.quantity } } });
       await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: reservation.variantId, userId: auth.user.id, type: 'RELEASE', quantity: reservation.quantity, reason: status === ReservationStatus.EXPIRED ? 'Apartado vencido' : 'Apartado liberado', referenceType: 'Reservation', referenceId: reservation.id } });
+      await audit({ businessId: auth.business!.id, userId: auth.user.id, action: action.toUpperCase(), entityType: 'Reservation', entityId: id }, tx, auditOptionsForRequest(req));
       return { reservation: updated, saleId: null };
     }, { isolationLevel: 'Serializable' });
-    await audit({ businessId: auth.business.id, userId: auth.user.id, action: action.toUpperCase(), entityType: 'Reservation', entityId: id });
-    return Response.json({ ...result.reservation, quantity: result.reservation.quantity.toString(), saleId: result.saleId });
+     return Response.json({ ...result.reservation, quantity: result.reservation.quantity.toString(), saleId: result.saleId });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     return jsonError(message === 'not-found' ? 'Apartado no encontrado' : message === 'cash' ? 'El efectivo recibido es insuficiente' : message === 'conversion-missing' ? 'El apartado convertido no tiene una venta asociada' : 'No fue posible actualizar el apartado', message === 'not-found' ? 404 : 409);

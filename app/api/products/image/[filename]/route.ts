@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 const types: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
 
 export async function GET(_request: Request, { params }: { params: Promise<{ filename: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const { filename } = await params;
   const match = /^([0-9a-f-]{36})\.(jpg|png|webp|gif)$/.exec(filename);

@@ -1,10 +1,10 @@
 import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { audit } from '@/lib/audit';
+import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const { id } = await params;
   const product = await db.product.findFirst({ where: { id, businessId: auth.business.id, archived: false }, include: { category: true, variants: { where: { active: true }, orderBy: { sku: 'asc' } } } });
@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const body = await req.json();
@@ -36,20 +36,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const variant = await tx.productVariant.create({ data: { businessId: auth.business!.id, productId: id, sku: input.sku.trim(), barcode: input.barcode?.trim() || null, size: input.size || null, color: input.color || null, cost: input.cost, price: input.price, promoPrice: input.promoPrice || null, stock: input.stock || 0, lowStockThreshold: input.lowStockThreshold || 1 } });
         if (Number(input.stock) > 0) await tx.inventoryMovement.create({ data: { businessId: auth.business!.id, variantId: variant.id, userId: auth.user.id, type: 'INITIAL', quantity: input.stock, reason: 'Alta de variante' } });
       }
+      await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'UPDATE', entityType: 'Product', entityId: id }, tx, auditOptionsForRequest(req));
       return updated;
     });
-    await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'UPDATE', entityType: 'Product', entityId: id });
-    return Response.json(result);
+     return Response.json(result);
   } catch (error) { return jsonError(error instanceof Error && error.message === 'not-found' ? 'Producto no encontrado' : 'SKU duplicado o datos invalidos', error instanceof Error && error.message === 'not-found' ? 404 : 409); }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const { id } = await params;
-  const result = await db.product.updateMany({ where: { id, businessId: auth.business.id }, data: { archived: true, updatedAt: new Date() } });
+  const result = await db.$transaction(async (tx) => {
+    const result = await tx.product.updateMany({ where: { id, businessId: auth.business!.id }, data: { archived: true, updatedAt: new Date() } });
+    if (result.count) await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'ARCHIVE', entityType: 'Product', entityId: id }, tx, auditOptionsForRequest(_req));
+    return result;
+  });
   if (!result.count) return jsonError('Producto no encontrado', 404);
-  await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'ARCHIVE', entityType: 'Product', entityId: id });
   return Response.json({ archived: true });
 }

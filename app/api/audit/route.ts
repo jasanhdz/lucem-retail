@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
 
 export async function GET() {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN])) return jsonError('No autorizado', 403);
 

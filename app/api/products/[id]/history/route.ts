@@ -2,7 +2,7 @@ import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const { id } = await params;
   const product = await db.product.findFirst({ where: { id, businessId: auth.business.id }, select: { variants: { select: { id: true } } } });

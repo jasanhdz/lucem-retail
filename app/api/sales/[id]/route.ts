@@ -6,7 +6,7 @@ function serialize(sale: any) {
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const { id } = await params;
   const sale = await db.sale.findFirst({ where: { id, businessId: auth.business.id }, include: { lines: { include: { variant: { include: { product: true } }, returnLines: true } }, user: { select: { name: true } } } });

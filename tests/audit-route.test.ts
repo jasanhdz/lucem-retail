@@ -13,7 +13,7 @@ describe('audit API projection regression', () => {
   });
 
   test('keeps the authorization and isolation guards', () => {
-    expect(source).toContain('getAuth()');
+    expect(source).toContain('getAuth({ renewCookie: true })');
     expect(source).toContain('jsonError(\'Sesion requerida\', 401)');
     expect(source).toContain('permitted(auth.membership?.role, [Role.ADMIN])');
     expect(source).toContain('jsonError(\'No autorizado\', 403)');

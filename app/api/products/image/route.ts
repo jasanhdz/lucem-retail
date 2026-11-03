@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 const MAX_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const form = await request.formData();

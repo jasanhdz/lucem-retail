@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 export { POST } from '../route';
 
 export async function GET(req: Request) {
-  const auth = await getAuth();
+  const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const url = new URL(req.url);
   const page = Math.max(1, Number(url.searchParams.get('page') || 1));
