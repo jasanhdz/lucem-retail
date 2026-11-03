@@ -34,6 +34,7 @@ Tras los ajustes visuales se volvió a verificar el runtime: `localhost:3000` lo
 - El editor simple no muestra banners ni notas ajenos al flujo de la referencia; las ayudas de stock aparecen en el propio campo y edición conserva su nota de sólo lectura.
 - El topbar ahora refleja sucursal activa, búsqueda del catálogo, nueva venta, acceso a auditoría y rol del usuario; el indicador de desarrollo Next.js se desactivó para no superponer el footer del sidebar.
 - La referencia Stitch más reciente de alta simple se tomó como fuente directa para títulos, textos auxiliares, texto recomendado, símbolos de moneda, unidades, contador de opcionales y acciones inferiores.
+- La alta desktop con variantes alinea nombre/categoría y ubicación/fotografía en dos columnas; las tarjetas de selección muestran estados inactivo/seleccionado y la matriz tiene una celda editable por atributo.
 
 ## Comparaciones
 
@@ -51,15 +52,16 @@ Viewports del runtime: desktop `1533x1600`, mobile `390x1600`. Las capturas se t
 ## Geometría Revisada
 
 - Desktop: el sidebar ocupa aproximadamente 300px del viewport de 1533px; el formulario queda dentro del área de workspace y ya no aparece como tarjeta modal centrada.
-- Desktop: selector, datos principales, valores simples/matriz y acciones siguen una columna de contenido única con ancho útil amplio.
+- Desktop: selector, datos generales, bloque de variantes/matriz y acciones siguen las secciones y cuadrículas de la referencia.
 - Mobile: el contenido se apila a 390px; las variantes pasan a tarjetas y el footer queda sobre la navegación inferior.
-- Mobile: el acordeón de información opcional permanece cerrado inicialmente, como en Stitch.
+- Mobile: el acordeón de información opcional simple permanece cerrado; la alta con variantes pasa de datos generales directamente a tarjetas de variantes.
 
 ## Diferencias Pendientes
 
 - Stitch usa datos demostrativos completos y una topbar/shell de referencia que no siempre coincide con el contenido real de sesión E2E.
 - El modelo funcional actual no añade campos nuevos de API sólo para replicar textos demostrativos de Stitch.
 - La matriz real conserva el contrato de variantes existente y puede mostrar más filas/errores que la composición estática del PNG.
+- La matriz conserva el campo de umbral de stock como columna adicional a la referencia de Stitch para no quitar una edición disponible previamente.
 - Las opciones “Usuarios y permisos” y “Configuración” del sidebar se muestran deshabilitadas porque el proyecto no tiene rutas para esas áreas.
 - El icono de campana enlaza a la auditoría existente, ya que no hay una API separada de notificaciones.
 - El footer conserva la versión real del paquete (`0.1.0`), no la versión ilustrativa del PNG.
@@ -67,6 +69,12 @@ Viewports del runtime: desktop `1533x1600`, mobile `390x1600`. Las capturas se t
 - La captura Stitch reciente de alta simple no incluye el sidebar en su encuadre, mientras que el runtime conserva el sidebar integrado de la aplicación.
 - El topbar no tiene un centro/API de notificaciones; la campana navega al módulo de auditoría existente. Los enlaces administrativos sin páginas disponibles se mantienen deshabilitados aunque visualmente presentes.
 - La aprobación visual final queda pendiente de la revisión humana de las cuatro comparaciones.
+
+### Diferencias P1 que mantienen la revisión pendiente
+
+- La referencia coloca notificaciones en el topbar; Lucem no tiene una API/centro de notificaciones. La campana lleva a auditoría existente y no replica el comportamiento de notificaciones.
+- La referencia dibuja enlaces activos para usuarios/configuración; estas rutas no existen en la aplicación, así que los accesos se muestran deshabilitados para no llevar a 404.
+- El PNG de alta simple más reciente encuadra el contenido sin sidebar; el runtime mantiene el shell lateral común solicitado para Productos.
 
 ## Resultados Funcionales
 

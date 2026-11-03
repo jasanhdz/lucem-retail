@@ -7,12 +7,14 @@ import {
   CircleAlert,
   CheckCircle2,
   ImagePlus,
+  Info,
   Layers,
   LoaderCircle,
   PackageOpen,
   Pencil,
   Plus,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
   Tag,
   Trash2,
@@ -964,18 +966,18 @@ function ProductForm({
               <div className="products-editor-title-line"><h1 id="products-editor-title">{isEdit ? "Editar producto" : variantMode === "multiple" ? <><span className="editor-title-desktop">Crear Producto con Variantes</span><span className="editor-title-mobile">Crear Producto</span></> : "Crear Producto"}</h1>{!isEdit && variantMode === "single" && <span className="products-title-context">Mostrador directo</span>}</div>
               <p>{variantMode === "multiple" ? <><span className="editor-copy-desktop">Control manual explícito de combinaciones, códigos SKU únicos y existencia inicial en tienda.</span><span className="editor-copy-mobile">Varias opciones: Artículos con tallas o colores (ej. Ropa, Calzado).</span></> : "Registra artículos con precio neto final y disponibilidad inmediata para venta física."}</p>
             </div>
-            <span className="products-editor-status">Captura Rápida de Inventario</span>
+            <span className="products-editor-status">{variantMode === "multiple" ? "Validación de códigos en tiempo real" : "Captura Rápida de Inventario"}</span>
           </div>
           <fieldset className="variant-mode">
             <legend>Presentación</legend>
-            <label>
+            <label className={variantMode !== "single" ? "products-mode-inactive" : ""}>
               <input
                 type="radio"
                 checked={variantMode === "single"}
                 onChange={() => setVariantMode("single")}
               />{" "}
-              <span className="products-mode-icon" aria-hidden="true">✓</span>
-              <span className="products-mode-copy"><strong>Una sola presentación{variantMode === "single" && <span className="products-recommended">Recomendado</span>}</strong><small>Artículos estándar sin tallas ni colores (ej. Cuaderno, Botella de agua).</small></span>
+              <span className={`products-mode-icon ${variantMode !== "single" ? "products-mode-icon-muted" : ""}`} aria-hidden="true">{variantMode === "single" ? <CheckCircle2 size={18} /> : <Archive size={18} />}</span>
+              <span className="products-mode-copy"><strong>Una sola presentación{variantMode === "single" ? <span className="products-recommended">Recomendado</span> : <span className="products-mode-state">Inactivo</span>}</strong><small>Artículos estándar sin tallas ni colores (ej. Cuaderno, Botella de agua).</small></span>
             </label>
             <label>
               <input
@@ -983,14 +985,15 @@ function ProductForm({
                 checked={variantMode === "multiple"}
                 onChange={() => setVariantMode("multiple")}
               />{" "}
-              <span className="products-mode-icon" aria-hidden="true"><Layers size={18} /></span>
-              <span className="products-mode-copy"><strong>Varias opciones</strong><small>Para artículos con múltiples atributos como talla o color (ej. Playeras, Calzado).</small></span>
+              <span className={`products-mode-icon ${variantMode === "multiple" ? "products-mode-icon-selected" : ""}`} aria-hidden="true"><Layers size={18} /></span>
+              <span className="products-mode-copy"><strong>Varias opciones{variantMode === "multiple" && <span className="products-mode-state products-mode-state-selected">Seleccionado</span>}</strong><small>Para artículos con múltiples atributos como talla o color (ej. Playeras, Calzado).</small></span>
+              {variantMode === "multiple" && <CheckCircle2 className="products-mode-selected-check" size={20} aria-hidden="true" />}
             </label>
           </fieldset>
           <section className={`products-data-section ${variantMode === "multiple" ? "products-data-multiple" : ""}`}>
           <div className="products-section-heading products-main-heading">
             <div>
-              <div className="products-main-heading-title"><span className="products-section-icon"><Archive size={18} aria-hidden="true" /></span><h2>{variantMode === "multiple" ? <><span className="data-heading-desktop">Datos generales del producto</span><span className="data-heading-mobile">Datos generales</span></> : "Datos principales"}</h2></div>
+              <div className={`products-main-heading-title ${variantMode === "multiple" ? "products-main-heading-multiple" : ""}`}><span className="products-section-icon">{variantMode === "multiple" ? <Info size={18} aria-hidden="true" /> : <Archive size={18} aria-hidden="true" />}</span><h2>{variantMode === "multiple" ? <><span className="data-heading-desktop">Datos generales del producto</span><span className="data-heading-mobile">Datos generales</span></> : "Datos principales"}</h2></div>
               <p>{variantMode === "multiple" ? "Información base compartida por todas las variantes en catálogo." : "Campos requeridos para habilitar el artículo en el punto de venta."}</p>
             </div>
             <span>{variantMode === "multiple" ? "Paso 1 de 2" : "Requerido"}</span>
@@ -998,15 +1001,17 @@ function ProductForm({
           <div className="products-form-grid">
             <label>
               <span className="products-field-label">Nombre del producto <em>*</em></span>
-              <input
-                aria-label="Nombre del producto"
-                value={draft.name}
-                placeholder="ej: Cuaderno Profesional Raya 100 Hojas"
+                <input
+                  aria-label="Nombre del producto"
+                  value={draft.name}
+                  placeholder="ej: Cuaderno Profesional Raya 100 Hojas"
+                  title={variantMode === "multiple" ? "El nombre visible en recibos, catálogo y búsqueda rápida de terminal." : undefined}
                 onChange={(event) => update("name", event.target.value)}
                 aria-invalid={showValidation && !draft.name.trim()}
                 aria-describedby="product-name-error"
                 required
               />
+              {variantMode === "multiple" && <small>El nombre visible en recibos, catálogo y búsqueda rápida de terminal.</small>}
               {showValidation && <FieldError message={firstError(validationErrors, "El nombre")} id="product-name-error" />}
             </label>
             <label>
@@ -1026,6 +1031,7 @@ function ProductForm({
                   </option>
                 ))}
               </select>
+              {variantMode === "multiple" && <small>Agrupación contable e inventario en punto de venta.</small>}
               {showValidation && <FieldError message={firstError(validationErrors, "Selecciona una categoría")} id="product-category-error" />}
             </label>
             {variantMode === "single" && draft.variants[0] && (
@@ -1046,13 +1052,15 @@ function ProductForm({
             {variantMode === "multiple" && (
               <>
                 <label>
-                  Ubicación en tienda
+                  <span className="products-field-label">Ubicación en tienda <small className="products-optional-inline">(Opcional)</small></span>
                   <input value={draft.location} onChange={(event) => update("location", event.target.value)} placeholder="Ej. Pasillo 2, Anaquel C-01" />
+                  <small>Referencia física para el personal de bodega y piso de venta.</small>
                 </label>
                 <label className="products-upload">
-                  Fotografía referencial
+                  <span className="products-field-label">Fotografía referencial <small className="products-optional-inline">(Opcional)</small></span>
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} />
                   <span><ImagePlus size={18} /> {preview ? "Cambiar imagen" : "Seleccionar imagen"}</span>
+                  <small>Imagen genérica visible en la cuadrícula de cobro de terminales.</small>
                 </label>
               </>
             )}
@@ -1119,11 +1127,11 @@ function ProductForm({
             <>
               <div className="variants-heading">
                 <div>
-                  <h3><span className="variant-heading-desktop">Variantes del producto</span><span className="variant-heading-mobile">Variantes</span></h3>
+                  <h3><span className="variants-heading-icon"><Layers size={17} aria-hidden="true" /></span><span className="variant-heading-desktop">Variantes del producto</span><span className="variant-heading-mobile">Variantes</span></h3>
                   <p>Agrega cada combinación vendible con su SKU, precio y existencia inicial.</p>
                 </div>
                 <button
-                  className="button button-quiet"
+                  className="button products-variant-add"
                   type="button"
                   onClick={() =>
                     setDraft((current) => ({
@@ -1156,7 +1164,7 @@ function ProductForm({
                   <th>Promo</th>
                   <th>Stock</th>
                   <th>Umbral</th>
-                  <th />
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -1209,6 +1217,9 @@ function ProductForm({
           )}
         </div>
         <footer className="products-modal-actions">
+          {variantMode === "multiple" && (
+            <p className="products-variant-footer-note"><ShieldCheck size={18} aria-hidden="true" /><span>Los cambios impactarán de inmediato en el catálogo de todas las terminales asociadas.</span></p>
+          )}
           <button
             className="button button-quiet"
             type="button"
@@ -1219,7 +1230,7 @@ function ProductForm({
             Cancelar
           </button>
           <button
-            className="button products-primary"
+            className={`button products-primary ${variantMode === "multiple" ? "products-variant-save" : ""}`}
             type="submit"
             disabled={saving}
           >
@@ -1227,7 +1238,7 @@ function ProductForm({
               <LoaderCircle className="spin" size={17} aria-hidden="true" />
             )}
             {!saving && <CheckCircle2 size={18} aria-hidden="true" />}
-            {saving ? "Guardando…" : "Guardar producto"}
+            {saving ? "Guardando…" : variantMode === "multiple" ? "Guardar producto con variantes" : "Guardar producto"}
           </button>
         </footer>
       </form>
