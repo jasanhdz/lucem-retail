@@ -163,7 +163,13 @@ export function ProductCatalog({ role }: { role: Role }) {
   function closeDialog() {
     setDialog(null);
     setEditing(null);
-    window.setTimeout(() => triggerRef.current?.focus(), 0);
+    window.setTimeout(() => {
+      if (triggerRef.current?.isConnected) {
+        triggerRef.current.focus();
+        return;
+      }
+      document.querySelector<HTMLButtonElement>('.products-page > .products-heading .products-primary')?.focus();
+    }, 0);
   }
   function openForm(product?: ProductGroup) {
     const active = document.activeElement;
@@ -219,7 +225,12 @@ export function ProductCatalog({ role }: { role: Role }) {
 
   const products = groupProductRows(rows);
   return (
-    <section className="products-page" aria-labelledby="products-title">
+    <section
+      className={`products-page ${dialog === "form" ? "products-editor-page" : ""}`}
+      aria-labelledby={dialog === "form" ? "products-editor-title" : "products-title"}
+    >
+      {dialog !== "form" && (
+        <>
       <header className="products-heading">
         <div>
           <p className="products-kicker">Inventario</p>
@@ -335,6 +346,8 @@ export function ProductCatalog({ role }: { role: Role }) {
             />
           ))}
         </div>
+      )}
+        </>
       )}
       {dialog === "form" && editing && (
         <ProductForm
@@ -602,6 +615,15 @@ function ProductForm({
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(product.photoPath ?? "");
   const isEdit = Boolean(product.id);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
   const validationErrors = validateProductDraft(
     draft.name,
     draft.categoryId,
@@ -857,12 +879,64 @@ function ProductForm({
     </div>
   );
   return (
-    <Modal
-      title={isEdit ? "Editar producto" : "Nuevo producto"}
-      onClose={onClose}
+    <section
+      className="products-editor-surface"
+      role="dialog"
+      aria-modal="false"
+      aria-label={isEdit ? "Editar producto" : "Nuevo producto"}
     >
+      <header className="products-editor-header">
+        <button
+          ref={closeRef}
+          className="products-editor-back"
+          type="button"
+          aria-label={`Cerrar ${isEdit ? "edición de producto" : "nuevo producto"}`}
+          onClick={onClose}
+        >
+          <X size={18} aria-hidden="true" />
+          <span>Productos</span>
+        </button>
+        <span className="products-editor-header-status">
+          {isEdit ? "Editar producto" : "Nuevo producto"}
+        </span>
+      </header>
       <form className="products-form" onSubmit={save} noValidate>
         <div className="products-form-body">
+          <div className="products-editor-hero">
+            <div>
+              <p className="products-editor-breadcrumb">Productos <span aria-hidden="true">›</span> {isEdit ? "Editar producto" : "Nuevo producto"}</p>
+              <h1 id="products-editor-title">{isEdit ? "Editar producto" : "Crear Producto"}</h1>
+              <p>{variantMode === "multiple" ? "Registra combinaciones, códigos únicos y existencia inicial por variante." : "Registra artículos con precio final y disponibilidad inmediata para venta física."}</p>
+            </div>
+            <span className="products-editor-status">{isEdit ? "Edición de catálogo" : "Alta de producto"}</span>
+          </div>
+          <fieldset className="variant-mode">
+            <legend>Presentación</legend>
+            <label>
+              <input
+                type="radio"
+                checked={variantMode === "single"}
+                onChange={() => setVariantMode("single")}
+              />{" "}
+              Una sola presentación
+            </label>
+            <label>
+              <input
+                type="radio"
+                checked={variantMode === "multiple"}
+                onChange={() => setVariantMode("multiple")}
+              />{" "}
+              Varias opciones
+            </label>
+          </fieldset>
+          <section className="products-data-section">
+          <div className="products-section-heading products-main-heading">
+            <div>
+              <h2>{variantMode === "multiple" ? "Datos generales del producto" : "Datos principales"}</h2>
+              <p>{variantMode === "multiple" ? "Información base compartida por todas las variantes en catálogo." : "Campos requeridos para habilitar el artículo en el punto de venta."}</p>
+            </div>
+            <span>{variantMode === "multiple" ? "Paso 1 de 2" : "Requerido"}</span>
+          </div>
           <div className="products-form-grid">
             <label>
               Nombre del producto
@@ -895,75 +969,97 @@ function ProductForm({
               </select>
               <FieldError message={firstError(validationErrors, "Selecciona una categoría")} id="product-category-error" />
             </label>
-            <label>
-              Ubicación
-              <input
-                value={draft.location}
-                onChange={(event) => update("location", event.target.value)}
-                placeholder="Ej. A-01"
-              />
-            </label>
-            <label className="products-upload">
-              Foto del producto
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={upload}
-              />
+          </div>
+          <details className="products-optional-section">
+            <summary>
               <span>
-                <ImagePlus size={18} />{" "}
-                {preview ? "Cambiar imagen" : "Seleccionar imagen"}
+                <strong>Información opcional</strong>
+                <small>Fotografía, ubicación en anaquel y datos complementarios</small>
               </span>
-            </label>
-          </div>
-          {preview && (
-            <img
-              className="products-preview"
-              src={preview}
-              alt="Vista previa de la foto del producto"
-            />
+              <ChevronDown size={18} aria-hidden="true" />
+            </summary>
+            <div className="products-extra-grid">
+              <label>
+                Ubicación en tienda
+                <input
+                  value={draft.location}
+                  onChange={(event) => update("location", event.target.value)}
+                  placeholder="Ej. A-01"
+                />
+              </label>
+              <label className="products-upload">
+                Foto del producto
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={upload}
+                />
+                <span>
+                  <ImagePlus size={18} />{" "}
+                  {preview ? "Cambiar imagen" : "Seleccionar imagen"}
+                </span>
+              </label>
+              {preview && (
+                <img
+                  className="products-preview"
+                  src={preview}
+                  alt="Vista previa de la foto del producto"
+                />
+              )}
+            </div>
+          </details>
+          {variantMode === "single" && draft.variants[0] && (
+            <div className="products-simple-values">
+              <div className="products-value-grid">
+                <label>
+                  SKU <span aria-hidden="true">*</span>
+                  <input aria-label="SKU" value={draft.variants[0].sku} onChange={(event) => updateVariant(0, "sku", event.target.value)} />
+                </label>
+                <label>
+                  Costo <span aria-hidden="true">*</span>
+                  <input aria-label="Costo" type="number" min="0" step="0.01" value={draft.variants[0].cost} onChange={(event) => updateVariant(0, "cost", event.target.value)} />
+                </label>
+                <label>
+                  Precio de venta <span aria-hidden="true">*</span>
+                  <input aria-label="Precio de venta" type="number" min="0" step="0.01" value={draft.variants[0].price} onChange={(event) => updateVariant(0, "price", event.target.value)} />
+                </label>
+                <label>
+                  Existencia inicial <span aria-hidden="true">*</span>
+                  <input aria-label="Existencia inicial" type="number" min="0" step="0.01" value={draft.variants[0].stock} onChange={(event) => updateVariant(0, "stock", event.target.value)} />
+                </label>
+              </div>
+            </div>
           )}
-          <fieldset className="variant-mode">
-            <legend>Presentación</legend>
-            <label>
-              <input
-                type="radio"
-                checked={variantMode === "single"}
-                onChange={() => setVariantMode("single")}
-              />{" "}
-              Una sola presentación
-            </label>
-            <label>
-              <input
-                type="radio"
-                checked={variantMode === "multiple"}
-                onChange={() => setVariantMode("multiple")}
-              />{" "}
-              Varias opciones
-            </label>
-          </fieldset>
-          <div className="variants-heading">
-            <h3>Variantes</h3>
-            <button
-              className="button button-quiet"
-              type="button"
-              onClick={() =>
-                setDraft((current) => ({
-                  ...current,
-                  variants: [...current.variants, emptyVariant()],
-                }))
-              }
-            >
-              <Plus size={16} /> Agregar variante
-            </button>
-          </div>
+          </section>
+          {variantMode === "multiple" && (
+            <>
+              <div className="variants-heading">
+                <div>
+                  <h3>Variantes del producto</h3>
+                  <p>Agrega cada combinación vendible con su SKU, precio y existencia inicial.</p>
+                </div>
+                <button
+                  className="button button-quiet"
+                  type="button"
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      variants: [...current.variants, emptyVariant()],
+                    }))
+                  }
+                >
+                  <Plus size={16} /> Agregar variante
+                </button>
+              </div>
+            </>
+          )}
           {message && (
             <div className="products-form-alert" role="alert">
               <CircleAlert size={18} aria-hidden="true" />
               <span>{message}</span>
             </div>
           )}
-          <div className="variants-table-wrap">
+          {variantMode === "multiple" && <div className="variants-table-wrap">
             <table className="variants-table" role="presentation">
               <thead>
                 <tr>
@@ -1006,8 +1102,8 @@ function ProductForm({
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="variant-cards">
+          </div>}
+          {variantMode === "multiple" && <div className="variant-cards">
             {draft.variants.map((variant, index) => (
               <details
                 className="variant-card"
@@ -1021,7 +1117,7 @@ function ProductForm({
                 {variantFields(variant, index, true)}
               </details>
             ))}
-          </div>
+          </div>}
           {isEdit && (
             <label className="reason-field">
               Motivo de cambios de costo, precio o promoción
@@ -1058,7 +1154,7 @@ function ProductForm({
           </button>
         </footer>
       </form>
-    </Modal>
+    </section>
   );
 }
 

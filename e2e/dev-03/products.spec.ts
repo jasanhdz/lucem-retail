@@ -286,7 +286,7 @@ test.describe('DEV-03 products', () => {
     }
   });
 
-  test('modal de producto es accesible a 390x844 y conserva foco, alertas y scroll lock', async ({ page }) => {
+  test('editor integrado de producto es accesible a 390x844 y conserva foco y alertas', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await waitForCatalog(page);
     const trigger = page.getByRole('button', { name: 'Nuevo producto' });
@@ -298,12 +298,13 @@ test.describe('DEV-03 products', () => {
     await expect(dialog).toBeVisible();
     const close = dialog.getByRole('button', { name: 'Cerrar nuevo producto' });
     await expect(close).toBeFocused();
-    expect(await page.locator('body').evaluate(body => body.style.overflow)).toBe('hidden');
+    expect(await page.locator('body').evaluate(body => body.style.overflow)).toBe('');
     for (const button of await dialog.locator('button:visible').all()) {
       const box = await button.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
+    await dialog.locator('.products-optional-section summary').click();
     const uploadTrigger = await dialog.locator('.products-upload span').boundingBox();
     expect(uploadTrigger?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(uploadTrigger?.height ?? 0).toBeGreaterThanOrEqual(44);
@@ -325,6 +326,7 @@ test.describe('DEV-03 products', () => {
     const dialog = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(dialog).toBeVisible();
     await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-simple-${testInfo.project.name}.png`) });
+    await dialog.getByLabel('Varias opciones').check();
     await dialog.getByRole('button', { name: 'Agregar variante' }).click();
     await dialog.screenshot({ path: testInfo.outputPath(`DEV-03B-create-variants-${testInfo.project.name}.png`) });
     await dialog.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
