@@ -7,3 +7,5 @@ La inspección del source en esta revisión confirma que el alta no tiene select
 ## Runtime autenticado
 
 **BLOCKED**, no PASS: `E2E_DATABASE_URL` está ausente. La suite E2E autenticada no se ejecutó contra base válida. El `curl -I` a `localhost:3000` agotó el timeout documentado; no se detuvo ni alteró ese proceso. No hay capturas nuevas, no se crearon PNGs y no se verificaron 1440x900, 768x1024 ni 390x844 en runtime. No se atribuye evidencia visual autenticada ni responsive a la inspección estática.
+
+El índice y las condiciones para incorporar evidencia runtime están en [`dev-12-visual-evidence/README.md`](dev-12-visual-evidence/README.md). El directorio no contiene capturas.
