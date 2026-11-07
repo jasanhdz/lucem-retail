@@ -12,3 +12,11 @@ playwright/.auth/
 e2e-artifacts/
 public/uploads
 *.tsbuildinfo
+
+# Private Lucem staging configuration and backup artifacts
+.staging/
+.env.staging
+.env.staging.*
+!*.example
+*.dump
+*.tar.gz

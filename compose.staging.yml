@@ -1,0 +1,71 @@
+name: lucem-retail-staging
+services:
+  db:
+    image: postgres:16.10-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lucem_staging
+      POSTGRES_USER: lucem_staging
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - staging_db:/var/lib/postgresql/data
+    networks:
+      - staging_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lucem_staging -d lucem_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lucem-retail-staging-app:local
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://lucem_staging:${STAGING_DB_PASSWORD:?Set STAGING_DB_PASSWORD in protected config}@db:5432/lucem_staging?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - staging_internal
+    restart: "no"
+  app:
+    image: lucem-retail-staging-app:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://lucem_staging:${STAGING_DB_PASSWORD:?Set STAGING_DB_PASSWORD in protected config}@db:5432/lucem_staging?schema=public
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - staging_uploads:/app/public/uploads/products
+    networks:
+      - staging_internal
+      - staging_ingress
+    ports:
+      - "${STAGING_LAN_IP:?Set STAGING_LAN_IP to the verified LAN address}:3000:3000"
+    restart: unless-stopped
+    user: "1001:1001"
+networks:
+  staging_internal:
+    name: lucem-retail-staging-internal
+    internal: true
+  staging_ingress:
+    name: lucem-retail-staging-ingress
+volumes:
+  staging_db:
+    name: lucem-retail-staging-db
+  staging_uploads:
+    name: lucem-retail-staging-uploads
+secrets:
+  db_password:
+    file: ./.staging/db_password
