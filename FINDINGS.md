@@ -821,3 +821,112 @@ Docker Compose no estaba disponible; se usó exclusivamente Docker Engine con `l
 La evaluación comercial integral pasa `1/1` contra PostgreSQL E2E: un comerciante nuevo registra cuenta, crea negocio con categoría `General`, crea productos simples y con variantes, registra entrada, vende en efectivo, genera ticket, crea y convierte apartado, registra devolución parcial, consulta Dashboard, cierra sesión y vuelve a entrar. Se verificaron persistencia directa, balances `physical = available + reserved`, idempotencia, concurrencia, roles y aislamiento mediante las suites dirigidas.
 
 Defectos reproducibles corregidos: `e2e:prepare` ahora espera el seed; negocios nuevos reciben categoría `General`; el topbar evita overflow a 768px; la expectativa POS refleja la última variante habilitada. Suites dirigidas: productos `14/14`, inventario `6/6`, POS `6/6`, apartados `7/7`, devoluciones `7/7`. Evidencia en `docs/testing/dev-09-visual-evidence/`; no se publicaron secretos ni storage states.
+
+# Findings — DEV-12 pass 1
+
+## Resumen
+
+**4/10 criterios PASS, 1 FAIL y 5 BLOCKED.** PASS: política documentada de anticipos no aprobados (#3); revisión de source de Apartados confirma que la UI dejó de ofrecer controles monetarios y declara el total pendiente (#6, sólo la parte de source); checks requeridos (#9; ambas suites E2E quedaron explícitamente BLOCKED); y límites Git/diseño verificados (#10). FAIL: falta el directorio obligatorio `docs/quality/dev-12-visual-evidence/` (#8). Permanecen BLOCKED los criterios #1, #2, #4, #5 y #7 por falta de PostgreSQL E2E/dataset real; el runtime visual autenticado también está BLOCKED.
+
+Se evaluó el diff desde `bcdc25d73b6d058ff0d2b3603e88ccbbb2bd3fdc` en rama `feature/lucem-ui-redesign-v1`. HEAD actual `bd33ad9aaef1cab2b363e943ebf733c0793ab3f6`; `origin/feature/lucem-ui-redesign-v1` apunta al base `bcdc25d`; `bcdc25d` es ancestro de HEAD. El remoto `origin` es `git@github.com:jasanhdz/lucem-retail.git`. El checkout estaba limpio antes de este informe, `git diff -- diseno/` vacío, y no se realizó ninguna operación Git mutante. Nota: la identidad de branch/HEAD/remoto y los untracked descritos en SPEC:384 no coinciden con el estado presente; el estado observado arriba es el usado para esta evaluación.
+
+`E2E_DATABASE_URL` se comprobó ausente mediante `printenv` sin imprimir valores. No se leyó intencionalmente `DATABASE_URL`, no se preparó/limpió dataset ni se ejecutó migración. `npx prisma validate` pasó, aunque Prisma informó literalmente `Environment variables loaded from .env`; no mostró ningún valor ni se conectó a DB. No se usó `localhost:3000` como evidencia visual: PID 26224 continúa escuchando con cwd del repo y padre 26216; `curl -I --max-time 8 http://localhost:3000` terminó en timeout sin respuesta. No se detuvo ni alteró el proceso.
+
+## Abiertos
+
+- [ ] F-DEV12-01 · BLOCKED · criterio #1 — La inspección de `src/components/reservations/ReservationCreationFlow.tsx` confirma el alta sin monto/método/efectivo recibido/cambio y con copy «sin registrar pagos»/«total pendiente»; `app/api/reservations/route.ts` rechaza `deposit` no cero antes de crear reserva, y `e2e/dev-06/reservations.spec.ts` contiene una aserción de rechazo. Sin embargo, ese E2E no pudo ejecutarse contra PostgreSQL y `npm test` sólo ejecutó la suite unitaria del helper de idempotencia (no prueba el handler ni los renders del flujo). Por la exigencia de evidencia ejecutada UI/API, no se declara PASS ni FAIL de comportamiento.
+- [ ] F-DEV12-02 · BLOCKED · criterio #2 — `app/api/reservations/[id]/route.ts` rechaza acciones individuales sobre depósito positivo con conflicto de revisión manual; `expire/route.ts` excluye depósitos positivos. `e2e/dev-06/reservations.spec.ts` define fixture y aserciones de preservación, pero no corrió. Sin PostgreSQL/dataset E2E no se comprueban filas, stock, ventas ni movimientos persistidos.
+- [ ] F-DEV12-03 · BLOCKED · criterio #4 — La API batch ejecuta creación, decrementos, movimientos, auditoría e idempotencia durable dentro de transacción serializable; el cliente conserva la misma key/payload ante respuesta incierta. `tests/reservation-batch.test.ts` pasó 2/2 y sólo prueba canonicalización/hash/validación de key: no demuestra atomicidad o idempotencia durable PostgreSQL. E2E está bloqueado; no se asigna PASS a source/unit tests.
+- [ ] F-DEV12-04 · BLOCKED · criterio #5 — Suites dirigidas DEV-06 y DEV-09 no ejecutaron casos comerciales, concurrencia, replay, permisos, aislamiento ni balances por falta de la DB E2E dedicada.
+- [ ] F-DEV12-05 · BLOCKED · criterios #6–7 — Source confirma CTA exacto «Completar apartado y registrar venta», copy que no afirma pago recibido, retiro de controles de anticipo y aviso/manual-review histórico; docs de auditoría reportan runtime BLOCKED. No hay sesión ni dataset para comparar Stitch, ni capturas/mediciones reales a 1440x900, 768x1024 o 390x844. `localhost:3000` no respondió a curl dentro del timeout; no se infiere PASS visual/responsive.
+- [ ] F-DEV12-06 · major · criterio #8 — Están presentes `DEV-12-MVP-REFINEMENT.md`, `DEV-12-ADVANCE-PAYMENTS.md` y `DEV-12-VISUAL-AUDIT.md`, pero no existe `docs/quality/dev-12-visual-evidence/` (`glob` sin archivos y `test -d` código 1). La rúbrica exige el directorio/evidencia runtime real; falta un entregable y por eso el criterio es FAIL, no BLOCKED.
+
+## Resueltos (verificados este pass)
+
+- [x] DEV12-PASS1 · criterios #3, #6 (source solamente), #9 y #10; los límites de esos PASS se detallan en la verificación inferior.
+
+## Verificación rubric DEV-12
+
+1. **BLOCKED — Anticipos nuevos.** Source: `ReservationCreationFlow.tsx` no incluye captura monetaria y comunica que no se registran pagos; `app/api/reservations/route.ts:25` rechaza `deposit` numérico distinto de cero antes de persistir. La suite contiene rechazo API, pero las únicas pruebas realmente corridas fueron unitarias de helpers, no ejecutan ni el handler ni el navegador. Suite dirigida bloqueada: no se promueve inspección estática a PASS de API/UI.
+2. **BLOCKED — Históricos protegidos.** Source inspeccionado: rutas de release/convert rechazan depósito histórico positivo; expiración masiva filtra a `deposit <= 0`; UI oculta acciones destructivas y muestra revisión manual. Prueba E2E de release/convert/expire/preservación existe en `e2e/dev-06/reservations.spec.ts` pero no corrió contra datos persistidos.
+3. **PASS — Política/aprobación.** `docs/quality/DEV-12-ADVANCE-PAYMENTS.md` declara explícitamente **BLOCKED / no aprobado para MVP**, identifica pendientes de reembolso/retención, aplicación a venta y tratamiento en liberación/vencimiento, y no presenta el campo `Reservation.deposit` como ledger ni pago recibido. Esto confirma que no hay aprobación; no implica que anticipos estén soportados.
+4. **BLOCKED — Atomicidad multi-producto.** Source tiene transacción `Serializable`, clave/hash/IDs persistidos junto con reservas, stock, movimientos y auditoría. `npm test` ejecutó `tests/reservation-batch.test.ts` (2 tests), limitados a normalización/hash y validez de key; no prueban rollback, persistencia durable, concurrencia ni replay en PostgreSQL. Suite de integración no ejecutada.
+5. **BLOCKED — Regresión comercial.** `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:reservations -- --reporter=list` → abortó antes de tests con `E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.` `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:dev-09 -- --reporter=list` → mismo bloqueo. Nunca se ejecutó suite global.
+6. **PASS (source de UX, no runtime).** Inspección de `ReservationCreationFlow.tsx` y `ReservationsPage.tsx`: alta sin controles/campos de anticipo, texto de no pago/pending, CTA exacto «Completar apartado y registrar venta», mensaje manual para históricos y sin acciones de liberar/convertir en ellos. Esto sólo verifica retirada/copy en source; comparación Stitch y refinamientos visuales runtime no se consideran PASS.
+7. **BLOCKED — Responsive/runtime visual.** `docs/quality/DEV-12-VISUAL-AUDIT.md` declara BLOCKED y ausencia de nuevas capturas. La comprobación de listener confirmó PID 26224/cwd del repo; `curl -I --max-time 8 http://localhost:3000` → `curl: (28) Operation timed out after 8012 milliseconds with 0 bytes received`. Proceso dejado intacto. No se usaron fixtures ni screenshots fabricados.
+8. **FAIL — Artefactos auditables.** Los tres documentos existen. El directorio exigido `docs/quality/dev-12-visual-evidence/` no existe y no hay capturas/evidencia runtime en esa ruta. Se registra F-DEV12-06.
+9. **PASS — Checks y bloqueo E2E informado.** `npm run lint` código 0; `npm run typecheck` código 0; `npm test` código 0, **11 archivos / 28 tests**; `env -u DATABASE_URL npx prisma validate` código 0, schema válido (Prisma indicó que cargó variables de `.env`, sin mostrar valores); `npm run build` código 0 (Next.js 15.5.28, warning de plugin Next.js no detectado por ESLint); `git diff --check` código 0. E2E de Apartados y DEV-09 quedaron BLOCKED con la causa exacta, permitido por el criterio. Se ejecutaron efectivamente los comandos listados, aunque los E2E no iniciaron tests.
+10. **PASS — Límites/Git/MVP.** Branch, HEAD, `origin` y base se comprobaron; el base es ancestro, diff de `diseno/` vacío y no hubo mutación Git. Los tres docs de calidad están presentes. El status estaba limpio antes de añadir sólo este apéndice a `FINDINGS.md`; las 823 líneas anteriores se preservaron sin cambios. El dictamen mantiene el MVP con anticipos **no aprobado**.
+
+### Comandos ejecutados y resultado
+
+- `if printenv E2E_DATABASE_URL >/dev/null; then ...; else ...; fi` → `E2E_DATABASE_URL_ABSENT`; no se mostró valor.
+- `git branch --show-current` → `feature/lucem-ui-redesign-v1`.
+- `git rev-parse HEAD` → `bd33ad9aaef1cab2b363e943ebf733c0793ab3f6`.
+- `git rev-parse bcdc25d` y `git rev-parse origin/feature/lucem-ui-redesign-v1` → `bcdc25d73b6d058ff0d2b3603e88ccbbb2bd3fdc`.
+- `git remote get-url origin` → `git@github.com:jasanhdz/lucem-retail.git`.
+- `git status --short` inicial → vacío; `git diff --name-only bcdc25d` → 16 archivos de DEV-12/SPEC/docs; `git diff --quiet bcdc25d -- diseno` → código 0.
+- `npm run lint` → PASS, código 0.
+- `npm run typecheck` → PASS, código 0.
+- `npm test` → PASS, 11/11 archivos, 28/28 tests.
+- `env -u DATABASE_URL npx prisma validate` → PASS, schema válido; Prisma notificó carga de variables desde `.env`, sin exponer valores.
+- `npm run build` → PASS, código 0; warning preexistente de plugin ESLint Next no detectado.
+- `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:reservations -- --reporter=list` → BLOCKED antes de tests: `E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.`
+- `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:dev-09 -- --reporter=list` → BLOCKED antes de tests con la misma razón exacta.
+- `git diff --check` → PASS, código 0.
+- `curl -I --max-time 8 http://localhost:3000` → timeout, código curl 28; PID 26224 no detenido.
+
+No se ejecutó `npm run e2e:prepare`, cleanup, migraciones, seed, suites globales, endpoint de auditoría ni escrituras a DB. No hubo sesión/dataset E2E; los E2E no cuentan como PASS. No se afirmó visual responsive autenticada.
+
+# Findings — DEV-12 pass 2
+
+## Resumen
+
+**4/10 criterios PASS, 0 FAIL y 6 BLOCKED.** Revisión incremental tras `6d71cda789683a569d1e39913e9a461d94582fdc` (`docs(F-DEV12-06): record blocked visual evidence`). El HEAD de pass 1 `bd33ad9aaef1cab2b363e943ebf733c0793ab3f6` es ancestro; desde ese pass sólo cambian `docs/quality/DEV-12-VISUAL-AUDIT.md` y `docs/quality/dev-12-visual-evidence/README.md`. El README resuelve la ausencia de un índice/directorio, pero declara explícitamente `BLOCKED`, cero capturas runtime y viewports pendientes. Por tanto, el criterio #8 se reclasifica de FAIL a **BLOCKED**, no PASS; no hay PNGs ni falsa afirmación visual. Se mantienen PASS #3 (anticipos no aprobados), #6 (sólo UX verificada en source), #9 (checks de pass 1 y E2E bloqueado correctamente) y #10. #1, #2, #4, #5, #7 y #8 permanecen BLOCKED; el MVP con anticipos sigue **no aprobado**.
+
+## Abiertos
+
+- [ ] F-DEV12-01 · BLOCKED · criterio #1 — Se conserva el resultado de pass 1: el source muestra controles monetarios retirados y API con rechazo de depósito no cero, pero no se ejecutó prueba API/UI; E2E necesita DB dedicada para confirmar comportamiento. No se infiere PASS.
+- [ ] F-DEV12-02 · BLOCKED · criterio #2 — Sin dataset PostgreSQL E2E no se verificaron release, expire y convert de históricos positivos ni preservación durable de sus saldos/movimientos.
+- [ ] F-DEV12-03 · BLOCKED · criterio #4 — Unit/source no demuestran atomicidad, replay ni idempotencia durable contra PostgreSQL; no se repitió la suite unitaria porque el commit evaluado sólo modifica documentos.
+- [ ] F-DEV12-04 · BLOCKED · criterio #5 — Suites dirigidas DEV-06 y DEV-09 abortaron antes de tests por ausencia de `E2E_DATABASE_URL`.
+- [ ] F-DEV12-05 · BLOCKED · criterios #6–7 — No hay sesión/dataset real ni capturas/mediciones runtime en los viewports rubricados. README declara que Stitch es referencia de diseño y no runtime evidence. No se declara PASS visual ni responsive.
+- [ ] F-DEV12-06 · BLOCKED · criterio #8 — El defecto específico de índice/directorio faltante queda resuelto: ahora existe `docs/quality/dev-12-visual-evidence/README.md` y está enlazado desde la auditoría visual. El criterio completo sigue BLOCKED porque falta la evidencia runtime autenticada exigida; la infraestructura E2E está ausente. No reclasificar a PASS ni FAIL de producto.
+
+## Resueltos (verificados este pass)
+
+- [x] F-DEV12-06 (gap de índice/directorio) — README y ruta de evidencia presentes, enlazados, y declaran con claridad estado BLOCKED, ausencia de screenshots, requisitos de sesión/DB y viewports pendientes. Se resuelve únicamente la ausencia del índice; el criterio #8 completo permanece BLOCKED.
+- [x] DEV12-PASS2 — Verificada la identidad Git/diff incremental, los documentos requeridos y que la evidencia visual no afirma capturas inexistentes. Se mantienen los resultados de código comprobados en pass 1, no reejecutados.
+
+## Verificación rubric DEV-12
+
+1. **BLOCKED — Anticipos nuevos.** Se conserva pass 1: source inspeccionado, pero sin prueba ejecutada del handler/UI que pruebe el rechazo/ausencia de captura. No hay cambio funcional en este pass.
+2. **BLOCKED — Históricos protegidos.** Sin DB E2E ni dataset real, no se verificó persistencia de la protección. Suites no ejecutadas.
+3. **PASS — Política/aprobación.** Se mantiene la evidencia de `docs/quality/DEV-12-ADVANCE-PAYMENTS.md`: decisiones de política pendientes y anticipos BLOCKED/no aprobados. Esto no significa que los anticipos estén soportados.
+4. **BLOCKED — Atomicidad.** No hubo nuevas pruebas contra PostgreSQL; pruebas de helper/source no prueban atomicidad durable.
+5. **BLOCKED — Regresión.** `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:reservations -- --reporter=list` abortó antes de ejecutar tests con `E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.` `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:dev-09 -- --reporter=list` abortó de igual forma. La guarda `printenv E2E_DATABASE_URL` confirmó `E2E_DATABASE_URL_ABSENT`; no se imprimió URL.
+6. **PASS (source solamente).** Se conserva la verificación del pass 1 del texto de CTA y ausencia de controles monetarios en source. No demuestra composición, comparación Stitch ni funcionamiento en runtime autenticado.
+7. **BLOCKED — Responsive/runtime visual.** El README lista 1440×900, 768×1024 y 390×844 como pendientes. No hay capturas reales ni mediciones responsive.
+8. **BLOCKED — Artefactos auditables.** Existen los tres documentos `DEV-12-*` y el README `docs/quality/dev-12-visual-evidence/README.md`; la auditoría enlaza el README. El README declara `Status: BLOCKED`, `No runtime screenshots were generated`, y no afirma PASS. `glob docs/quality/dev-12-visual-evidence/**/*.png` no encontró archivos. Queda resuelto el índice ausente, pero no la evidencia runtime exigida por SPEC, por lo que criterio #8 permanece BLOCKED.
+9. **PASS (checks de pass 1; no repetidos).** Pass 1 ejecutó lint, typecheck, `npm test` (11 archivos/28 tests), Prisma validate, build y diff-check en código 0. Este pass inspeccionó que HEAD contiene sólo cambios de documentación/evidencia respecto a pass 1; no repitió checks de código. Los dos E2E guardados se reintentaron y quedaron BLOCKED antes de tests con la causa exacta.
+10. **PASS — Límites Git y MVP.** Rama `feature/lucem-ui-redesign-v1`; HEAD `6d71cda789683a569d1e39913e9a461d94582fdc`; remoto `origin` URL `git@github.com:jasanhdz/lucem-retail.git`, ref `origin/feature/lucem-ui-redesign-v1` en `bcdc25d73b6d058ff0d2b3603e88ccbbb2bd3fdc`. El commit Generator `6d71cda` y el HEAD pass 1 son ancestros de HEAD. Diff desde pass 1 contiene exactamente los dos documentos visuales indicados; `diseno/` no tiene diff desde base. No hubo acciones Git mutantes; el único cambio local pendiente antes de añadir pass 2 era `FINDINGS.md` de pass 1. El dictamen mantiene anticipos no aprobados.
+
+### Comandos y verificaciones ejecutados
+
+- `git branch --show-current` → `feature/lucem-ui-redesign-v1`.
+- `git rev-parse HEAD` → `6d71cda789683a569d1e39913e9a461d94582fdc`.
+- `git status --short` → `M FINDINGS.md` (apéndice pass 1 preexistente a esta evaluación).
+- `git remote -v` → `origin` fetch/push `git@github.com:jasanhdz/lucem-retail.git`.
+- `git rev-parse origin/feature/lucem-ui-redesign-v1` → `bcdc25d73b6d058ff0d2b3603e88ccbbb2bd3fdc`.
+- `git merge-base --is-ancestor 6d71cda HEAD` y `git merge-base --is-ancestor bd33ad9 HEAD` → ambos código 0.
+- `git diff --name-status bd33ad9..HEAD` → `M docs/quality/DEV-12-VISUAL-AUDIT.md`; `A docs/quality/dev-12-visual-evidence/README.md`; no hay cambios de código desde pass 1.
+- `git show --stat --oneline 6d71cda` → únicamente los dos paths documentales anteriores, 15 inserciones.
+- `git diff --check 6d71cda^ 6d71cda` → código 0; `git diff --check` del worktree → código 0.
+- Los tres docs DEV-12 y `docs/quality/dev-12-visual-evidence/README.md` existen.
+- Revisión del README y auditoría: estado BLOCKED, no screenshots runtime, no PASS, viewports pendientes y enlace al README; no se presentan los PNG de Stitch como capturas runtime.
+- `glob docs/quality/dev-12-visual-evidence/**/*.png` → sin archivos.
+- `if printenv E2E_DATABASE_URL >/dev/null; then ...; else ...; fi` → `E2E_DATABASE_URL_ABSENT`, sin mostrar valor. No se leyó `DATABASE_URL`.
+- `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:reservations -- --reporter=list` → BLOCKED antes de tests: `E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.`
+- `env -u E2E_DATABASE_URL -u DATABASE_URL CI=1 npm run test:e2e:dev-09 -- --reporter=list` → BLOCKED antes de tests con la misma causa.
+
+No se ejecutaron lint/build ni unit tests de nuevo porque el diff desde pass 1 sólo contiene los dos cambios documentales/evidencia descritos. No se ejecutó preparación/cleanup, migraciones, seed, E2E global, endpoint de auditoría ni acceso a DB. No se detuvo ni alteró PID 26224. No se hizo commit/push.
