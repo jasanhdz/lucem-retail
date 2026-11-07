@@ -55,6 +55,12 @@ services:
       - "${STAGING_LAN_IP:?Set STAGING_LAN_IP to the verified LAN address}:3000:3000"
     restart: unless-stopped
     user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 networks:
   staging_internal:
     name: lucem-retail-staging-internal
