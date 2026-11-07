@@ -4,6 +4,39 @@ test.describe.configure({ mode: 'serial' });
 const sku = 'DEV-TEST-01-NORMAL';
 
 test.describe('DEV-06 apartados', () => {
+  test('atomically creates batch reservations and replays persisted idempotency without duplicate stock movements', async ({ page }) => {
+    const request = page.request;
+    const rows = await (await request.get('/api/inventory')).json();
+    const normal = rows.find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');
+    const low = rows.find((row: { sku: string }) => row.sku === 'DEV-TEST-01-LOW');
+    const payload = { customerName: 'DEV-06 batch', expiresAt: new Date(Date.now() + 86400000).toISOString(), items: [{ variantId: normal.id, quantity: 1 }, { variantId: low.id, quantity: 1 }] };
+    const key = `dev06-batch-${crypto.randomUUID()}`;
+    expect((await request.post('/api/reservations', { data: payload })).status()).toBe(400);
+    const rejectedDeposit = await request.post('/api/reservations', { data: { variantId: normal.id, quantity: 1, expiresAt: payload.expiresAt, deposit: 'NaN' } });
+    expect(rejectedDeposit.status()).toBe(400);
+    const beforeFailedBatch = await request.get('/api/inventory');
+    const stockBeforeFailure = (await beforeFailedBatch.json()).find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');
+    const failed = await request.post('/api/reservations', { headers: { 'Idempotency-Key': `${key}-failed` }, data: { ...payload, items: [{ variantId: normal.id, quantity: 1 }, { variantId: low.id, quantity: 999 }] } });
+    expect(failed.status()).toBe(409);
+    const stockAfterFailure = (await (await request.get('/api/inventory')).json()).find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');
+    expect(Number(stockAfterFailure.available)).toBe(Number(stockBeforeFailure.available));
+    const [first, concurrent] = await Promise.all([request.post('/api/reservations', { headers: { 'Idempotency-Key': key }, data: payload }), request.post('/api/reservations', { headers: { 'Idempotency-Key': key }, data: payload })]);
+    expect([first.status(), concurrent.status()].sort()).toEqual([200, 201]);
+    const results = await Promise.all([first.json(), concurrent.json()]);
+    expect(results[0].reservations.map((row: { id: string }) => row.id)).toEqual(results[1].reservations.map((row: { id: string }) => row.id));
+    expect((await request.post('/api/reservations', { headers: { 'Idempotency-Key': key }, data: { ...payload, customerName: 'different' } })).status()).toBe(409);
+    process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
+    const { PrismaClient } = await import('@prisma/client'); const db = new PrismaClient();
+    try {
+      const ids = results[0].reservations.map((row: { id: string }) => row.id);
+      expect(await db.reservation.count({ where: { id: { in: ids } } })).toBe(2);
+      expect(await db.inventoryMovement.count({ where: { referenceType: 'Reservation', referenceId: { in: ids }, type: 'RESERVATION' } })).toBe(2);
+      const replay = await request.post('/api/reservations', { headers: { 'Idempotency-Key': key }, data: payload }); expect(replay.status()).toBe(200);
+      expect(await db.inventoryMovement.count({ where: { referenceType: 'Reservation', referenceId: { in: ids }, type: 'RESERVATION' } })).toBe(2);
+    } finally { await db.$disconnect(); }
+    for (const row of results[0].reservations) await request.post(`/api/reservations/${row.id}/release`, { data: { confirmation: true } });
+  });
+
   test('creates and releases a reservation with persisted balance transitions', async ({ page }) => {
     const request = page.request;
     const initial = (await (await request.get('/api/inventory')).json()).find((row: { sku: string }) => row.sku === sku);
@@ -94,6 +127,28 @@ test.describe('DEV-06 apartados', () => {
     await manager.close();
   });
 
+  test('blocks destructive operations on historical advances and preserves the reservation', async ({ page }) => {
+    const request = page.request;
+    const variant = (await (await request.get('/api/products?available=true&q=DEV-TEST-01-NORMAL')).json())[0];
+    const created = await request.post('/api/reservations', { data: { variantId: variant.id, quantity: 1, expiresAt: new Date(Date.now() + 86400000).toISOString() } });
+    const reservation = await created.json();
+    process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
+    const { PrismaClient } = await import('@prisma/client'); const db = new PrismaClient();
+    try { await db.reservation.update({ where: { id: reservation.id }, data: { deposit: 25, expiresAt: new Date(Date.now() - 1000) } }); } finally { await db.$disconnect(); }
+    const baseline = (await (await request.get('/api/inventory')).json()).find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');
+    expect((await request.post(`/api/reservations/${reservation.id}/release`, { data: { confirmation: true } })).status()).toBe(409);
+    expect((await request.post(`/api/reservations/${reservation.id}/convert`, { data: { confirmation: true, paymentMethod: 'CARD' } })).status()).toBe(409);
+    const expireResponse = await request.post('/api/reservations/expire'); expect(expireResponse.status()).toBe(200);
+    process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
+    const dbAfter = new PrismaClient();
+    try { const stored = await dbAfter.reservation.findUniqueOrThrow({ where: { id: reservation.id } }); expect(stored.status).toBe('ACTIVE'); expect(Number(stored.deposit)).toBe(25); expect(stored.saleId).toBeNull(); } finally { await dbAfter.$disconnect(); }
+    const after = (await (await request.get('/api/inventory')).json()).find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');
+    expect(Number(after.available)).toBe(Number(baseline.available)); expect(Number(after.reserved)).toBe(Number(baseline.reserved));
+    process.env.DATABASE_URL = process.env.E2E_DATABASE_URL; const cleanupDb = new PrismaClient();
+    try { await cleanupDb.reservation.update({ where: { id: reservation.id }, data: { deposit: null, expiresAt: new Date(Date.now() + 86400000) } }); } finally { await cleanupDb.$disconnect(); }
+    await request.post(`/api/reservations/${reservation.id}/release`, { data: { confirmation: true } });
+  });
+
   test('renders responsive management UI and controls permissions', async ({ page, browser }) => {
     await page.goto('/apartados');
     await expect(page.getByRole('heading', { name: 'Apartados' })).toBeVisible();
@@ -106,8 +161,7 @@ test.describe('DEV-06 apartados', () => {
     await page.getByRole('button', { name: /Agregar/ }).click();
     await expect(page.getByText('1 piezas seleccionadas')).toBeVisible();
     await expect(page.locator('.reservation-catalog-results')).not.toContainText(firstSuggestedSku.split('SKU: ')[1]?.split(' · ')[0] ?? sku);
-    await page.getByRole('button', { name: 'Con anticipo' }).click();
-    await expect(page.getByLabel(/Monto del anticipo/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Crear apartado sin anticipo' })).toBeDisabled();
     await page.getByRole('button', { name: 'Cerrar crear apartado' }).click();
     const variant = (await (await page.request.get('/api/products?available=true&q=DEV-TEST-01-NORMAL')).json())[0];
     await page.request.post('/api/reservations', { data: { variantId: variant.id, quantity: 1, expiresAt: new Date(Date.now() + 86400000).toISOString(), notes: 'DEV-06 UI action' } });

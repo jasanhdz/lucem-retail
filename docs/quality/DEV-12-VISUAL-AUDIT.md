@@ -2,8 +2,8 @@
 
 ## Inspección de source
 
-Se revisó `ReservationCreationFlow.tsx`, `ReservationsPage.tsx` y el handler API. El source aún presenta controles y afirmaciones de anticipo, y creación multiproducto mediante POST separados con compensación. No se atribuye PASS visual por inspección estática. El CTA exacto solicitado tampoco fue verificado como corregido.
+La inspección del source en esta revisión confirma que el alta no tiene selector/campos de anticipo ni copy que afirme cobro; el total figura pendiente hasta completar la venta y el CTA de alta es «Crear apartado sin anticipo». Las acciones de conversión indican «Completar apartado y registrar venta». La UI conserva modal, flujo de selección, cliente, teléfono, notas y vencimiento dentro de la composición existente. Los registros con depósito histórico positivo muestran advertencia manual y no ofrecen acciones release/convert.
 
-## Runtime
+## Runtime autenticado
 
-BLOCKED: el servidor existente en `localhost:3000` agotó `curl -I` a 3 segundos y no se detuvo ni modificó. `E2E_DATABASE_URL` no está disponible, por lo que no hay sesión/dataset autenticados. No se generaron capturas. Viewports 1440x900, 768x1024 y 390x844 no verificados en runtime; falta evidencia de overflow e interacción.
+**BLOCKED**, no PASS: `E2E_DATABASE_URL` está ausente. La suite E2E autenticada no se ejecutó contra base válida. El `curl -I` a `localhost:3000` agotó el timeout documentado; no se detuvo ni alteró ese proceso. No hay capturas nuevas, no se crearon PNGs y no se verificaron 1440x900, 768x1024 ni 390x844 en runtime. No se atribuye evidencia visual autenticada ni responsive a la inspección estática.

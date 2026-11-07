@@ -2,6 +2,7 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
+import { canonicalReservationBatch, reservationBatchHash, validReservationBatchKey } from '@/lib/reservation-batch';
 
 const roles = [Role.ADMIN, Role.INVENTORY_MANAGER];
 
@@ -26,7 +27,24 @@ export async function POST(req: Request) {
     if (!body.items.length) return jsonError('Agrega al menos un producto');
     const expiresAt = new Date(body.expiresAt);
     if (!Number.isFinite(expiresAt.getTime()) || expiresAt <= new Date()) return jsonError('Vencimiento válido obligatorio');
+    const keyHeader = req.headers.get('Idempotency-Key');
+    if (!validReservationBatchKey(keyHeader)) return jsonError('Idempotency-Key obligatorio (1–128 caracteres imprimibles)');
+    const key = keyHeader!;
+    if (typeof body.customerName !== 'undefined' && body.customerName !== null && typeof body.customerName !== 'string') return jsonError('Nombre de cliente inválido');
+    if (body.items.some((item: { variantId?: unknown; quantity?: unknown; notes?: unknown }) => typeof item.variantId !== 'string' || !item.variantId || !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0 || (item.notes !== undefined && item.notes !== null && typeof item.notes !== 'string'))) return jsonError('Cada artículo requiere variante y cantidad positiva');
+    const canonical = canonicalReservationBatch({ customerName: body.customerName, expiresAt: expiresAt.toISOString(), items: body.items });
+    const requestHash = reservationBatchHash(canonical);
+    const replay = async () => {
+      const stored = await db.reservationBatchIdempotency.findUnique({ where: { businessId_key: { businessId: auth.business!.id, key } } });
+      if (!stored) return null;
+      if (stored.requestHash !== requestHash) throw new Error('idempotency-conflict');
+      const rows = await db.reservation.findMany({ where: { id: { in: stored.reservationIds }, businessId: auth.business!.id } });
+      const byId = new Map(rows.map(row => [row.id, row]));
+      return Response.json({ reservations: stored.reservationIds.flatMap(id => { const reservation = byId.get(id); return reservation ? [{ ...reservation, quantity: reservation.quantity.toString(), deposit: reservation.deposit?.toString() ?? null }] : []; }) }, { status: 200 });
+    };
     try {
+      const previous = await replay();
+      if (previous) return previous;
       const reservations = await db.$transaction(async tx => {
         const result = [];
         for (const item of body.items) {
@@ -41,10 +59,17 @@ export async function POST(req: Request) {
           await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Reservation', entityId: reservation.id }, tx, auditOptionsForRequest(req));
           result.push(reservation);
         }
+        await tx.reservationBatchIdempotency.create({ data: { businessId: auth.business!.id, key, requestHash, reservationIds: result.map(row => row.id) } });
         return result;
       }, { isolationLevel: 'Serializable' });
       return Response.json({ reservations: reservations.map(reservation => ({ ...reservation, quantity: reservation.quantity.toString(), deposit: null })) }, { status: 201 });
-    } catch (error) { const message = error instanceof Error ? error.message : ''; return jsonError(message === 'stock' ? 'Existencia insuficiente' : 'No fue posible crear el apartado completo', message === 'stock' ? 409 : 400); }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'idempotency-conflict') return jsonError('Idempotency-Key ya fue usado con otra solicitud', 409);
+      if (message === 'stock') return jsonError('Existencia insuficiente', 409);
+      try { const concurrentReplay = await replay(); if (concurrentReplay) return concurrentReplay; } catch (replayError) { if (replayError instanceof Error && replayError.message === 'idempotency-conflict') return jsonError('Idempotency-Key ya fue usado con otra solicitud', 409); }
+      return jsonError('No fue posible crear el apartado completo', 400);
+    }
   }
   const quantity = Number(body.quantity);
   const expiresAt = new Date(body.expiresAt);

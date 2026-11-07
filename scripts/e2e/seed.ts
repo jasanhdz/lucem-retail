@@ -27,6 +27,7 @@ export async function clearE2eData(db: PrismaClient) {
       await tx.saleLine.deleteMany({ where: { saleId: { in: saleIds } } });
       await tx.return.deleteMany({ where: { id: { in: returns.map(row => row.id) } } });
       await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
+      await tx.reservationBatchIdempotency.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.reservation.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businesses } } });

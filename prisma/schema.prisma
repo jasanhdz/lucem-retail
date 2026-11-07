@@ -97,6 +97,7 @@ model Business {
   sales         Sale[]
   movements     InventoryMovement[]
   reservations  Reservation[]
+  reservationBatchIdempotencies ReservationBatchIdempotency[]
   returns       Return[]
   auditLogs     AuditLog[]
   history       PriceCostHistory[]
@@ -244,6 +245,18 @@ model Reservation {
   variant      ProductVariant    @relation(fields: [variantId], references: [id])
   user         User              @relation(fields: [userId], references: [id])
   sale         Sale?             @relation(fields: [saleId], references: [id])
+}
+
+model ReservationBatchIdempotency {
+  id             String   @id @default(cuid())
+  businessId     String
+  key            String
+  requestHash    String
+  reservationIds String[]
+  createdAt      DateTime @default(now())
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, key])
 }
 
 model Sale {
