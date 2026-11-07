@@ -68,8 +68,8 @@ test('business selection supports loading, empty and recoverable errors without 
   await expect(page.locator('.error-message')).toBeVisible();
   mode = 'empty';
   await page.getByRole('button', { name: 'Reintentar' }).click();
-  await expect(page.getByText(/No hay negocios disponibles/)).toBeVisible();
-  await expect(page.getByRole('button', { name: /Crear|Agregar negocio/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /Aún no tienes negocios registrados/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Crear mi primer negocio/ })).toBeVisible();
   mode = 'list';
   await page.reload();
   await expect(page.getByRole('radio', { name: /Tienda Centro/ })).toBeVisible();
@@ -94,6 +94,62 @@ test('business confirmation posts the selected id exactly and follows the server
   await page.getByRole('button', { name: /Continuar/ }).click();
   await expect.poll(() => requestedPaths).toContain('/dashboard');
   expect(payload).toEqual({ businessId: 'business-b' });
+});
+
+test('registration continues through profile, business details, giro and confirmation', async ({ page }) => {
+  let businessPayload: Record<string, unknown> | undefined;
+  let businessCookie = '';
+  await page.route('**/api/auth/register', route => route.fulfill({ status: 201, contentType: 'application/json', headers: { 'Set-Cookie': 'lucem_session=registration-session; Path=/; HttpOnly; SameSite=Lax' }, body: JSON.stringify({ user: { name: 'Sofía Morales', email: 'sofia@example.test' }, redirect: '/negocios/crear' }) }));
+  await page.route('**/api/businesses', async route => {
+    if (route.request().method() === 'POST') {
+      businessPayload = route.request().postDataJSON();
+      businessCookie = route.request().headers().cookie || '';
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ business: { id: 'business-new', name: 'Tienda de prueba', branchName: 'Matriz', giro: 'papeleria' }, redirect: '/negocios/confirmacion' }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ activeBusinessId: 'business-new', businesses: [{ id: 'business-new', name: 'Tienda de prueba', branchName: 'Matriz', giro: 'papeleria' }] }) });
+    }
+  });
+  await page.goto('/registro');
+  await page.getByLabel('Nombre completo').fill('Sofía Morales');
+  await page.getByLabel('Correo electrónico').fill('sofia@example.test');
+  await page.locator('#register-password').fill('LucemTest!2026');
+  await page.getByLabel('Confirmar contraseña').fill('LucemTest!2026');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+  await expect(page).toHaveURL(/\/perfil$/);
+  await expect(page.getByLabel('Nombre visible')).toHaveValue('Sofía');
+  await expect(page.getByLabel('Apellido(s)')).toHaveValue('Morales');
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page).toHaveURL(/\/negocios\/crear$/);
+  await expect(page.locator('#business-giro')).toHaveCount(0);
+  const layout = await page.evaluate(() => ({ descriptionTop: document.querySelector('#business-description')?.getBoundingClientRect().top ?? 0, timezoneTop: document.querySelector('#business-timezone')?.getBoundingClientRect().top ?? 0, namePadding: Number.parseFloat(getComputedStyle(document.querySelector('#business-name') as HTMLInputElement).paddingLeft) }));
+  expect(layout.descriptionTop).toBeGreaterThan(layout.timezoneTop);
+  expect(layout.namePadding).toBeGreaterThanOrEqual(46);
+  await page.getByLabel('Nombre del negocio').fill('Tienda de prueba');
+  await page.getByLabel(/Nombre de la sucursal principal/).fill('Matriz');
+  await page.getByLabel('País de operación').selectOption('CO');
+  await page.getByLabel('Moneda base').selectOption('USD');
+  await page.getByLabel('Zona horaria').selectOption('America/Bogota');
+  await page.getByLabel(/Descripción corta/).fill('Tienda de prueba');
+  await expect(page.getByText('16 / 180')).toBeVisible();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page).toHaveURL(/\/negocios\/giro$/);
+  const businessDraft = await page.evaluate(() => JSON.parse(sessionStorage.getItem('lucem_onboarding_draft') || '{}'));
+  expect(businessDraft).toMatchObject({ country: 'CO', currency: 'USD', timezone: 'America/Bogota', description: 'Tienda de prueba' });
+  await page.getByRole('radio', { name: /Papelería y oficina/ }).click();
+  await page.getByRole('button', { name: /Finalizar configuración/ }).click();
+  await expect(page).toHaveURL(/\/negocios\/confirmacion$/);
+  await expect(page.getByRole('heading', { name: 'Tienda de prueba' })).toBeVisible();
+  expect(businessPayload).toMatchObject({ name: 'Tienda de prueba', branchName: 'Matriz', giro: 'papeleria' });
+  expect(businessCookie).toContain('lucem_session=registration-session');
+});
+
+test('profile skip advances without requiring profile fields', async ({ page }) => {
+  await page.goto('/perfil');
+  await page.getByRole('button', { name: /Omitir por ahora/ }).click();
+  await expect(page).toHaveURL(/\/negocios\/crear$/);
+  await expect(page.getByRole('heading', { name: 'Crea tu primer negocio' })).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('lucem_onboarding_profile') || '{}').skipped)).toBe(true);
 });
 
 test('auth pages remain usable without horizontal scrolling at mobile and tablet widths', async ({ page }) => {

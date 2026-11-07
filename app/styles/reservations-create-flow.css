@@ -1,0 +1,97 @@
+.reservations-create-workflow .inventory-mutation-form { min-height:0; overflow:hidden; }
+.reservations-create-columns { grid-template-rows:minmax(0,1fr); overflow:hidden; }
+.reservation-create-left { height:100%; overflow-y:auto; overscroll-behavior:contain; }
+.reservation-create-summary { position:sticky; top:0; height:fit-content; max-height:100%; overflow-y:auto; overscroll-behavior:contain; }
+.reservations-create-workflow .reservation-create-footer { position:relative; z-index:2; flex:none; box-shadow:0 -5px 18px #102b2a10; }
+.inventory-mutation-form .reservation-product-search { display:flex; height:44px; min-height:44px; flex-direction:row; align-items:center; gap:9px; margin:0!important; padding:0 12px; }
+.inventory-mutation-form .reservation-product-search>svg { width:17px; height:17px; flex:none; }
+.inventory-mutation-form .reservation-product-search input { display:block; width:100%; min-width:0; height:42px; min-height:0!important; flex:1; padding:0; line-height:1.2; }
+.reservation-create-columns { gap:18px; padding:16px 22px; }
+.reservation-create-left { gap:14px; }
+.reservation-create-products { gap:8px; }
+.reservation-create-products>header { min-height:28px; padding:0!important; }
+.reservation-catalog-results { gap:5px; padding:7px; }
+.reservation-catalog-results>div { min-height:52px; gap:8px; padding:6px 8px; }
+.reservation-catalog-results>div>span { width:34px; height:34px; }
+.reservation-catalog-results button { min-height:32px!important; }
+.reservation-cart { gap:6px; }
+.reservation-client-section,.reservation-validity-section { gap:8px; }
+.reservation-create-summary { gap:11px; padding:15px; }
+.reservation-create-summary>section:first-child { gap:7px; }
+.reservation-advance-message { padding:8px; }
+.reservation-account-breakdown { gap:8px; padding:12px; }
+.reservation-create-columns { gap:14px; padding:14px 20px; }
+.reservation-create-left { gap:11px; }
+.reservation-client-section,.reservation-validity-section { gap:7px; padding:12px 13px; border:1px solid #e4eee9; border-radius:11px; background:#fff; }
+.reservation-client-section h3,.reservation-validity-section h3 { gap:6px; font-size:12px; }
+.reservation-client-section>div { gap:8px; }
+.reservation-client-section>label,.reservation-client-section>div>label { gap:4px; font-size:8px; }
+.reservation-client-section input { min-height:36px!important; }
+.reservation-validity-section>div { grid-template-columns:32px minmax(0,1fr) auto; gap:7px; padding:7px 9px; }
+.reservation-validity-section>div>span { width:29px; height:29px; }
+.reservation-validity-section input { min-height:34px!important; font-size:9px; }
+.reservation-validity-section>div>small { max-width:130px; font-size:7px; line-height:1.3; }
+.reservation-validity-section>p { gap:4px; font-size:8px; }
+.reservation-create-summary { gap:9px; padding:13px; }
+.reservation-create-summary>section:first-child { gap:6px; }
+.reservation-create-summary h3 { font-size:12px; }
+.reservation-create-summary>section:first-child>p { font-size:8px; }
+.reservation-advance-toggle { padding:3px; }
+.reservation-advance-toggle button { min-height:35px!important; font-size:8px; }
+.reservation-advance-message { gap:6px; padding:8px; font-size:8px; }
+.reservation-advance-fields { grid-template-columns:1fr 1fr; gap:7px 9px; }
+.reservation-advance-fields>label:first-child,.reservation-advance-fields>label:nth-child(2) { grid-column:1/-1; }
+.reservation-advance-fields>label { gap:4px; font-size:8px; }
+.reservation-advance-fields>label>div input { min-height:37px!important; font-size:12px; }
+.reservation-advance-fields select { min-height:36px!important; }
+.reservation-cash-received>input { min-height:36px!important; }
+.reservation-advance-coverage { gap:4px; }
+.reservation-account-breakdown { gap:7px; padding:11px; }
+.reservation-account-breakdown>div:not(.reservation-account-lock) { font-size:9px; }
+.reservation-account-breakdown>footer>strong { font-size:20px; }
+.reservation-account-lock { padding:7px; font-size:7px; }
+.reservation-terminal-note { padding:5px; font-size:8px; }
+@keyframes reservation-suggestion-enter{0%{opacity:0;transform:translate3d(0,12px,0) scale(.97)}65%{opacity:1;transform:translate3d(0,-2px,0) scale(1.005)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes reservation-cart-enter{0%{opacity:0;transform:translate3d(-8px,6px,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+.reservation-catalog-results>div{animation:reservation-suggestion-enter .48s cubic-bezier(.2,.8,.2,1) both;transition:box-shadow .18s ease,border-color .18s ease}.reservation-catalog-results>div:nth-child(2){animation-delay:.06s}.reservation-catalog-results>div:nth-child(3){animation-delay:.12s}.reservation-catalog-results>div:nth-child(4){animation-delay:.18s}.reservation-catalog-results>div:hover{box-shadow:0 4px 14px #102b2a12}.reservation-catalog-results button{transition:transform .16s ease,background .16s ease,color .16s ease}.reservation-catalog-results button:active{transform:scale(.94)}.reservation-cart-line{animation:reservation-cart-enter .3s cubic-bezier(.2,.8,.2,1) both}
+@media(prefers-reduced-motion:reduce){.reservation-catalog-results>div,.reservation-cart-line{animation:none!important;transition:none!important}.reservation-catalog-results button:active{transform:none}}
+.reservation-client-section { gap:8px; padding:12px 14px; border-color:#e8efeb; background:#fbfdfc; }
+.reservation-client-section h3 { gap:7px; margin-bottom:1px; font-size:13px; }
+.reservation-client-section>div { grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:12px; row-gap:8px; align-items:start; }
+.reservation-client-section>div>label,.reservation-client-section>label { position:relative; gap:4px; color:#465b54; font-size:9px; line-height:1.25; }
+.reservation-client-section>div>label>input,.reservation-client-section>label>input { min-height:38px!important; padding:0 11px 0 35px; border-color:#e2eee8; background:#e5f7f0; font-size:10px; }
+.reservation-client-section>div>label:first-child:before,.reservation-client-section>div>label:nth-child(2):before,.reservation-client-section>label:before { position:absolute; top:28px; left:11px; z-index:1; width:15px; height:15px; background-repeat:no-repeat; background-position:center; background-size:15px; content:""; pointer-events:none; }
+.reservation-client-section>div>label:first-child:before { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23536660' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E"); }
+.reservation-client-section>div>label:nth-child(2):before { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23536660' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72l.38 2.72a2 2 0 0 1-.57 1.69L7.64 9.41a16 16 0 0 0 6 6l1.28-1.28a2 2 0 0 1 1.69-.57l2.72.38a2 2 0 0 1 1.67 1.98z'/%3E%3C/svg%3E"); }
+.reservation-client-section>label:before { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23536660' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z'/%3E%3C/svg%3E"); }
+.reservation-client-section>label>input { padding-left:35px; }
+.reservation-validity-section { gap:6px; padding:11px 13px; border-color:#e8efeb; background:#fbfdfc; }
+.reservation-validity-section h3 { margin-bottom:1px; }
+.reservation-validity-section>p { margin-top:-1px; }
+.reservation-client-section label,.reservation-create-summary label,.reservation-advance-fields label,.reservation-cash-received{margin:0!important;padding-block:0!important}
+.reservation-client-section>div,.reservation-advance-fields{margin:0!important}
+.reservations-create-workflow .reservation-catalog-results strong{font-size:11px}.reservations-create-workflow .reservation-catalog-results small{font-size:9px}.reservations-create-workflow .reservation-catalog-results button{font-size:10px}.reservations-create-workflow .reservation-section-caption{font-size:10px}.reservations-create-workflow .reservation-cart-line>div:nth-child(2)>strong{font-size:11px}.reservations-create-workflow .reservation-cart-line>div:nth-child(2)>small{font-size:9px}.reservations-create-workflow .reservation-cart-adjust b{font-size:11px}.reservations-create-workflow .reservation-items-verified{font-size:10px}.reservations-create-workflow .reservation-client-section>div>label,.reservations-create-workflow .reservation-client-section>label{font-size:10px}.reservations-create-workflow .reservation-client-section input{font-size:11px}.reservations-create-workflow .reservation-validity-section>div>small{font-size:8px}.reservations-create-workflow .reservation-validity-section>p{font-size:9px}.reservations-create-workflow .reservation-create-summary h3{font-size:13px}.reservations-create-workflow .reservation-create-summary>section:first-child>p{font-size:9px}.reservations-create-workflow .reservation-advance-toggle button{font-size:9px}.reservations-create-workflow .reservation-advance-message{font-size:9px}.reservations-create-workflow .reservation-advance-fields>label{font-size:9px}.reservations-create-workflow .reservation-advance-fields>label>div input{font-size:13px}.reservations-create-workflow .reservation-advance-coverage{font-size:9px}.reservations-create-workflow .reservation-account-breakdown>span{font-size:10px}.reservations-create-workflow .reservation-account-breakdown>div:not(.reservation-account-lock){font-size:10px}.reservations-create-workflow .reservation-account-breakdown>footer>span{font-size:10px}.reservations-create-workflow .reservation-account-breakdown>footer small{font-size:9px}.reservations-create-workflow .reservation-account-lock{font-size:8px}.reservations-create-workflow .reservation-terminal-note{font-size:9px}
+@media(max-width:760px) {
+  .reservations-create-columns { grid-template-columns:minmax(0,1fr); grid-template-rows:auto; overflow-y:auto; }
+  .reservation-create-left { height:auto; overflow:visible; }
+  .reservation-create-summary { position:relative; top:auto; height:auto; max-height:none; overflow:visible; }
+  .reservations-create-workflow .reservation-create-footer { position:sticky; bottom:0; }
+}
+.reservation-success-dialog>p{font-size:12px}.reservation-success-folio>small{font-size:9px}.reservation-success-folio>strong{font-size:15px}.reservation-success-folio>span{font-size:10px}.reservation-success-meta small{font-size:9px}.reservation-success-meta strong{font-size:12px}.reservation-success-meta>article>span{font-size:10px}.reservation-success-items>header strong{font-size:10px}.reservation-success-items>header>span{font-size:9px}.reservation-success-items>div strong{font-size:11px}.reservation-success-items>div small{font-size:9px}.reservation-success-items>div>b{font-size:11px}.reservation-success-financial>div:first-child>span{font-size:10px}.reservation-success-financial>div:first-child>strong{font-size:15px}.reservation-success-financial small{font-size:9px}.reservation-success-deposit{font-size:10px}.reservation-success-deposit>strong{font-size:12px}.reservation-success-pending>span{font-size:10px}.reservation-success-pending>span>small{font-size:9px}.reservation-success-pending>strong{font-size:22px}.reservation-success-share{font-size:10px}.reservation-success-share button{font-size:10px}.reservation-success-actions button{font-size:11px}.reservation-success-close-link{font-size:10px}
+.workspace-content>.reservations-page.reservations-operations-page{padding:0!important}
+.reservations-page .reservations-toolbar.reservations-toolbar-upgraded{margin:0!important}
+.reservations-page.reservations-operations-page,.reservations-operations-page *{box-sizing:border-box;min-width:0}
+.reservations-page.reservations-operations-page{overflow-x:clip}
+.reservations-operations-page .reservations-heading-actions{flex-wrap:wrap}
+.reservations-operations-page .reservations-list-column,.reservations-operations-page .reservations-detail-column,.reservations-operations-page .reservation-detail-card{min-width:0}
+.reservations-operations-page .reservations-filter-chips{scrollbar-width:none;overscroll-behavior-x:contain}
+.reservations-operations-page .reservations-filter-chips::-webkit-scrollbar{display:none}
+.reservations-operations-page .reservations-list-select:focus-visible,.reservations-operations-page .reservations-list-mobile-actions button:focus-visible,.reservations-operations-page .reservations-detail-card button:focus-visible{outline:3px solid #16815f;outline-offset:2px}
+@media(max-width:1180px) and (min-width:1024px){.workspace-content>.reservations-page.reservations-operations-page{padding-inline:18px}.reservations-main-grid{grid-template-columns:minmax(0,1.2fr) minmax(340px,.9fr);gap:13px}.reservations-operations-page .reservations-heading{gap:14px}.reservations-heading-actions{gap:7px}.reservations-heading-actions>.button,.reservations-rules-button{padding-inline:11px;font-size:10px}.reservations-availability-rule{gap:14px;padding:16px}.reservations-stock-equation{gap:8px;padding:10px}.reservations-stock-equation>span{min-width:55px}}
+@media(max-width:1023px) and (min-width:761px){.reservations-main-grid{grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr)}.reservations-list-select{gap:8px;padding-inline:12px}.reservation-product-thumb{width:46px;height:46px}.reservation-list-status{gap:4px}.reservation-status-pill{padding-inline:6px;font-size:7px}.reservation-detail-card{padding:14px}.reservation-stock-card>div{gap:4px}.reservation-stock-card>div>span{padding:7px 5px}}
+@media(max-width:760px){.reservations-page .reservations-toolbar.reservations-toolbar-upgraded{margin:0!important}.reservations-page.reservations-operations-page{overflow-x:clip}.reservations-operations-page .reservations-heading-actions{flex-wrap:nowrap}.reservations-toolbar-upgraded .reservations-toolbar-top{display:block;width:100%}.reservations-toolbar-upgraded .reservations-period-select,.reservations-toolbar-upgraded .reservations-search kbd{display:none}.reservations-toolbar-upgraded .reservations-search{width:100%;max-width:none}.reservations-summary-four,.reservations-filter-chips,.reservation-list-mobile-actions button,.reservation-detail-actions button{min-width:0}.reservation-list-select{width:100%}.reservation-list-main{flex:1}.reservation-list-status{max-width:118px}.reservation-list-status .reservation-status-pill{max-width:118px;overflow:hidden;text-overflow:ellipsis}.reservation-list-mobile-actions{padding-left:10px}.reservations-operational-note{width:100%}.reservations-mobile-detail-overlay{overflow-y:auto;overscroll-behavior:contain}}
+@media(max-width:390px){.workspace-content>.reservations-page.reservations-operations-page{padding-inline:0}.reservations-summary-four{gap:4px}.reservations-operations-page .reservations-kpi{padding-inline:6px}.reservations-kpi>div{gap:3px;font-size:7px}.reservations-kpi>strong{font-size:18px}.reservation-product-thumb{width:50px;height:50px}.reservation-list-select{gap:7px;padding:10px 8px 8px 12px}.reservation-list-status{max-width:96px}.reservation-list-status .reservation-status-pill{max-width:96px;font-size:7px}.reservation-list-mobile-actions button{font-size:8px}.reservation-stock-card>div>span{font-size:7px}}
+.reservations-operations-page .reservations-summary-four{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.reservations-operations-page .reservations-kpi{min-width:0}
+@media(max-width:1100px) and (min-width:761px){.reservations-operations-page .reservations-summary-four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.reservations-operations-page .reservations-summary-four{grid-template-columns:repeat(3,minmax(0,1fr))}.reservations-operations-page .reservations-summary-four .reservations-kpi:nth-child(3){display:none}}

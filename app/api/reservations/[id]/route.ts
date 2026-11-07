@@ -59,3 +59,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const action = new URL(req.url).pathname.endsWith('/release') ? 'release' : new URL(req.url).pathname.endsWith('/convert') ? 'convert' : 'expire';
   return change(req, id, action);
 }
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getAuth({ renewCookie: true });
+  if (!auth?.business) return jsonError('Sesion requerida', 401);
+  if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const { id } = await params;
+  const body = await req.json().catch(() => ({}));
+  const expiresAt = new Date(body.expiresAt);
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) return jsonError('Selecciona una nueva fecha de vencimiento valida.');
+  const reservation = await db.reservation.findFirst({ where: { id, businessId: auth.business.id } });
+  if (!reservation) return jsonError('Apartado no encontrado', 404);
+  if (reservation.status !== ReservationStatus.ACTIVE) return jsonError('Solo puedes modificar la fecha de un apartado activo.', 409);
+  const updated = await db.reservation.update({ where: { id }, data: { expiresAt } });
+  await audit({ businessId: auth.business.id, userId: auth.user.id, action: 'UPDATE', entityType: 'Reservation', entityId: id, metadata: { field: 'expiresAt', expiresAt: expiresAt.toISOString() } }, undefined, auditOptionsForRequest(req));
+  return Response.json({ ...updated, quantity: updated.quantity.toString(), deposit: updated.deposit?.toString() ?? null });
+}

@@ -23,6 +23,8 @@ const names: Record<string, string> = Object.fromEntries(groups.flatMap(group =>
 export function WorkspaceShell({ children, businessName, role, userName, userEmail }: { children: React.ReactNode; businessName: string; role: Role; userName: string; userEmail: string }) {
   const pathname = usePathname(); const router = useRouter();
   const [businessOpen, setBusinessOpen] = useState(false); const [userOpen, setUserOpen] = useState(false);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
+  const [userMenuPosition, setUserMenuPosition] = useState({ top: 0, left: 12 });
   const [catalogSearch, setCatalogSearch] = useState('');
   const operationSearchRef = useRef<HTMLInputElement>(null);
   const [topbarElement, setTopbarElement] = useState<HTMLElement | null>(null);
@@ -33,13 +35,13 @@ export function WorkspaceShell({ children, businessName, role, userName, userEma
   async function logout() { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (response.ok) { router.push('/login'); router.refresh(); } }
    useEffect(() => { setBusinessOpen(false); setUserOpen(false); }, [pathname]);
    useEffect(() => { setCatalogSearch(''); }, [pathname]);
-   const operationRoutes = ['/pos', '/productos', '/inventario', '/apartados'];
+   const operationRoutes = ['/pos', '/productos', '/inventario', '/apartados', '/tickets'];
    const isOperationsRoute = operationRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
-   const hasOperationSearch = ['/pos', '/productos', '/inventario', '/inventario/movimientos', '/apartados'].includes(pathname);
+     const hasOperationSearch = true;
    useEffect(() => {
      const focusOperationSearch = () => {
        if (window.matchMedia('(min-width: 761px)').matches) operationSearchRef.current?.focus();
-       else document.querySelector<HTMLInputElement>('.pos-search input, .inventory-search input, .reservations-search input, .products-search input')?.focus();
+        else (document.querySelector<HTMLInputElement>('.pos-search input, .inventory-search input, .reservations-search input, .products-search input') ?? document.querySelector<HTMLInputElement>('.topbar-operation-search input'))?.focus();
      };
      const syncSearch = (event: Event) => {
        const value = (event as CustomEvent<string>).detail;
@@ -72,17 +74,22 @@ export function WorkspaceShell({ children, businessName, role, userName, userEma
        : pathname === '/apartados'
          ? 'Buscar producto, SKU o cliente…'
          : 'Buscar producto, SKU o código de barras…';
-   const operationSearchLabel = pathname === '/pos' || pathname === '/productos'
-     ? 'Buscar productos'
-     : pathname.startsWith('/inventario')
-       ? 'Buscar inventario'
-       : 'Buscar apartados';
+     const operationSearchLabel = pathname === '/pos' || pathname === '/productos' || pathname.startsWith('/tickets/')
+      ? 'Buscar productos'
+      : pathname.startsWith('/inventario')
+        ? 'Buscar inventario'
+        : pathname === '/apartados'
+          ? 'Buscar apartados'
+          : 'Buscar en el catálogo';
    function searchCatalog(value: string) {
      setCatalogSearch(value);
      if (pathname === '/pos') window.dispatchEvent(new CustomEvent('pos:search', { detail: value }));
-     else if (pathname === '/inventario') window.dispatchEvent(new CustomEvent('inventory:search', { detail: value }));
-     else if (pathname === '/inventario/movimientos') window.dispatchEvent(new CustomEvent('inventory-movements:search', { detail: value }));
-     else if (pathname === '/apartados') window.dispatchEvent(new CustomEvent('reservations:search', { detail: value }));
+      else if (pathname === '/inventario') window.dispatchEvent(new CustomEvent('inventory:search', { detail: value }));
+      else if (pathname === '/inventario/movimientos') window.dispatchEvent(new CustomEvent('inventory-movements:search', { detail: value }));
+      else if (pathname.startsWith('/inventario/')) return;
+      else if (pathname === '/apartados') window.dispatchEvent(new CustomEvent('reservations:search', { detail: value }));
+      else if (pathname.startsWith('/tickets/')) return;
+      else if (pathname === '/dashboard' || pathname === '/devoluciones' || pathname === '/reportes' || pathname === '/auditoria') return;
       else window.dispatchEvent(new CustomEvent('products:search', { detail: value }));
     }
    useEffect(() => { setTopbarElement(document.querySelector<HTMLElement>('.workspace-topbar')); }, []);
@@ -91,11 +98,11 @@ export function WorkspaceShell({ children, businessName, role, userName, userEma
   const extraRoutes = permittedGroups.flatMap(group => group.items).filter(item => !item.disabled && !['/dashboard', '/pos', '/productos', '/inventario'].includes(item.href));
     return <><div className={`workspace ${isOperationsRoute ? 'workspace-operations' : ''}`}>
    <aside className="sidebar" aria-label="Navegación principal"><Brand/><div className="business-context" aria-label={`Negocio actual: ${businessName}, ${roleLabel(role)}`}><span className="business-avatar"><Store size={18}/></span><span className="business-context-label"><strong>{businessName}</strong><small>{roleLabel(role)}</small></span></div>
-       <nav className="sidebar-nav" aria-label="Secciones del negocio">{permittedGroups.map(group => <div className="nav-group" key={group.label}><p className="nav-label">{group.label}</p>{group.items.map(item => { const Icon = item.icon; const active = pathname === item.href || pathname.startsWith(`${item.href}/`); return item.disabled ? <span className="nav-link" key={item.href} aria-disabled="true"><Icon aria-hidden="true"/><span>{item.label}</span></span> : <Link className="nav-link" key={item.href} href={item.href} aria-current={active ? 'page' : undefined}><Icon aria-hidden="true"/><span>{item.label}</span></Link>; })}</div>)}</nav>
+        <nav className="sidebar-nav" aria-label="Secciones del negocio">{permittedGroups.map(group => <div className="nav-group" key={group.label}><p className="nav-label">{group.label}</p>{group.items.map(item => { const Icon = item.icon; const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || item.href === '/pos' && pathname.startsWith('/tickets/'); return item.disabled ? <span className="nav-link" key={item.href} aria-disabled="true"><Icon aria-hidden="true"/><span>{item.label}</span></span> : <Link className="nav-link" key={item.href} href={item.href} aria-current={active ? 'page' : undefined}><Icon aria-hidden="true"/><span>{item.label}</span></Link>; })}</div>)}</nav>
        <footer className="sidebar-footer"><span>Lucem Retail Cloud</span><small>v0.1.0</small></footer>
      </aside>
       <main className="workspace-main">
-        <header className="workspace-topbar">
+         <header className="workspace-topbar workspace-topbar-main">
           <Brand className="topbar-brand" />
           <div className="topbar-switch-wrap">
             <button type="button" className="topbar-switch" aria-expanded={businessOpen} onClick={() => { const next = !businessOpen; setBusinessOpen(next); if (next && !businesses.length) void loadBusinesses(); }}>
@@ -108,17 +115,16 @@ export function WorkspaceShell({ children, businessName, role, userName, userEma
           <Link className="button topbar-cta" href="/pos" aria-label="Nueva venta"><Plus size={17} /><span>Nueva venta</span></Link>
           {role === 'ADMIN' && <Link className="topbar-notifications" href="/auditoria" aria-label="Ver actividad de auditoría"><Bell size={20} aria-hidden="true" /><span aria-hidden="true" /></Link>}
           <div className="topbar-user-wrap">
-            <button className="topbar-user" aria-expanded={userOpen} onClick={() => setUserOpen(value => !value)}>
+             <button ref={userButtonRef} className="topbar-user" aria-expanded={userOpen} onClick={() => { if (!userOpen && userButtonRef.current) { const bounds = userButtonRef.current.getBoundingClientRect(); const menuWidth = Math.min(320, window.innerWidth - 24); setUserMenuPosition({ top: bounds.bottom + 10, left: Math.max(12, Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 12)) }); } setUserOpen(value => !value); }}>
               <span className="topbar-user-copy"><strong>{userName}</strong><small>{roleLabel(role)}</small></span>
               <span className="user-avatar">{initials}</span>
             </button>
-            {userOpen && <div className="user-menu topbar-user-menu"><span>{userEmail} · {roleLabel(role)}</span><button type="button" onClick={() => void logout()}><LogOut size={16} /> Cerrar sesión</button></div>}
           </div>
         </header>
         {error && !businessOpen && <div className="shell-error" role="alert">{error}<button onClick={() => void loadBusinesses()}>Reintentar</button></div>}
         <div className="workspace-content">{children}</div>
         <MobileBottomNavigation extraRoutes={extraRoutes} />
       </main>
-    </div>{hasOperationSearch && topbarElement && createPortal(<label className="topbar-operation-search"><Search size={18} aria-hidden="true"/><span className="sr-only">{operationSearchLabel}</span><input ref={operationSearchRef} aria-label={operationSearchLabel} placeholder={operationSearchPlaceholder} value={catalogSearch} onChange={(event) => searchCatalog(event.target.value)}/><kbd>F3</kbd></label>, topbarElement)}</>;
+    </div>{hasOperationSearch && topbarElement && createPortal(<label className="topbar-operation-search"><Search size={18} aria-hidden="true"/><span className="sr-only">{operationSearchLabel}</span><input ref={operationSearchRef} aria-label={operationSearchLabel} placeholder={operationSearchPlaceholder} value={catalogSearch} onChange={(event) => searchCatalog(event.target.value)} onKeyDown={(event) => { if (pathname.startsWith('/tickets/') && event.key === 'Enter' && catalogSearch.trim()) router.push(`/pos?search=${encodeURIComponent(catalogSearch.trim())}`); if (pathname.startsWith('/inventario/') && pathname !== '/inventario/movimientos' && event.key === 'Enter' && catalogSearch.trim()) router.push(`/inventario?search=${encodeURIComponent(catalogSearch.trim())}`); }}/><kbd>F3</kbd></label>, topbarElement)}{userOpen && typeof document !== 'undefined' && createPortal(<div className="user-menu topbar-user-menu" style={{ top: userMenuPosition.top, left: userMenuPosition.left, right: 'auto' }}><div className="user-menu-profile"><span className="user-avatar">{initials}</span><span><strong>{userName}</strong><small>{userEmail}</small><em>{roleLabel(role)}</em></span></div><div className="user-menu-divider"/><nav className="user-menu-links" aria-label="Opciones de usuario"><Link href="/dashboard" onClick={() => setUserOpen(false)}><LayoutDashboard size={17}/><span>Resumen del negocio</span></Link><Link href="/negocios" onClick={() => setUserOpen(false)}><Store size={17}/><span>Cambiar de negocio</span></Link><Link href="/negocios/crear" onClick={() => setUserOpen(false)}><Plus size={17}/><span>Crear negocio</span></Link>{role === 'ADMIN' && <Link href="/auditoria" onClick={() => setUserOpen(false)}><Activity size={17}/><span>Actividad y auditoría</span></Link>}</nav><div className="user-menu-divider user-menu-divider-bottom"/><button type="button" onClick={() => void logout()}><LogOut size={16} /> Cerrar sesión</button></div>, document.body)}</>;
 }
 function roleLabel(role: Role) { return ({ ADMIN: 'Administrador', SELLER: 'Vendedor', INVENTORY_MANAGER: 'Encargado de inventario' })[role]; }

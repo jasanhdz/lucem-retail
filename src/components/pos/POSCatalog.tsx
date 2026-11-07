@@ -39,6 +39,10 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
     void fetch('/api/categories').then((response) => response.json()).then(setCategories).catch(() => undefined);
   }, []);
   useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get('search');
+    if (initialSearch) setQuery(initialSearch);
+  }, []);
+  useEffect(() => {
     const refresh = () => void load();
     const syncSearch = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;

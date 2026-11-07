@@ -20,7 +20,7 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   await page.getByLabel('Confirmar contraseña').fill(password);
   await page.getByRole('checkbox').check();
   const registerResponsePromise = page.waitForResponse(response => response.url().endsWith('/api/auth/register'));
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
   const registerResponse = await registerResponsePromise;
   expect(registerResponse.status()).toBe(201);
   const registerBody = await registerResponse.json();
@@ -29,6 +29,10 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   const sessionCookie = (await page.context().cookies()).find(cookie => cookie.name === 'lucem_session');
   expect(sessionCookie?.httpOnly).toBe(true);
   expect(sessionCookie?.sameSite).toBe('Lax');
+  await expect(page).toHaveURL(/\/perfil$/);
+  await capture(page, 'completar-perfil');
+  await page.getByLabel('Apellido(s)').fill('DEV-08');
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(/\/negocios\/crear$/);
   await capture(page, 'crear-negocio');
   await page.getByLabel('Nombre del negocio').fill('DEV-08 Primera Tienda');
@@ -38,7 +42,7 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   await capture(page, 'seleccionar-giro');
   await page.getByRole('radio', { name: /Papelería y oficina/ }).click();
   const creationKey = await page.evaluate(() => sessionStorage.getItem('lucem_onboarding_creation_key'));
-  await page.getByRole('button', { name: 'Crear negocio' }).click();
+  await page.getByRole('button', { name: /Finalizar configuración/ }).click();
   await expect(page).toHaveURL(/\/negocios\/confirmacion$/);
   await expect(page.getByRole('heading', { name: /Todo listo/ })).toBeVisible();
   await expect(page.getByText('DEV-08 Primera Tienda', { exact: true })).toBeVisible();
@@ -46,7 +50,7 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   const replay = await page.evaluate(async (key) => { const response = await fetch('/api/businesses', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key || '' }, body: JSON.stringify({ name: 'DEV-08 Primera Tienda', branchName: 'Matriz DEV-08', giro: 'papeleria', idempotencyKey: key }) }); return { status: response.status, body: await response.json() }; }, creationKey);
   expect(replay.status).toBe(201);
   expect(replay.body.business.name).toBe('DEV-08 Primera Tienda');
-  await page.getByRole('button', { name: /Ir al dashboard/ }).click();
+  await page.getByRole('button', { name: /Entrar a mi sistema/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.request.post('/api/auth/logout');
   await page.goto('/login');

@@ -8,6 +8,8 @@
 @import './styles/products-accessibility.css';
 @import './styles/products-catalog.css';
 @import './styles/inventory.css';
+@import './styles/inventory-catalog.css';
 @import './styles/pos.css';
 @import './styles/reservations.css';
+@import './styles/reservations-create-flow.css';
 @import './styles/returns.css';

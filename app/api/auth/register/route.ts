@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
-import { createSession, jsonError } from '@/lib/auth';
+import { createSession, jsonError, sessionCookie } from '@/lib/auth';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -17,9 +17,11 @@ export async function POST(req: Request) {
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) return jsonError('Este correo ya está registrado.', 409);
   try {
     const user = await db.user.create({ data: { name, email, passwordHash: await bcrypt.hash(password, 12) } });
-    await createSession(user.id);
+    const token = await createSession(user.id);
     await audit({ userId: user.id, action: 'REGISTER', entityType: 'User', entityId: user.id });
-    return Response.json({ user: { id: user.id, name: user.name, email: user.email }, redirect: '/negocios/crear' }, { status: 201 });
+    const response = Response.json({ user: { id: user.id, name: user.name, email: user.email }, redirect: '/negocios/crear' }, { status: 201 });
+    response.headers.append('Set-Cookie', sessionCookie(token));
+    return response;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Unique constraint')) return jsonError('Este correo ya está registrado.', 409);
     return jsonError('No fue posible crear la cuenta.', 500);

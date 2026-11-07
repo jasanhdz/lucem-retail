@@ -60,7 +60,7 @@ test.describe('DEV-05 POS', () => {
       const box = await label.boundingBox();
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
-    await page.getByRole('button', { name: /Regresar al carrito/ }).click();
+    await page.locator('.pos-payment-heading .app-breadcrumbs').getByRole('link', { name: 'Punto de venta' }).click();
     for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) {
       await page.setViewportSize(viewport);
       expect(await page.locator('.pos-page').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
@@ -88,10 +88,10 @@ test.describe('DEV-05 POS', () => {
     expect(saleBody.lines).toHaveLength(1);
     const after = await variant(page, 'DEV-TEST-01-NORMAL');
     expect(Number(after.stock)).toBe(before - 1);
-    await expect(page.getByRole('heading', { name: new RegExp(`Folio #${saleBody.folio}`) })).toBeVisible();
-    await expect(page.getByText('Recibido / Cambio')).toBeVisible();
+    await expect(page.getByText(new RegExp(`#TK-${saleBody.folio}`))).toBeVisible();
+    await expect(page.getByText('Cambio entregado:')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Imprimir ticket' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Nueva venta' })).toBeVisible();
+    await expect(page.locator('.ticket-next-customer').getByRole('link', { name: 'Nueva venta' })).toBeVisible();
     await page.screenshot({ path: test.info().outputPath('pos-ticket-success.png'), fullPage: false });
   });
 

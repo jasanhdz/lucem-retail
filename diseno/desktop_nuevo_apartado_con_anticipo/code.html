@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-surface": "#0b1f1b", "primary-fixed": "#cbe8e6", "surface-container-lowest": "#ffffff", "surface-container": "#dcf3ec", "error-container": "#ffdad6", "outline-variant": "#c1c8c7", "surface": "#e7fef8", "error": "#ba1a1a", "on-secondary": "#ffffff", "on-secondary-container": "#1f715a", "tertiary-container": "#372300", "secondary-fixed": "#a4f2d6", "primary": "#001615", "primary-container": "#102b2a", "tertiary-fixed-dim": "#f1be6e", "surface-bright": "#e7fef8", "primary-fixed-dim": "#b0ccca", "inverse-surface": "#203430", "on-tertiary-fixed": "#281800", "outline": "#727878", "on-tertiary": "#ffffff", "surface-container-high": "#d6ede7", "surface-tint": "#496362", "surface-dim": "#c8dfd9", "on-primary-fixed-variant": "#314b4a", "secondary-container": "#a4f2d6", "secondary-fixed-dim": "#89d5ba", "secondary": "#166b55", "on-error-container": "#93000a", "surface-variant": "#d1e7e1", "on-primary-container": "#789391", "surface-container-low": "#e2f9f2", "inverse-on-surface": "#dff6ef", "background": "#e7fef8", "tertiary": "#1c1000", "on-error": "#ffffff", "on-primary-fixed": "#04201f", "tertiary-fixed": "#ffddaf", "on-surface-variant": "#414847", "on-secondary-fixed": "#002117", "inverse-primary": "#b0ccca", "on-tertiary-fixed-variant": "#614000", "on-background": "#0b1f1b", "on-primary": "#ffffff", "on-tertiary-container": "#b3863c", "on-secondary-fixed-variant": "#00513f", "surface-container-highest": "#d1e7e1" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-md": "1.5rem", "margin-lg": "2rem", "space-md": "1rem", "space-lg": "1.5rem", "space-xs": "0.25rem", "space-xl": "2rem", "margin": "1rem", "space-2xl": "3rem", "gutter-lg": "1.5rem", "space-sm": "0.5rem", "gutter": "1rem" }, "fontFamily": { "label-sm": [ "Inter" ], "numeric-total": [ "Plus Jakarta Sans" ], "label-lg": [ "Inter" ], "headline-lg-mobile": [ "Plus Jakarta Sans" ], "title-md": [ "Plus Jakarta Sans" ], "body-sm": [ "Inter" ], "label-md": [ "Inter" ], "display-lg": [ "Plus Jakarta Sans" ], "body-md": [ "Inter" ], "body-lg": [ "Inter" ], "headline-lg": [ "Plus Jakarta Sans" ], "headline-sm": [ "Plus Jakarta Sans" ], "headline-md": [ "Plus Jakarta Sans" ] }, "fontSize": { "label-sm": [ "11px", { "lineHeight": "14px", "fontWeight": "600" } ], "numeric-total": [ "32px", { "lineHeight": "36px", "fontWeight": "800" } ], "label-lg": [ "14px", { "lineHeight": "20px", "fontWeight": "600" } ], "headline-lg-mobile": [ "24px", { "lineHeight": "32px", "fontWeight": "700" } ], "title-md": [ "16px", { "lineHeight": "22px", "fontWeight": "600" } ], "body-sm": [ "12px", { "lineHeight": "16px", "fontWeight": "400" } ], "label-md": [ "12px", { "lineHeight": "16px", "fontWeight": "500" } ], "display-lg": [ "36px", { "lineHeight": "44px", "fontWeight": "700" } ], "body-md": [ "14px", { "lineHeight": "20px", "fontWeight": "400" } ], "body-lg": [ "16px", { "lineHeight": "24px", "fontWeight": "400" } ], "headline-lg": [ "28px", { "lineHeight": "36px", "fontWeight": "700" } ], "headline-sm": [ "18px", { "lineHeight": "24px", "fontWeight": "600" } ], "headline-md": [ "22px", { "lineHeight": "28px", "fontWeight": "600" } ] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-30 flex flex-col justify-between py-6"><div class="flex flex-col gap-6"><div class="flex items-center gap-3 px-6"><div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[22px]">storefront</span></div><div><span class="font-headline-sm text-headline-sm text-primary tracking-tight block">Lucem POS</span><span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider block">Retail Enterprise</span></div></div><nav class="flex flex-col gap-1 px-3" data-active-classes="bg-surface-container text-on-surface font-semibold"><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="punto-de-venta" href="#"><span class="material-symbols-outlined text-[20px]">point_of_sale</span><span>Punto de Venta</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="gestion-de-apartados" href="#"><span class="material-symbols-outlined text-[20px]">bookmark_manager</span><span>Apartados</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="inventario" href="#"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Inventario</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="clientes" href="#"><span class="material-symbols-outlined text-[20px]">group</span><span>Clientes</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="cortes-de-caja" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span>Cortes de Caja</span></a></nav></div><div class="px-3"><div class="bg-surface-container rounded-lg p-3 flex items-center justify-between"><div class="flex flex-col"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Terminal #04</span><span class="font-body-sm text-body-sm text-on-surface font-medium">Sucursal Centro</span></div><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-20 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-4"><div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg"><span class="material-symbols-outlined text-secondary text-[18px]">wifi</span><span class="font-label-sm text-label-sm text-on-surface">En línea</span></div></div><div class="flex items-center gap-4"><button class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span></button><div class="flex items-center gap-3 pl-2"><div class="text-right hidden sm:block"><span class="font-label-lg text-label-lg text-on-surface block leading-tight">Valeria Ríos</span><span class="font-body-sm text-body-sm text-on-surface-variant block leading-tight">Cajera Principal</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full relative">
+<!-- Backdrop Blur Layer representing the Lucem Retail 'Apartados' Dashboard -->
+<div class="w-full pointer-events-none select-none opacity-40 filter blur-md px-gutter-lg py-space-xl flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-headline-lg text-headline-lg text-primary tracking-tight">Gestión de Apartados</span>
+<span class="font-body-md text-body-md text-on-surface-variant block mt-1">Control de inventario en mostrador, pagos parciales y retiros programados</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="h-10 px-4 rounded-lg bg-surface-container-low text-on-surface font-label-lg text-label-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Filtros avanzados</span>
+</button>
+<button class="h-10 px-5 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Nuevo apartado</span>
+</button>
+</div>
+</div>
+<!-- Background Stat Summary Cards -->
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Apartados Activos</span>
+<span class="font-headline-lg text-headline-lg text-primary mt-2 block">42 reservas</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1 block">96 unidades custodiadas</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Anticipos Recibidos</span>
+<span class="font-headline-lg text-headline-lg text-primary mt-2 block">$14,820.00</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1 block">Corte del mes actual</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Saldos por Cobrar</span>
+<span class="font-headline-lg text-headline-lg text-primary mt-2 block">$28,450.00</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1 block">Pendiente de liquidación</span>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Por Vencer Hoy</span>
+<span class="font-headline-lg text-headline-lg text-error mt-2 block">4 clientes</span>
+<span class="font-body-sm text-body-sm text-error mt-1 block">Notificación enviada vía SMS</span>
+</div>
+</div>
+<!-- Background Table Mockup -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-4 overflow-hidden">
+<div class="h-10 bg-surface-container-low rounded-lg mb-3 flex items-center px-4 justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">FOLIO &amp; CLIENTE</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">ESTADO</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">MONTO TOTAL</span>
+</div>
+<div class="space-y-3">
+<div class="h-14 bg-surface-container rounded-lg"></div>
+<div class="h-14 bg-surface-container-low rounded-lg"></div>
+<div class="h-14 bg-surface-container rounded-lg"></div>
+</div>
+</div>
+</div>
+<!-- Modal Overlay Container -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/45 backdrop-blur-[6px] overflow-y-auto">
+<!-- Active Modal Dialog -->
+<div aria-labelledby="modal-title" aria-modal="true" class="w-full max-w-[940px] my-6 bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all" role="dialog">
+<!-- Modal Header -->
+<div class="px-8 py-5 bg-surface-container-lowest flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">bookmark_manager</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight" id="modal-title">Nuevo apartado</h2>
+<span class="bg-secondary-container text-on-secondary-container font-label-sm text-label-sm px-2.5 py-0.5 rounded-full uppercase tracking-wider">Anticipo Habilitado</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Reserva productos para tu cliente y registra su anticipo si corresponde</p>
+</div>
+</div>
+<button aria-label="Cerrar modal" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="close-modal-btn">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Modal Body (2 Columns Split) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 min-h-0 bg-surface-container-lowest">
+<!-- Left Column (60% ~ 7 cols) -->
+<div class="lg:col-span-7 p-6 sm:p-7 flex flex-col gap-6 bg-surface-container-lowest">
+<!-- Sección A: Seleccionar productos -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">shopping_bag</span>
+                Seleccionar productos
+              </span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded-full">Stock validado</span>
+</div>
+<!-- Search Bar with shortcut -->
+<div class="relative w-full">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant absolute left-3.5 top-1/2 -translate-y-1/2">search</span>
+<input class="w-full h-11 pl-11 pr-14 bg-surface-container-low rounded-lg text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary transition-all" placeholder="Buscar por nombre, SKU o código... ⌘K" type="text" value=""/>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-surface-container rounded font-label-sm text-label-sm text-on-surface-variant">⌘K</div>
+</div>
+<!-- Inline Catalog Search Suggestions -->
+<div class="bg-surface-container-low rounded-xl p-2.5 flex flex-col gap-1.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant px-2 pt-1 uppercase tracking-wide">Resultados de inventario rápido</span>
+<div class="p-2 bg-surface-container-lowest rounded-lg flex items-center justify-between hover:bg-surface-container transition-colors group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">checkroom</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Playera Básica Algodón (Negro / Talla M)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">SKU: PLY-092 · <span class="font-semibold text-primary">$249.00</span> · <span class="text-secondary font-medium">Disp: 71 pzas</span></p>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary font-label-sm text-label-sm flex items-center gap-1 transition-all flex-shrink-0 ml-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Agregar</span>
+</button>
+</div>
+<div class="p-2 bg-surface-container-lowest rounded-lg flex items-center justify-between hover:bg-surface-container transition-colors group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">dry_cleaning</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Jeans Denim Regular Fit (Azul / Talla 32)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">SKU: JNS-441 · <span class="font-semibold text-primary">$599.00</span> · <span class="text-secondary font-medium">Disp: 8 pzas</span></p>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary font-label-sm text-label-sm flex items-center gap-1 transition-all flex-shrink-0 ml-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Agregar</span>
+</button>
+</div>
+</div>
+<!-- Selected Items List -->
+<div class="flex flex-col gap-2 mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Artículos a reservar</span>
+<!-- Item 1 -->
+<div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+                    2
+                  </div>
+<div class="min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface truncate">Playera Básica Algodón</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Negro / M · 2 pzas × $249.00</p>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-shrink-0">
+<span class="font-title-md text-title-md text-primary">$498.00 MXN</span>
+<button class="w-7 h-7 rounded flex items-center justify-center text-error hover:bg-error-container transition-colors" title="Quitar producto">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-headline-sm flex-shrink-0">
+                    1
+                  </div>
+<div class="min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface truncate">Jeans Denim Regular Fit</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Azul / 32 · 1 pza × $599.00</p>
+</div>
+</div>
+<div class="flex items-center gap-4 flex-shrink-0">
+<span class="font-title-md text-title-md text-primary">$599.00 MXN</span>
+<button class="w-7 h-7 rounded flex items-center justify-center text-error hover:bg-error-container transition-colors" title="Quitar producto">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+<div class="p-2.5 rounded-lg bg-secondary-container/60 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">verified</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container">Total 3 piezas seleccionadas (stock validado en mostrador)</span>
+</div>
+</div>
+</div>
+<!-- Sección B: Datos del cliente -->
+<div class="flex flex-col gap-3">
+<span class="font-title-md text-title-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">person_pin</span>
+              Datos del cliente
+            </span>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="font-label-sm text-label-sm text-on-surface-variant block mb-1" for="client-name">Nombre completo *</label>
+<div class="relative">
+<input class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none transition-all" id="client-name" type="text" value="Mariana López Rivera"/>
+<span class="material-symbols-outlined text-[18px] text-secondary absolute right-3 top-1/2 -translate-y-1/2">check_circle</span>
+</div>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-on-surface-variant block mb-1" for="client-phone">Teléfono (WhatsApp)</label>
+<div class="relative">
+<input class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none transition-all" id="client-phone" type="tel" value="55 4123 9901"/>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant absolute right-3 top-1/2 -translate-y-1/2">call</span>
+</div>
+</div>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-on-surface-variant block mb-1" for="client-notes">Notas operativas de entrega</label>
+<input class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none transition-all" id="client-notes" type="text" value="Pasa el viernes por la tarde a liquidar"/>
+</div>
+</div>
+<!-- Sección C: Vigencia de la reserva -->
+<div class="flex flex-col gap-2.5">
+<span class="font-title-md text-title-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">event_repeat</span>
+              Vigencia de la reserva
+            </span>
+<div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface block">25 de Octubre, 2025 · 18:00 hrs</span>
+<span class="font-body-sm text-body-sm text-secondary font-medium">Plazo estándar: 3 días naturales</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors shadow-sm">
+                Cambiar fecha
+              </button>
+</div>
+<div class="p-3 rounded-lg bg-surface-container flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[18px] mt-0.5 flex-shrink-0">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                Los productos permanecerán reservados protegiendo disponibilidad física hasta la fecha indicada o hasta que el apartado se complete o libere en caja.
+              </p>
+</div>
+</div>
+</div>
+<!-- Right Column (40% ~ 5 cols) - Financial Summary & Anticipo -->
+<div class="lg:col-span-5 p-6 sm:p-7 bg-surface-container-low flex flex-col justify-between gap-6">
+<div class="flex flex-col gap-5">
+<!-- Segmented Control Anticipo -->
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-primary">¿El cliente dejará anticipo?</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">payments</span>
+</div>
+<div class="grid grid-cols-2 p-1 bg-surface-container-low rounded-lg gap-1">
+<button class="py-2 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center justify-center" type="button">
+                  Sin anticipo
+                </button>
+<button class="py-2 rounded bg-primary-container text-on-primary font-label-md text-label-md shadow-sm flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">check</span>
+                  Con anticipo
+                </button>
+</div>
+<!-- Monto del Anticipo Input -->
+<div class="flex flex-col gap-1.5 mt-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="advance-amount">Monto del anticipo ($ MXN)</label>
+<div class="relative">
+<span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-headline-sm text-headline-sm text-primary">$</span>
+<input class="w-full h-12 pl-8 pr-4 bg-surface-container-low rounded-lg font-headline-sm text-headline-sm text-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-secondary focus:outline-none transition-all" id="advance-amount" type="text" value="300.00"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 font-label-sm text-label-sm text-on-surface-variant uppercase">MXN</span>
+</div>
+</div>
+<!-- Payment Method Selector -->
+<div class="flex flex-col gap-1.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Método de recepción</span>
+<div class="grid grid-cols-3 gap-1.5">
+<button class="py-2 px-1 rounded-lg bg-surface-container text-secondary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+                    Efectivo
+                  </button>
+<button class="py-2 px-1 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-label-sm text-label-sm flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">credit_card</span>
+                    Tarjeta
+                  </button>
+<button class="py-2 px-1 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-label-sm text-label-sm flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+                    Transf.
+                  </button>
+</div>
+</div>
+<!-- Cash Denomination Details -->
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between text-on-surface">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Efectivo recibido</span>
+<span class="font-label-lg text-label-lg text-primary">$500.00 MXN</span>
+</div>
+<div class="h-8 w-px bg-surface-container"></div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Cambio al cliente</span>
+<span class="font-label-lg text-label-lg text-secondary font-bold">$200.00 MXN</span>
+</div>
+</div>
+<!-- Ratio / Progress Bar -->
+<div class="flex flex-col gap-1 pt-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Cobertura del anticipo</span>
+<span class="text-secondary font-bold">27.3% cubierto</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-300" style="width: 27.34%;"></div>
+</div>
+</div>
+</div>
+<!-- Detailed Financial Breakdown -->
+<div class="p-4 bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-3">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Desglose de la operación</span>
+<div class="flex items-center justify-between font-body-md text-body-md">
+<span class="text-on-surface-variant">Subtotal productos (3 arts)</span>
+<span class="text-primary font-medium">$1,097.00 MXN</span>
+</div>
+<div class="flex items-center justify-between font-body-md text-body-md">
+<div class="flex items-center gap-1.5">
+<span class="text-secondary font-medium">Anticipo registrado</span>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-1.5 py-0.5 rounded">Efectivo</span>
+</div>
+<span class="text-secondary font-bold">-$300.00 MXN</span>
+</div>
+<div class="pt-3 mt-1 bg-surface-container-low rounded-lg p-3 flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Saldo pendiente por liquidar</span>
+<span class="bg-surface-container text-on-surface text-[10px] font-bold px-2 py-0.5 rounded-full">Pendiente al entregar</span>
+</div>
+<div class="flex items-baseline justify-between mt-1">
+<span class="font-numeric-total text-numeric-total text-primary tracking-tight font-extrabold">$797.00</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant font-bold">MXN</span>
+</div>
+</div>
+</div>
+<!-- Rule Notice Box -->
+<div class="p-3 bg-surface-container rounded-xl flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] flex-shrink-0 mt-0.5">lock_clock</span>
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+                Al confirmar, las <strong class="font-semibold text-primary">3 unidades</strong> quedarán reservadas en mostrador. El anticipo de <strong class="font-semibold text-primary">$300.00</strong> se registrará como pago recibido, sin completar todavía la venta final.
+              </p>
+</div>
+</div>
+<!-- Right Column Summary Meta -->
+<div class="flex items-center justify-between pt-2 text-on-surface-variant font-body-sm text-body-sm">
+<span>Terminal #04 · Sucursal Centro</span>
+<span class="flex items-center gap-1 text-secondary font-medium">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> En línea
+            </span>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-4 bg-surface-container-lowest flex items-center justify-between shadow-[0_-2px_8px_rgba(0,0,0,0.03)]">
+<button class="h-11 px-6 rounded-lg bg-surface-container-low text-primary font-label-lg text-label-lg hover:bg-surface-container transition-colors" id="cancel-modal-btn" type="button">
+          Cancelar
+        </button>
+<div class="flex items-center gap-3">
+<button class="h-11 px-4 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-colors flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Imprimir comprobante</span>
+</button>
+<button class="h-11 px-7 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-secondary active:scale-[0.98] transition-all shadow-md flex items-center gap-2.5" id="submit-modal-btn" type="button">
+<span class="material-symbols-outlined text-[19px] text-secondary-fixed">lock</span>
+<span>Confirmar apartado</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interactions for modal close & simulated action
+  const closeBtn = document.getElementById('close-modal-btn');
+  const cancelBtn = document.getElementById('cancel-modal-btn');
+  const submitBtn = document.getElementById('submit-modal-btn');
+
+  function handleDismiss() {
+    const dialog = document.querySelector('[role="dialog"]');
+    if (dialog) {
+      dialog.style.opacity = '0';
+      dialog.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        alert('Modal cerrado: acción descartada.');
+      }, 180);
+    }
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', handleDismiss);
+  if (cancelBtn) cancelBtn.addEventListener('click', handleDismiss);
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[19px]">progress_activity</span> <span>Procesando reserva...</span>';
+      setTimeout(() => {
+        alert('¡Apartado #AP-8842 registrado exitosamente! Stock bloqueado y anticipo aplicado a caja.');
+        submitBtn.innerHTML = '<span class="material-symbols-outlined text-[19px] text-secondary-fixed">check_circle</span> <span>Confirmado</span>';
+      }, 600);
+    });
+  }
+</script></main></div></body></html>

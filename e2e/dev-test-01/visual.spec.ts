@@ -4,7 +4,7 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
   await page.goto('/dashboard');
 
   const heading = page.getByRole('heading', { level: 1 });
-  await expect(heading).toHaveAccessibleName('Buenos días, aquí tienes el pulso de tu negocio.');
+  await expect(heading).toHaveAccessibleName('Resumen de tu negocio');
   await expect(heading).toBeVisible();
   if (testInfo.project.name === 'visual-mobile') {
     await expect(page.locator('.topbar-switch:visible')).toContainText('DEV-TEST-01 Centro');
@@ -13,11 +13,11 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
   }
   await expect(page.getByText('$250.00').first()).toBeVisible();
 
-  const primaryCta = page.locator('.dashboard-sale-button');
-  await expect(primaryCta).toHaveAccessibleName('Venta y cobro directo');
+  const primaryCta = page.locator('.topbar-cta');
+  await expect(primaryCta).toHaveAccessibleName(/Nueva venta/);
   await expect(primaryCta).toBeVisible();
 
-  const shortcut = page.locator('.dashboard-shortcut').filter({ hasText: 'Catálogo' }).first();
+  const shortcut = page.locator('.dashboard-shortcut').filter({ hasText: 'Productos' }).first();
   await shortcut.focus();
   await expect(shortcut).toBeFocused();
   await expect.poll(() => shortcut.evaluate(element => {

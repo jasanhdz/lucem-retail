@@ -1,2 +1,2 @@
 import { PreparationPlaceholder } from '@/components/PreparationPlaceholder';
-export default PreparationPlaceholder;
+export default function AuditPage() { return <PreparationPlaceholder title="Auditoría"/>; }

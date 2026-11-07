@@ -8,7 +8,7 @@ export async function GET() {
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   const where = { businessId: auth.business.id, status: 'ACTIVE' as const };
   const [variants, reservations] = await Promise.all([
-    db.productVariant.findMany({ where: { businessId: auth.business.id, active: true }, include: { product: true }, orderBy: { stock: 'asc' } }),
+    db.productVariant.findMany({ where: { businessId: auth.business.id, active: true }, include: { product: { include: { category: true } } }, orderBy: { stock: 'asc' } }),
     db.reservation.groupBy({ by: ['variantId'], where, _sum: { quantity: true } }),
   ]);
   const reservedByVariant = new Map(reservations.map((row) => [row.variantId, row._sum.quantity ?? 0]));

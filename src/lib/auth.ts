@@ -8,21 +8,38 @@ const SESSION_IDLE_MS = 30 * 60 * 1000;
 const COOKIE_RENEWAL_WINDOW_MS = 5 * 60 * 1000;
 const hash = (v: string) => crypto.createHash('sha256').update(v).digest('hex');
 const cookieOptions = { httpOnly: true, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', maxAge: SESSION_IDLE_MS / 1000, path: '/' };
-export async function createSession(userId: string, businessId?: string) { const token=crypto.randomBytes(32).toString('hex'); await db.session.create({data:{userId,activeBusinessId:businessId,tokenHash:hash(token),expiresAt:new Date(Date.now()+SESSION_IDLE_MS)}}); (await cookies()).set(COOKIE,token,cookieOptions); }
+export async function createSession(userId: string, businessId?: string) { const token=crypto.randomBytes(32).toString('hex'); await db.session.create({data:{userId,activeBusinessId:businessId,tokenHash:hash(token),expiresAt:new Date(Date.now()+SESSION_IDLE_MS)}}); return token; }
+export function sessionCookie(token: string) { return `${COOKIE}=${token}; Path=/; Max-Age=${SESSION_IDLE_MS / 1000}; HttpOnly; SameSite=Lax${cookieOptions.secure ? '; Secure' : ''}`; }
 export async function getAuth(options: { renewCookie?: boolean } = {}) {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const now = new Date();
   const session = await db.session.findUnique({ where: { tokenHash: hash(token) }, include: { user: { include: { memberships: { include: { business: true } } } }, activeBusiness: true } });
   if (!session || !session.user.active || session.expiresAt <= now) return null;
-  const membership = session.user.memberships.find((item) => item.businessId === session.activeBusinessId);
+  let activeBusinessId = session.activeBusinessId;
+  let membership = session.user.memberships.find((item) => item.businessId === activeBusinessId);
+  if (!membership && session.user.memberships.length > 0) {
+    const fallbackMembership = [...session.user.memberships].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.businessId.localeCompare(b.businessId))[0];
+    const selected = await db.session.updateMany({
+      where: { id: session.id, activeBusinessId },
+      data: { activeBusinessId: fallbackMembership.businessId },
+    });
+    if (selected.count === 1) {
+      activeBusinessId = fallbackMembership.businessId;
+      membership = fallbackMembership;
+    } else {
+      const latest = await db.session.findUnique({ where: { id: session.id }, select: { activeBusinessId: true } });
+      activeBusinessId = latest?.activeBusinessId ?? null;
+      membership = session.user.memberships.find((item) => item.businessId === activeBusinessId);
+    }
+  }
   const shouldRenew = session.expiresAt.getTime() - now.getTime() <= COOKIE_RENEWAL_WINDOW_MS;
   if (shouldRenew && options.renewCookie) {
     const expiresAt = new Date(now.getTime() + SESSION_IDLE_MS);
     const updated = await db.session.updateMany({ where: { id: session.id, expiresAt: { gt: now } }, data: { lastActivityAt: now, expiresAt } });
     if (updated.count === 1) (await cookies()).set(COOKIE, token, cookieOptions);
   }
-  return { session, user: session.user, business: session.activeBusiness && membership ? session.activeBusiness : undefined, membership };
+  return { session: { ...session, activeBusinessId }, user: session.user, business: membership?.business, membership };
 }
 export async function logout(){const token=(await cookies()).get(COOKIE)?.value;if(token)await db.session.deleteMany({where:{tokenHash:hash(token)}});(await cookies()).delete(COOKIE);}
 export async function authenticate(email:string,password:string){const user=await db.user.findUnique({where:{email:email.trim().toLowerCase()},include:{memberships:true}});if(!user||!user.active||!(await bcrypt.compare(password,user.passwordHash)))return null;return user;}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-tertiary-container": "#b3863c", "primary-container": "#102b2a", "surface-container": "#dcf3ec", "primary-fixed-dim": "#b0ccca", "on-tertiary-fixed": "#281800", "on-secondary-container": "#1f715a", "primary": "#001615", "primary-fixed": "#cbe8e6", "on-surface-variant": "#414847", "on-primary-fixed-variant": "#314b4a", "error": "#ba1a1a", "tertiary-fixed": "#ffddaf", "surface-dim": "#c8dfd9", "secondary": "#166b55", "on-background": "#0b1f1b", "on-secondary": "#ffffff", "on-primary-fixed": "#04201f", "inverse-surface": "#203430", "inverse-on-surface": "#dff6ef", "on-secondary-fixed-variant": "#00513f", "secondary-container": "#a4f2d6", "tertiary": "#1c1000", "secondary-fixed-dim": "#89d5ba", "surface-tint": "#496362", "error-container": "#ffdad6", "outline-variant": "#c1c8c7", "background": "#e7fef8", "surface-container-lowest": "#ffffff", "on-primary": "#ffffff", "on-tertiary": "#ffffff", "inverse-primary": "#b0ccca", "surface-container-low": "#e2f9f2", "tertiary-container": "#372300", "surface-container-highest": "#d1e7e1", "tertiary-fixed-dim": "#f1be6e", "on-error-container": "#93000a", "outline": "#727878", "surface-variant": "#d1e7e1", "on-tertiary-fixed-variant": "#614000", "on-error": "#ffffff", "secondary-fixed": "#a4f2d6", "on-secondary-fixed": "#002117", "on-primary-container": "#789391", "surface-bright": "#e7fef8", "surface-container-high": "#d6ede7", "surface": "#e7fef8", "on-surface": "#0b1f1b" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "margin": "1rem", "margin-md": "1.5rem", "gutter": "1rem", "margin-lg": "2rem", "space-md": "1rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "space-2xl": "3rem", "space-sm": "0.5rem", "gutter-lg": "1.5rem" }, fontFamily: { "body-lg": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "numeric-total": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "label-md": ["Inter"], "label-lg": ["Inter"], "title-md": ["Plus Jakarta Sans"] }, fontSize: { "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-sm": ["11px", { lineHeight: "14px", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "700" }], "numeric-total": ["32px", { lineHeight: "36px", fontWeight: "800" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", fontWeight: "600" }], "headline-lg": ["28px", { lineHeight: "36px", fontWeight: "700" }], "display-lg": ["36px", { lineHeight: "44px", fontWeight: "700" }], "label-md": ["12px", { lineHeight: "16px", fontWeight: "500" }], "label-lg": ["14px", { lineHeight: "20px", fontWeight: "600" }], "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }] } } } }</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100vh;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-secondary-fixed text-[20px]">diamond</span></div><button class="flex items-center gap-space-xs min-w-0 h-11 px-space-xs text-left group"><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-on-surface-variant leading-none truncate">Sucursal</span><div class="flex items-center gap-0.5 min-w-0"><span class="font-title-md text-title-md text-on-surface truncate">American Outfit</span><span class="material-symbols-outlined text-on-surface-variant text-[18px] shrink-0">expand_more</span></div></div></button></div><div class="flex items-center gap-space-xs shrink-0"><button class="relative w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full px-margin pb-space-xl">
+<!-- 1. ENCABEZADO Y ACCIÓN PRINCIPAL -->
+<section class="flex flex-col pt-space-sm mb-space-md">
+<div class="flex items-center justify-between gap-space-sm mb-space-xs">
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Módulo de Mostrador</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface truncate">Apartados y Reservas</h1>
+</div>
+<button aria-label="Historial de apartados" class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface shrink-0 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md">Control y entrega de productos reservados en tienda.</p>
+<!-- Botón de Acción Principal -->
+<button class="w-full h-12 bg-primary-container text-on-primary rounded-xl flex items-center justify-center gap-space-sm font-label-lg text-label-lg shadow-md active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+<span>+ Nuevo apartado</span>
+</button>
+</section>
+<!-- 2. RESUMEN DE MÉTRICAS COMPACTO -->
+<section aria-label="Métricas de apartados" class="grid grid-cols-3 gap-space-xs mb-space-md">
+<!-- Métrica: Total -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Total</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">receipt_long</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">36</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Folios reg.</span>
+</div>
+</div>
+<!-- Métrica: Activos -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-secondary-container truncate">Activos</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">bookmark_added</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-secondary">18</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">54 pzas res.</span>
+</div>
+</div>
+<!-- Métrica: Por Vencer -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-tertiary-container truncate">Por vencer</span>
+<span class="material-symbols-outlined text-on-tertiary-container text-[18px]">hourglass_top</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-tertiary-container">5</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">&lt; 48 hrs</span>
+</div>
+</div>
+</section>
+<!-- 3. BUSCADOR Y CHIPS DE FILTRO -->
+<section class="flex flex-col gap-space-sm mb-space-md">
+<!-- Barra de búsqueda -->
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-12 pl-10 pr-10 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none shadow-sm" placeholder="Buscar por cliente, folio o SKU..." type="text"/>
+<button aria-label="Escanear código" class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] active:text-on-surface">barcode_scanner</button>
+</div>
+<!-- Filtros Horizontales -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5" role="tablist">
+<button aria-selected="true" class="px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md shrink-0 shadow-sm transition-all" role="tab">
+        Todos (36)
+      </button>
+<button aria-selected="false" class="px-space-md py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 shadow-sm active:bg-surface-container transition-all" role="tab">
+        Activos (18)
+      </button>
+<button aria-selected="false" class="px-space-md py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 shadow-sm active:bg-surface-container transition-all" role="tab">
+        Por vencer (5)
+      </button>
+<button aria-selected="false" class="px-space-md py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md shrink-0 shadow-sm active:bg-surface-container transition-all" role="tab">
+        Vencidos (3)
+      </button>
+</div>
+</section>
+<!-- 4. LISTA DE APARTADOS EN TARJETAS TÁCTILES -->
+<section class="flex flex-col gap-space-md mb-space-lg">
+<!-- Tarjeta 1: Activo - Por Vencer -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Indicador visual lateral de urgencia -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary-fixed-dim"></div>
+<!-- Cabecera de la tarjeta -->
+<div class="flex items-center justify-between gap-space-xs pl-1">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">#APT-1082</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">· Mostrador 02</span>
+</div>
+<!-- Badge ámbar -->
+<div class="px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[14px]">alarm</span>
+<span class="font-label-sm text-label-sm font-semibold">24 hrs restantes</span>
+</div>
+</div>
+<!-- Información del Producto y Cliente -->
+<div class="flex gap-space-sm items-center pl-1">
+<img class="w-16 h-16 rounded-lg object-cover shrink-0 bg-surface-container" data-alt="A neatly folded premium black organic cotton crewneck t-shirt displayed in soft diffused boutique studio lighting with minimalist shadows and rich dark textile weave texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDO1lCesptqKcZ8kst45bTwB3ZrkreaSG9j_NcxCVdSwziX1_oNK6AUeeYjo-JssuU2qhlQmL5p-Nir50KkUvhMXJ1B2s1K3fcU1cBkm9Y_1c9tLWgLRHjEMtnY3f-1w89mB_3QPY9YZpbLaHuFffQXrD_wo9CvqTxeMQWN1IuVGgskt8yIB0J5zvPY7_qKkUKwcXKAbpkJZ6RKvWEhD3WB8EoYsVjc0hum4z-eRA"/>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-title-md text-title-md text-on-surface truncate">Playera Básica Algodón</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Negro / Talla M · SKU: PLY-092</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-md text-label-md text-secondary font-semibold">3 pzas apartadas</span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Mariana López Rivera</span>
+</div>
+</div>
+</div>
+<!-- Barra de Vigencia Detallada -->
+<div class="bg-surface-container-low px-space-sm py-1.5 rounded-lg flex items-center justify-between text-on-surface-variant text-body-sm font-body-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-container">info</span>
+          Vence mañana a las 18:00
+        </span>
+<span class="font-semibold text-on-tertiary-container">Anticipo: $300.00</span>
+</div>
+<!-- Acciones táctiles claras (≥ 48px) -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button aria-label="Ver detalles de Mariana López" class="h-12 bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+<span>Detalle</span>
+</button>
+<button aria-label="Completar venta folio 1082" class="h-12 bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Completar venta</span>
+</button>
+</div>
+</div>
+<!-- Tarjeta 2: Activo Vigente -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Indicador visual lateral activo -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+<!-- Cabecera de la tarjeta -->
+<div class="flex items-center justify-between gap-space-xs pl-1">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">#APT-1081</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">· Mostrador 01</span>
+</div>
+<!-- Badge verde activo -->
+<div class="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+<span class="font-label-sm text-label-sm font-semibold">Vence en 5 días</span>
+</div>
+</div>
+<!-- Información del Producto y Cliente -->
+<div class="flex gap-space-sm items-center pl-1">
+<img class="w-16 h-16 rounded-lg object-cover shrink-0 bg-surface-container" data-alt="Classic indigo blue denim jeans resting flat on a contemporary polished wooden boutique counter under bright warm commercial lighting showcasing crisp stitch detailing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBu52zZRX0k1ITrOpAm_uuczn-nXPZPcb9_3gFUv-ONZOdFsBH_7XdhTXWxEDakciQrL_t2de_QgFmWfhfz5kFjd71Tlog1ArbXz7d5d60me7OYUk5FvtdkbZ-0BKp6vxTIACdfUoEltnl4l7wEDxEyBvHopv8Q3jZFIQiFvacCC_xUJi9TjnUnQJBmeE78x3D9iOHnCQ0To8f5PG9n91FmtunfJee3rSuTA_CT7g"/>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-title-md text-title-md text-on-surface truncate">Jeans Denim Regular</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Azul / Talla 32 · SKU: JNS-441</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-md text-label-md text-secondary font-semibold">1 pza apartada</span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Roberto Garza Salazar</span>
+</div>
+</div>
+</div>
+<!-- Barra de Vigencia Detallada -->
+<div class="bg-surface-container-low px-space-sm py-1.5 rounded-lg flex items-center justify-between text-on-surface-variant text-body-sm font-body-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+          Vence 18 Octubre
+        </span>
+<span class="font-semibold text-secondary">Anticipo: $450.00</span>
+</div>
+<!-- Acciones táctiles claras (≥ 48px) -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<button aria-label="Ver detalles de Roberto Garza" class="h-12 bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+<span>Detalle</span>
+</button>
+<button aria-label="Completar venta folio 1081" class="h-12 bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Completar venta</span>
+</button>
+</div>
+</div>
+<!-- Tarjeta 3: Vencido -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Indicador visual lateral vencido -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-error"></div>
+<!-- Cabecera de la tarjeta -->
+<div class="flex items-center justify-between gap-space-xs pl-1">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">#APT-1080</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">· Central</span>
+</div>
+<!-- Badge rojo vencido -->
+<div class="px-2.5 py-1 rounded-full bg-error-container text-on-error-container flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="font-label-sm text-label-sm font-semibold">Expiró hace 3 días</span>
+</div>
+</div>
+<!-- Información del Producto y Cliente -->
+<div class="flex gap-space-sm items-center pl-1">
+<img class="w-16 h-16 rounded-lg object-cover shrink-0 bg-surface-container" data-alt="Modern white leather street sneakers on a minimal textured neutral podium illuminated with high-fashion retail showcase lighting displaying crisp white leather and subtle perforation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRGZs08mM5bD2LNhhDOgrJYGB16p5TIs8TC020-sgPa6xhz9DqyobTOqw_CVEHBHeKDILoD_Y6Q5yZz8UOdPDRS6MjWRvDko3e2vtF4pi7d70qnmpyldv1NUMNFP0254cpYOyDhpXkUm7y38kKnIqZfqGyTdW4RSh5jxwt-01AYNJndaFhkmn6XhaH_ipAfxYsSjxEbu1_qkfbZN83WIz7qWfnegIZr_7CAXD2Lg"/>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-title-md text-title-md text-on-surface truncate">Tenis Urbanos Classic</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Blanco / Talla 27 · SKU: CAL-118</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-md text-label-md text-error font-semibold">2 pzas no reclamadas</span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Andrea Domínguez</span>
+</div>
+</div>
+</div>
+<!-- Barra de Estado Expirado -->
+<div class="bg-surface-container-low px-space-sm py-1.5 rounded-lg flex items-center justify-between text-on-surface-variant text-body-sm font-body-sm">
+<span class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-error">event_busy</span>
+          Apartado caducado (10 Octubre)
+        </span>
+<span class="font-semibold text-on-surface-variant">Saldo devuelto</span>
+</div>
+<!-- Acción: Liberar a inventario general -->
+<div class="pt-space-xs">
+<button aria-label="Liberar folio 1080 a inventario general" class="w-full h-12 bg-error-container text-on-error-container rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-[20px]">unarchive</span>
+<span>Liberar a inventario general</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 5. NOTA OPERATIVA INFERIOR -->
+<section class="bg-surface-container rounded-xl p-space-md flex gap-space-sm items-start mb-space-md">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">lightbulb</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-secondary-container mb-0.5">Regla Operativa de Inventario</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+<strong class="text-on-surface font-semibold">Existencia física = Disponible + Apartadas.</strong> Los apartados retienen disponibilidad de venta sin descontar inventario físico hasta concretar la venta en caja.
+      </p>
+</div>
+</section>
+</div>
+<script>
+  // Micro-interacción: Cambio de tab de filtros
+  document.querySelectorAll('[role="tab"]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[role="tab"]').forEach((t) => {
+        t.setAttribute('aria-selected', 'false');
+        t.classList.remove('bg-primary-container', 'text-on-primary');
+        t.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+      });
+      tab.setAttribute('aria-selected', 'true');
+      tab.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+      tab.classList.add('bg-primary-container', 'text-on-primary');
+    });
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-secondary [&amp;_.indicator]:bg-secondary-container/60 [&amp;_.indicator]:text-secondary"><div class="flex items-center justify-around h-16 px-space-xs max-w-md mx-auto"><a class="flex flex-col items-center justify-center min-w-[56px] h-14 group text-on-surface-variant" data-path="inicio" href="#"><div class="indicator px-3 py-1 rounded-full flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[22px]">storefront</span></div><span class="font-label-sm text-label-sm leading-tight mt-0.5">Inicio</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-14 group text-on-surface-variant" data-path="pos" href="#"><div class="indicator px-3 py-1 rounded-full flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[22px]">point_of_sale</span></div><span class="font-label-sm text-label-sm leading-tight mt-0.5">POS</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-14 group text-on-surface-variant" data-path="productos" href="#"><div class="indicator px-3 py-1 rounded-full flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[22px]">category</span></div><span class="font-label-sm text-label-sm leading-tight mt-0.5">Productos</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-14 group text-secondary [&amp;_.indicator]:bg-secondary-container/60 [&amp;_.indicator]:text-secondary" data-path="inventario" href="#"><div class="indicator px-3 py-1 rounded-full flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[22px]">inventory_2</span></div><span class="font-label-sm text-label-sm leading-tight mt-0.5">Inventario</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-14 group text-on-surface-variant" data-path="mas" href="#"><div class="indicator px-3 py-1 rounded-full flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[22px]">more_horiz</span></div><span class="font-label-sm text-label-sm leading-tight mt-0.5">Más</span></a></div></nav></body></html>

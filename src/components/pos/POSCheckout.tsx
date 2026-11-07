@@ -131,7 +131,7 @@ export function POSCheckout() {
   return (
     <main className="pos-payment-page">
       <header className="pos-payment-heading">
-        <Breadcrumbs items={[{ label: 'Regresar al carrito (Esc)', href: '/pos' }, { label: 'Cobro de Venta' }]} />
+        <Breadcrumbs items={[{ label: 'Operaciones' }, { label: 'Punto de venta', href: '/pos' }, { label: 'Cobro de venta' }]} />
         <small>Folio: se asignará al confirmar</small>
       </header>
 

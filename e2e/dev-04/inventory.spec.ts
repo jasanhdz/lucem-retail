@@ -14,13 +14,13 @@ test.describe('DEV-04 inventory', () => {
     expect(Number(normal.physical)).toBe(Number(normal.available) + Number(normal.reserved));
     await page.goto('/inventario');
     await expect(page.getByRole('heading', { name: 'Inventario' })).toBeVisible();
-    await expect(page.getByText('Disponible', { exact: true }).first()).toBeVisible();
-    await page.getByRole('textbox', { name: 'Buscar inventario' }).fill('DEV-TEST-01-NORMAL');
+    await expect(page.getByRole('button', { name: /Disponible/ }).first()).toBeVisible();
+    await page.locator('.inventory-filter-top-row input').fill('DEV-TEST-01-NORMAL');
     await expect(page.getByText('DEV-TEST-01-NORMAL', { exact: false })).toBeVisible();
     const detailLink = page.getByRole('link', { name: /Ver detalle.*DEV-TEST-01-NORMAL/ });
     await detailLink.click();
-    await expect(page.getByRole('heading', { name: 'Detalle de existencias' })).toBeVisible();
-    await expect(page.getByText('Stock físico', { exact: true })).toBeVisible();
+      await expect(page.locator('.inventory-detail-hero h1')).toBeVisible();
+    await expect(page.getByText('Existencia física', { exact: true })).toBeVisible();
   });
 
   test('ADMIN records entry and adjustment atomically, persists Kardex and rejects invalid values', async ({ page }) => {
@@ -74,20 +74,27 @@ test.describe('DEV-04 inventory', () => {
     await page.goto('/inventario');
     const trigger = page.getByRole('button', { name: /Registrar movimiento/ });
     await trigger.click();
-    await expect(page.getByRole('dialog', { name: 'Registrar entrada o ajuste' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Registrar entrada de stock' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(trigger).toBeFocused();
     await trigger.click();
     await page.getByLabel('Cantidad').fill('1');
-    await page.getByLabel('Motivo obligatorio').fill('DEV-04-ui');
+    await page.getByLabel('Referencia u observación').fill('DEV-04-ui');
     let requests = 0;
     page.on('request', (request) => { if (request.url().endsWith('/api/inventory/movements') && request.method() === 'POST') requests += 1; });
-    await page.getByRole('button', { name: 'Confirmar movimiento' }).dblclick();
+    await page.getByRole('button', { name: /Confirmar entrada/ }).dblclick();
     await expect(page.getByRole('dialog')).toBeHidden();
     expect(requests).toBe(1);
-    const row = (await (await page.request.get('/api/inventory')).json()).find((item: { sku: string }) => item.sku === 'DEV-TEST-01-NORMAL');
-    await page.request.post('/api/inventory/movements', { data: { variantId: row.id, type: 'ADJUSTMENT_OUT', quantity: 1, reason: 'DEV-04-ui-restore' } });
+    await page.getByRole('button', { name: 'Realizar ajuste' }).click();
+    await expect(page.getByRole('dialog', { name: 'Ajuste de existencias' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Disminuir stock/ })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByLabel('Cantidad').fill('1');
+    await page.getByLabel('Detalle o justificación obligatoria').fill('DEV-04-ui-adjustment');
+    await expect(page.getByText('-1 pzas')).toBeVisible();
+    await page.getByRole('button', { name: /Confirmar ajuste/ }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    expect(requests).toBe(2);
   });
 
   test('unauthenticated access is denied, INVENTORY_MANAGER can mutate, SELLER is read-only and ADMIN isolation excludes Norte data', async ({ browser }) => {
@@ -124,17 +131,21 @@ test.describe('DEV-04 inventory', () => {
       const detail = page.getByRole('link', { name: /Ver detalle/ }).first();
       const detailHref = await detail.getAttribute('href');
       await detail.click();
-      await expect(page.getByRole('heading', { name: 'Detalle de existencias' })).toBeVisible();
+      await expect(page.locator('.inventory-detail-hero h1')).toBeVisible();
       await page.screenshot({ path: test.info().outputPath(`inventory-detail-${name}.png`), fullPage: false });
       await page.goto('/inventario/movimientos');
-      await expect(page.getByRole('heading', { name: 'Movimientos' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Kárdex de Movimientos' })).toBeVisible();
       await page.screenshot({ path: test.info().outputPath(`inventory-movements-${name}.png`), fullPage: false });
-      await page.goto('/inventario');
-      await page.getByRole('button', { name: /Registrar movimiento/ }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-      await page.screenshot({ path: test.info().outputPath(`inventory-mutation-${name}.png`), fullPage: false });
-      await page.getByRole('button', { name: 'Cerrar diálogo' }).click();
-      expect(detailHref).toMatch(/^\/inventario\//);
+       await page.goto('/inventario');
+       await page.getByRole('button', { name: /Registrar movimiento/ }).click();
+       await expect(page.getByRole('dialog')).toBeVisible();
+       await page.screenshot({ path: test.info().outputPath(`inventory-mutation-${name}.png`), fullPage: false });
+       await page.getByRole('button', { name: 'Cerrar diálogo' }).click();
+       await page.getByRole('button', { name: 'Realizar ajuste' }).click();
+       await expect(page.getByRole('dialog', { name: 'Ajuste de existencias' })).toBeVisible();
+       await page.screenshot({ path: test.info().outputPath(`inventory-adjustment-${name}.png`), fullPage: false });
+       await page.getByRole('button', { name: 'Cerrar diálogo' }).click();
+       expect(detailHref).toMatch(/^\/inventario\//);
     }
   });
 });

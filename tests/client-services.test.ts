@@ -8,7 +8,7 @@ describe('client services', () => {
     const fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetch);
     expect((await signIn('a@b.test', 'secret')).status).toBe(200);
-    expect(fetch).toHaveBeenCalledWith('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'a@b.test', password: 'secret' }) });
+    expect(fetch).toHaveBeenCalledWith('/api/auth/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'a@b.test', password: 'secret' }) });
   });
   it('fetches businesses and posts selected business preserving statuses', async () => {
     const fetch = vi.fn().mockResolvedValueOnce(new Response('{}', { status: 401 })).mockResolvedValueOnce(new Response('{}', { status: 200 }));
@@ -16,8 +16,8 @@ describe('client services', () => {
     expect((await getBusinesses()).status).toBe(401);
     expect((await selectBusiness('biz')).status).toBe(200);
     expect(fetch.mock.calls).toEqual([
-      ['/api/businesses'],
-      ['/api/businesses/select', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessId: 'biz' }) }],
+      ['/api/businesses', { credentials: 'include', cache: 'no-store' }],
+      ['/api/businesses/select', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessId: 'biz' }) }],
     ]);
   });
   it('registers accounts and sends an idempotent business creation request', async () => {
@@ -26,8 +26,8 @@ describe('client services', () => {
     await registerAccount({ name: 'Sofia', email: 'sofia@test.local', password: 'strong-pass', confirmation: 'strong-pass', terms: true });
     await createBusiness({ name: 'Tienda', branchName: 'Centro', giro: 'ropa', idempotencyKey: 'key-1' });
     expect(fetch.mock.calls).toEqual([
-      ['/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Sofia', email: 'sofia@test.local', password: 'strong-pass', confirmation: 'strong-pass', terms: true }) }],
-      ['/api/businesses', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'key-1' }, body: JSON.stringify({ name: 'Tienda', branchName: 'Centro', giro: 'ropa', idempotencyKey: 'key-1' }) }],
+      ['/api/auth/register', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Sofia', email: 'sofia@test.local', password: 'strong-pass', confirmation: 'strong-pass', terms: true }) }],
+      ['/api/businesses', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'key-1' }, body: JSON.stringify({ name: 'Tienda', branchName: 'Centro', giro: 'ropa', idempotencyKey: 'key-1' }) }],
     ]);
   });
 });

@@ -97,7 +97,18 @@ test.describe('DEV-06 apartados', () => {
   test('renders responsive management UI and controls permissions', async ({ page, browser }) => {
     await page.goto('/apartados');
     await expect(page.getByRole('heading', { name: 'Apartados' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Crear apartado' })).toBeVisible();
+    const newReservation = page.getByRole('button', { name: 'Nuevo apartado' });
+    await expect(newReservation).toBeVisible();
+    await newReservation.click();
+    await expect(page.getByRole('dialog', { name: 'Nuevo apartado' })).toBeVisible();
+    await page.getByLabel('Buscar producto para apartado').fill(sku);
+    const firstSuggestedSku = await page.locator('.reservation-catalog-results > div').first().innerText();
+    await page.getByRole('button', { name: /Agregar/ }).click();
+    await expect(page.getByText('1 piezas seleccionadas')).toBeVisible();
+    await expect(page.locator('.reservation-catalog-results')).not.toContainText(firstSuggestedSku.split('SKU: ')[1]?.split(' · ')[0] ?? sku);
+    await page.getByRole('button', { name: 'Con anticipo' }).click();
+    await expect(page.getByLabel(/Monto del anticipo/)).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar crear apartado' }).click();
     const variant = (await (await page.request.get('/api/products?available=true&q=DEV-TEST-01-NORMAL')).json())[0];
     await page.request.post('/api/reservations', { data: { variantId: variant.id, quantity: 1, expiresAt: new Date(Date.now() + 86400000).toISOString(), notes: 'DEV-06 UI action' } });
     await page.reload();
@@ -113,12 +124,12 @@ test.describe('DEV-06 apartados', () => {
     await expect(release).toBeFocused();
     await release.click();
     await page.getByRole('button', { name: 'Liberar apartado' }).click();
-    for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) { await page.setViewportSize(viewport); await expect(page.getByRole('heading', { name: 'Apartados' })).toBeVisible(); expect(await page.locator('.reservations-page').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy(); await page.screenshot({ path: test.info().outputPath(`reservations-${name}.png`), fullPage: false }); }
+    for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) { await page.setViewportSize(viewport); await expect(page.getByRole('heading', { name: /Apartados/ })).toBeVisible(); expect(await page.locator('.reservations-page').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy(); await page.screenshot({ path: test.info().outputPath(`reservations-${name}.png`), fullPage: false }); }
     const seller = await browser.newContext({ storageState: 'playwright/.auth/seller.json' });
     const sellerPage = await seller.newPage();
     await sellerPage.goto('/apartados');
-    await expect(sellerPage.getByRole('heading', { name: 'Apartados' })).toBeVisible();
-    await expect(sellerPage.getByRole('button', { name: 'Crear apartado' })).toHaveCount(0);
+    await expect(sellerPage.getByRole('heading', { name: /Apartados/ })).toBeVisible();
+    await expect(sellerPage.getByRole('button', { name: 'Nuevo apartado' })).toHaveCount(0);
     const sellerApi = await seller.request.get('/api/reservations');
     expect(sellerApi.status()).toBe(200);
     const products = await seller.request.get('/api/products?available=true');

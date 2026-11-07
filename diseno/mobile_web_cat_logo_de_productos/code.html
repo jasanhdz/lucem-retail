@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface": "#e7fef8", "inverse-primary": "#b0ccca", "on-secondary-fixed": "#002117", "surface-bright": "#e7fef8", "secondary-container": "#a4f2d6", "secondary-fixed": "#a4f2d6", "surface-tint": "#496362", "secondary-fixed-dim": "#89d5ba", "on-primary-fixed-variant": "#314b4a", "tertiary-fixed": "#ffddaf", "tertiary-container": "#372300", "tertiary": "#1c1000", "surface-container-high": "#d6ede7", "on-background": "#0b1f1b", "outline": "#727878", "outline-variant": "#c1c8c7", "on-tertiary-fixed": "#281800", "inverse-on-surface": "#dff6ef", "tertiary-fixed-dim": "#f1be6e", "on-primary-container": "#789391", "surface-container": "#dcf3ec", "on-primary": "#ffffff", "primary-container": "#102b2a", "on-error-container": "#93000a", "error-container": "#ffdad6", "on-primary-fixed": "#04201f", "on-secondary-container": "#1f715a", "on-tertiary-fixed-variant": "#614000", "primary-fixed-dim": "#b0ccca", "inverse-surface": "#203430", "surface-container-low": "#e2f9f2", "secondary": "#166b55", "surface-variant": "#d1e7e1", "on-secondary-fixed-variant": "#00513f", "surface-container-lowest": "#ffffff", "on-surface": "#0b1f1b", "on-tertiary": "#ffffff", "surface-dim": "#c8dfd9", "primary-fixed": "#cbe8e6", "error": "#ba1a1a", "on-secondary": "#ffffff", "primary": "#001615", "background": "#e7fef8", "on-error": "#ffffff", "on-surface-variant": "#414847", "surface-container-highest": "#d1e7e1", "on-tertiary-container": "#b3863c" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-lg": "1.5rem", "space-2xl": "3rem", "margin-lg": "2rem", "space-md": "1rem", "gutter-lg": "1.5rem", "space-xl": "2rem", "margin": "1rem", "margin-md": "1.5rem", "gutter": "1rem", "space-sm": "0.5rem", "space-xs": "0.25rem" }, fontFamily: { "label-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "numeric-total": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "label-md": ["Inter"], "display-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "title-md": ["Plus Jakarta Sans"] }, fontSize: { "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "numeric-total": ["32px", { "lineHeight": "36px", "fontWeight": "800" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-lg": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#e7fef8;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col selection:bg-secondary-container selection:text-on-secondary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">diamond</span></div><div class="flex items-center bg-surface-container-lowest px-space-sm py-space-xs rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.04)]"><span class="font-label-md text-label-md text-on-surface">American Outfit</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant ml-0.5">arrow_drop_down</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notificaciones" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col w-full bg-surface pt-16 pb-24"><div class="flex flex-col w-full">
+<!-- Encabezado de Catálogo -->
+<div class="px-gutter pt-space-md pb-space-sm flex items-center justify-between gap-space-sm">
+<div class="min-w-0">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight truncate">Productos</h1>
+<p class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>
+<span class="truncate">American Outfit · Sucursal Matriz Centro</span>
+</p>
+</div>
+<button class="h-11 px-space-md rounded-lg bg-primary hover:bg-secondary active:scale-95 text-on-primary font-label-lg text-label-lg flex items-center gap-1.5 shadow-sm transition-all shrink-0" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Nuevo</span>
+</button>
+</div>
+<!-- Resumen Métrico Ligero -->
+<div class="px-gutter py-space-xs">
+<div class="grid grid-cols-4 gap-2 bg-surface-container-lowest p-2.5 rounded-xl shadow-sm">
+<div class="flex flex-col items-center justify-center p-1 rounded-lg bg-surface-container-low/60 text-center">
+<span class="font-headline-sm text-headline-sm text-primary leading-tight font-bold">84</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Total</span>
+</div>
+<div class="flex flex-col items-center justify-center p-1 rounded-lg bg-secondary-container/40 text-center">
+<span class="font-headline-sm text-headline-sm text-on-secondary-container leading-tight font-bold">72</span>
+<span class="font-label-sm text-label-sm text-on-secondary-container mt-0.5">Listos</span>
+</div>
+<div class="flex flex-col items-center justify-center p-1 rounded-lg bg-tertiary-fixed/60 text-center">
+<span class="font-headline-sm text-headline-sm text-on-tertiary-fixed-variant leading-tight font-bold">9</span>
+<span class="font-label-sm text-label-sm text-on-tertiary-fixed-variant mt-0.5">Stock bajo</span>
+</div>
+<div class="flex flex-col items-center justify-center p-1 rounded-lg bg-error-container/70 text-center">
+<span class="font-headline-sm text-headline-sm text-on-error-container leading-tight font-bold">3</span>
+<span class="font-label-sm text-label-sm text-on-error-container mt-0.5">Agotados</span>
+</div>
+</div>
+</div>
+<!-- Barra de Búsqueda y Escáner -->
+<div class="px-gutter pt-space-sm pb-space-xs">
+<div class="flex items-center gap-2">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[22px] pointer-events-none">search</span>
+<input class="w-full h-12 pl-10 pr-10 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md shadow-sm outline-none focus:bg-surface-container-lowest focus:shadow-md transition-all" placeholder="Buscar producto, SKU o código..." type="search"/>
+<button aria-label="Limpiar o filtrar voz" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant" type="button">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</button>
+</div>
+<button aria-label="Escanear código de barras" class="w-12 h-12 rounded-xl bg-surface-container-lowest text-primary hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 shadow-sm flex items-center justify-center transition-all shrink-0" type="button">
+<span class="material-symbols-outlined text-[24px]">barcode_scanner</span>
+</button>
+<button aria-label="Filtros avanzados" class="w-12 h-12 rounded-xl bg-surface-container-lowest text-primary hover:bg-surface-container-high active:scale-95 shadow-sm flex items-center justify-center transition-all shrink-0 relative" type="button">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-secondary"></span>
+</button>
+</div>
+</div>
+<!-- Carrusel de Filtros Rápidos -->
+<div class="w-full overflow-x-auto py-space-sm px-gutter flex items-center gap-2 no-scrollbar">
+<button class="h-9 px-3.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shrink-0 flex items-center gap-1.5 shadow-sm" type="button">
+<span>Todos</span>
+<span class="px-1.5 py-0.2 rounded-full bg-white/20 text-on-primary text-[10px]">84</span>
+</button>
+<button class="h-9 px-3 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 flex items-center gap-1.5 shadow-sm" type="button">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Disponibles</span>
+<span class="text-on-surface-variant text-[11px]">72</span>
+</button>
+<button class="h-9 px-3 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 flex items-center gap-1.5 shadow-sm" type="button">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+<span>Stock bajo</span>
+<span class="text-on-surface-variant text-[11px]">9</span>
+</button>
+<button class="h-9 px-3 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 flex items-center gap-1.5 shadow-sm" type="button">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span>Agotados</span>
+<span class="text-on-surface-variant text-[11px]">3</span>
+</button>
+<button class="h-9 px-3 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 flex items-center gap-1 shadow-sm" type="button">
+<span>Con variantes</span>
+</button>
+<button class="h-9 px-3 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 flex items-center gap-1 shadow-sm" type="button">
+<span>Simples</span>
+</button>
+</div>
+<!-- Lista de Productos -->
+<div class="px-gutter pt-space-xs pb-space-lg flex flex-col gap-space-sm">
+<!-- Tarjeta 1: Playera Básica Algodón -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="A folded premium black organic cotton t-shirt resting on a clean studio display podium, soft atmospheric boutique lighting with subtle teal and mint green studio tones, sharp texture of natural combed cotton cloth, editorial product photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTz-a7ZZHRW6WWb1BCyFSIhxAa4a8Er6Hx3yaClsGanrghv3BTbcttFPeY8w6HoEk2SA5EMgJkX7fdVodaJNEop__FINb_yAiKHmNyTFfAhlI1eg2xSX5fTzyWCoFhKgBWhEbPml9bKvNieyHpgEXir7AZzaOdnRKtsrDfeT2pBzbzSVCoCWVPrYD-EjSFUSFK-_faBnpw19-BoYTBMQ9icr0WepDijTiOt1pMGg"/>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            4 var.
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Playera Básica Algodón</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              Disponible
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Ropa y accesorios · <span class="font-label-sm">PLY-BAS-M-NEG</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$249.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[15px] mr-0.5">inventory_2</span>
+<span>74 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 2)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 border-t-0 gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Física: 76 · Tallas CH a EG</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Playera Básica Algodón" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Tarjeta 2: Jeans Denim Regular Fit -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Classic indigo denim blue jeans perfectly tailored on a wooden minimal boutique counter, warm gentle studio shadows, exquisite contrast with minty clean ambient shop accents, crisp stitching details, high-end apparel merchandising shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkEzLzbPm21MBCg7ocOE66k8F-Q_BLlPVe0Rs2oJ1vkDyHBzU1QANmAqnNFGt44S4DSQW_ZnA9nUyj5gdkcXW_fSiKAjzVtw5o3riXQ9zhbSNUkQxzR9uDGlmgMRNfKK6t5H-aaSt3veNkkCq3dzabK5QSUk3Ru-Pp6aeVzXDdRxoL--XSYNlxGKa6JwQG2QeqpYfSJWOllGf4BNFzJq9zzsAk9pbcSkrzVw4KrA"/>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            6 var.
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Jeans Denim Regular Fit</h2>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>
+              Stock bajo
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Pantalones · <span class="font-label-sm">JNS-REG-AZ-32</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$599.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined text-[15px] mr-0.5">warning</span>
+<span>8 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 1)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Física: 9 · Reabastecimiento próx.</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Jeans Denim Regular Fit" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Tarjeta 3: Cuaderno Profesional Raya 100 H -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<div class="w-full h-full bg-surface-container-high flex flex-col items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[30px] text-secondary">menu_book</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Papelería</span>
+</div>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            Simple
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Cuaderno Profesional Raya</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              Disponible
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Papelería y Oficina · <span class="font-label-sm">CD-RAY-100H</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$45.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[15px] mr-0.5">inventory_2</span>
+<span>45 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 0)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Física: 45 · 100 Hojas espiral</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Cuaderno Profesional" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Tarjeta 4: Tenis Urbanos Classic -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Minimalist white leather street sneakers positioned at three-quarter view, polished commercial sneaker photography, crisp light grey podium with soft emerald botanical reflection, stylish retail footwear aesthetics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc2cEdFWrny-xCawx1r-Q_qa9nFO68HOaBzt32RHQ_u6dCsMhuqo03x-VPgKz0PKkpyAElavnAFAcXeXxRlGdbkEMQKeeCJ9_tra9fjq3ka-BSmCM51t9qR6IqM0U7FN_ywPI_8fN2CwtHmmOpOv9IjA69NRbuByvaI0dKgYwoZmKfpeX7yrm8peUwEIwEqMHk8GiglQulME3JjOHebagImuHJ7qbnU5zmP63CWg"/>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            8 var.
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Tenis Urbanos Classic</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              Disponible
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Calzado urbano · <span class="font-label-sm">TNS-URB-BL-27</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$899.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[15px] mr-0.5">inventory_2</span>
+<span>34 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 3)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Física: 37 · Tallas 24 al 29.5</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Tenis Urbanos Classic" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Tarjeta 5: Sudadera Oversize Capucha -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all opacity-95 active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover grayscale-[35%]" data-alt="Cozy heavyweight forest green oversized hoodie arranged cleanly against neutral stone backdrop, subtle mint backlight, soft tactile fleece textures, contemporary streetwear catalog shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1HhBAas3DXkJ7u5q_inIphbNVPd-C9glmknGOBD1gUp7rDO8YdCZAm9a7ESYdBXAkaOk0dNkgqYg081L1L8Haxs992_iy694_3HHn6LQdBZ28kPcs5Ir8L0B2bhrk310-COu_0ADNSMkQi5tIRIyxwYAs_ZgqlscvVgQspwwveBfD0wAPGzk3IPjuKW3d5-OiFXOKIXGNO13M28UDlOb1hfKp8J4vCTreKup6QQ"/>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            3 var.
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Sudadera Oversize Capucha</h2>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              Agotado
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Ropa de abrigo · <span class="font-label-sm">SUD-OVR-VRD-L</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$450.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-on-error-container">
+<span class="material-symbols-outlined text-[15px] mr-0.5">block</span>
+<span>0 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 0)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 gap-2">
+<span class="font-body-sm text-body-sm text-error font-medium truncate">Orden de compra pendiente #OC-290</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Sudadera Oversize Capucha" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Tarjeta 6: Gorra Trucker Bordada -->
+<article class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2.5 transition-all active:bg-surface-container-low/40">
+<div class="flex items-start gap-3">
+<div class="relative w-[72px] h-[72px] rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Modern mesh trucker cap with subtle embroidered front emblem placed on minimalist retail shelf, soft directional light, hints of pale botanical green and dark slate textures, luxury streetwear boutique setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc_5tM37_-BLaXXpmSiaqTNozzz13s5k80g4zospU9nT4DUTJQ0yRaU483oPrDzo1reN-G0nTBxkYdLdjdawOgt9Edi7qFzOxvp1v5jOtHKDXfVe3FVVRNcGaIXBSyaF5j-qrANJqlCpBYwCVHWEPL3GOtDnNU0dsVCFHPwIvI7EqVHdjE_CrqE8ciLNrJSN1-AxrKVFGoCsVKAeUftXqeaDqaDJwnBZnJ464USA"/>
+<span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-label-sm text-[10px] shadow-sm">
+            2 var.
+          </span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-1.5">
+<h2 class="font-title-md text-title-md text-primary font-bold truncate">Gorra Trucker Bordada</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              Disponible
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Accesorios · <span class="font-label-sm">GOR-TRK-BRD-UN</span></p>
+<div class="flex items-baseline justify-between gap-2 mt-1.5">
+<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">$180.00 <span class="font-label-sm text-[11px] text-on-surface-variant font-normal">MXN</span></span>
+<div class="flex items-center text-right font-label-sm text-label-sm text-secondary">
+<span class="material-symbols-outlined text-[15px] mr-0.5">inventory_2</span>
+<span>19 pzas</span>
+<span class="text-on-surface-variant text-[10px] ml-1">(ap: 1)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Física: 20 · Malla transpirable</span>
+<div class="flex items-center gap-1.5 shrink-0">
+<button aria-label="Editar Gorra Trucker Bordada" class="h-9 w-9 rounded-lg bg-surface-container-low text-primary flex items-center justify-center hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container active:scale-95 transition-all flex items-center gap-1" type="button">
+<span>Detalle</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+<!-- Paginación y Cargar Más (Zona Segura Inferior) -->
+<div class="px-gutter pb-28 pt-2 flex flex-col items-center justify-center gap-3 text-center">
+<div class="w-full bg-surface-container-high rounded-full h-1.5 max-w-xs overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 7.1%;"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mostrando 6 de 84 productos registrados</span>
+<button class="h-12 px-6 rounded-xl bg-surface-container-lowest hover:bg-surface-container active:scale-98 text-primary font-label-lg text-label-lg shadow-sm flex items-center gap-2 transition-all w-full max-w-xs justify-center" id="load-more-btn" type="button">
+<span class="material-symbols-outlined text-[20px] text-secondary">expand_more</span>
+<span>Cargar más productos</span>
+</button>
+</div>
+</div>
+<script>
+  // Micro-interacción ligera para chips de filtros
+  document.querySelectorAll('.no-scrollbar button').forEach(button => {
+    button.addEventListener('click', function() {
+      document.querySelectorAll('.no-scrollbar button').forEach(b => {
+        b.className = b.className.replace('bg-primary text-on-primary', 'bg-surface-container-lowest text-on-surface-variant');
+      });
+      this.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+      this.classList.add('bg-primary', 'text-on-primary');
+    });
+  });
+
+  // Micro-interacción táctil botón cargar más
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() {
+      const originalText = this.innerHTML;
+      this.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px] text-secondary">sync</span><span>Consultando almacén...</span>';
+      setTimeout(() => {
+        this.innerHTML = originalText;
+      }, 900);
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-secondary font-semibold"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="inicio" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-sm text-label-sm mt-0.5">Inicio</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="pos" href="#"><span class="material-symbols-outlined text-[22px]">point_of_sale</span><span class="font-label-sm text-label-sm mt-0.5">POS</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 transition-colors text-secondary font-semibold" data-path="productos" href="#"><div class="relative flex flex-col items-center"><div class="w-8 h-6 flex items-center justify-center rounded-full bg-secondary-container text-on-secondary-container"><span class="material-symbols-outlined text-[20px]">inventory_2</span></div><span class="font-label-sm text-label-sm mt-0.5 text-secondary">Productos</span></div></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="inventario" href="#"><span class="material-symbols-outlined text-[22px]">warehouse</span><span class="font-label-sm text-label-sm mt-0.5">Inventario</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="mas" href="#"><span class="material-symbols-outlined text-[22px]">more_horiz</span><span class="font-label-sm text-label-sm mt-0.5">Más</span></a></div></nav></body></html>

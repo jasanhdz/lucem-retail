@@ -4,13 +4,13 @@
 
 ## Identidad y alcance de la evidencia
 
-Captura/control ejecutados el **2026-11-01 11:13 CST**, en `feature/lucem-ui-redesign-v1`, HEAD **`19626b1acc8ac4ee5d8e86316419394bcdee9e71`** (`docs(spec): clarify DEV-01C source baseline`). El HEAD coincide con `origin/feature/lucem-ui-redesign-v1` (`6caccce9a2757e41d8f3ae411e1897c9760480bf`); hay dos commits locales por delante del origin (este follow-up y el SPEC previo). El source base de comparación es `6caccce9a2757e41d8f3ae411e1897c9760480bf`. `main` y `backup/lucem-ui-legacy-20261101` apuntan ambos a `bf8c45f9f17de012ae7613e31805f31791afc5d4`.
+Captura/control ejecutados el **2026-11-01 11:13 CST**, en `feature/lucem-ui-redesign-v1`, HEAD **`19626b1acc8ac4ee5d8e86316419394bcdee9e71`** (`docs(spec): clarify DEV-01C source baseline`). En ese momento `origin/feature/lucem-ui-redesign-v1` permanecía en `6caccce9a2757e41d8f3ae411e1897c9760480bf`; el HEAD de captura era descendiente y estaba dos commits locales por delante, ambos documentation-only. El source base de comparación es `6caccce9a2757e41d8f3ae411e1897c9760480bf`. Los commits posteriores de documentación no cambian esta identidad histórica de captura. `main` y `backup/lucem-ui-legacy-20261101` apuntan ambos a `bf8c45f9f17de012ae7613e31805f31791afc5d4`.
 
 Comandos de identidad: `git branch --show-current`, `git rev-parse HEAD`, `git show-ref --verify refs/heads/main`, `git show-ref --verify refs/heads/backup/lucem-ui-legacy-20261101`, `git rev-parse origin/feature/lucem-ui-redesign-v1`, `git rev-list --left-right --count 6caccce...bf8c45f`, `git diff --stat 6caccce..bf8c45f -- app src prisma package.json package-lock.json`. La cuenta fue `18 0`: hay 18 commits en `6caccce` que no están en `bf8c45f`, ninguno en la dirección inversa. El source diff lista 35 archivos, con 916 inserciones y 242 eliminaciones; incluye sustitución de páginas workspace legacy por placeholders. El worktree antes de crear este informe y sus PNG sólo contenía los cambios del informe/evidencia de esta tarea.
 
 ## Procesos y puertos
 
-Se revalidaron los puertos con `lsof -nP -iTCP:<puerto> -sTCP:LISTEN`. Antes del arranque controlado, **3000, 3001, 3100, 3101 y 3102 estaban libres**. El proceso anterior de `:3000` ya había sido detenido por el orquestador debido al conflicto documentado sobre `.next`; no se envió señal a ningún proceso durante esta auditoría. La información verificada antes de esa parada y provista como baseline fue: PID 36669 `next-server v15.5.28` → PID 36651 (`node_modules/.bin/next dev`) → PID 36650 (`yarn dev`), cwd `/Users/jasanhernandez/Develop/lucem-retail`, inicio 2026-11-01 10:39:55 local, posterior al HEAD fuente de entonces. Ese listener pertenecía al proyecto; su salida servía el código actual, no se acreditó como causa de la diferencia histórica.
+Se revalidaron los puertos con `lsof -nP -iTCP:<puerto> -sTCP:LISTEN`. Antes del arranque controlado, **3000, 3001, 3100, 3101 y 3102 estaban libres**. El proceso anterior de `:3000` fue detenido por el orquestador debido al conflicto documentado sobre `.next`, después de registrar su identidad y antes del build controlado; se envió `SIGTERM` únicamente a ese proceso confirmado del proyecto. La información verificada antes de esa parada fue: PID 36669 `next-server v15.5.28` → PID 36651 (`node_modules/.bin/next dev`) → PID 36650 (`yarn dev`), cwd `/Users/jasanhernandez/Develop/lucem-retail`, inicio 2026-11-01 10:39:55 local, posterior al HEAD fuente de entonces. Ese listener pertenecía al proyecto; su salida servía el código actual, no se acreditó como causa de la diferencia histórica.
 
 Para evidencia aislada se comprobó `:3101` libre y se ejecutó `npm run start -- --hostname 127.0.0.1 --port 3101` sobre el build de este checkout. Next 15.5.28 escuchó en `127.0.0.1:3101` (PID de prueba 39653, wrapper npm 39632). Tras capturas y verificaciones se detuvieron únicamente esos procesos propios; la comprobación final de `lsof` no mostró listener en `:3101`. No quedó ningún proceso de esta prueba.
 
@@ -62,13 +62,13 @@ Se conserva el hallazgo de seguridad: **`GET /api/audit exposes passwordHash`**.
 ## Rubric DEV-01C
 
 1. **PASS** — Identidad de branch/HEAD/origin, snapshot `6caccce`, refs `main`/backup en `bf8c45f`, conteo y source diff registrados arriba.
-2. **PASS** — Baseline de PID/ancestros/cwd/inicio aportado y ausencia actual en los cinco puertos registrada; la prueba sólo detuvo su propio servidor.
+2. **PASS** — Baseline de PID/ancestros/cwd/inicio aportado y ausencia actual en los cinco puertos registrada; el orquestador envió `SIGTERM` sólo al listener confirmado del proyecto después de registrar la evidencia.
 3. **PASS** — GETs en `:3101` confirman 200/200/307, destino y marcadores de fuente/CSS documentados.
 4. **PASS** — Páginas workspace y ticket asociadas a implementación por inspección estática, separada del redirect HTTP.
 5. **PASS** — Metadata observada se documenta como evidencia limitada; no se borra cache ni se atribuye causalidad sin prueba.
 6. **PASS** — POS/ticket legacy de `bf8c45f` y lógica reusable actual contrastados; print es navegador, no PDF server-side.
 7. **PASS** — Diagnóstico acotado a mismatch de versión fuente; proceso/browser/cache de la visita original indeterminables.
-8. **PASS** — El proceso preexistente de `:3000` ya estaba detenido por orquestación debido al conflicto `.next`; ningún proceso ajeno fue señalado o detenido en esta ejecución.
+8. **PASS** — El proceso preexistente de `:3000` fue detenido por orquestación debido al conflicto `.next` después de registrar PID, ancestros, cwd, inicio y motivo; ningún proceso ajeno fue señalado o detenido.
 9. **PASS** — `:3101` libre antes de uso; branch/HEAD/puerto anotados; servidor de prueba salió y no quedó listener.
 10. **PASS parcial / integración BLOCKED** — Capturas desktop/móvil enlazadas; selector/shell están explícitamente fixture no-auth. Sin sesión válida no se afirma integración autenticada.
 11. **PASS** — No se modificó código del proyecto, datos, auth, API, Prisma, dependencias ni diseño; `git diff -- diseno/` vacío. Únicos entregables: este informe y PNGs indicados.
