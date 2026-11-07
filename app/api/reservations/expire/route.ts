@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
   const expired = await db.$transaction(async (tx) => {
-    const rows = await tx.reservation.findMany({ where: { businessId: auth.business!.id, status: 'ACTIVE', expiresAt: { lte: new Date() } } });
+    const rows = await tx.reservation.findMany({ where: { businessId: auth.business!.id, status: 'ACTIVE', expiresAt: { lte: new Date() }, OR: [{ deposit: null }, { deposit: { lte: 0 } }] } });
     for (const row of rows) {
       const changed = await tx.reservation.updateMany({ where: { id: row.id, status: 'ACTIVE' }, data: { status: 'EXPIRED' } });
       if (changed.count) {

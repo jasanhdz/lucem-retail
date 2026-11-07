@@ -16,6 +16,7 @@ async function change(req: Request, id: string, action: 'release' | 'expire' | '
     const result = await db.$transaction(async (tx) => {
       const reservation = await tx.reservation.findFirst({ where: { id, businessId: auth.business!.id } });
       if (!reservation) throw new Error('not-found');
+      if (reservation.deposit && reservation.deposit.gt(0)) throw new Error('manual-review');
       if (reservation.status !== ReservationStatus.ACTIVE) {
         if (action === 'convert' && reservation.status === ReservationStatus.CONVERTED) {
           if (!reservation.saleId) throw new Error('conversion-missing');
@@ -50,7 +51,7 @@ async function change(req: Request, id: string, action: 'release' | 'expire' | '
      return Response.json({ ...result.reservation, quantity: result.reservation.quantity.toString(), saleId: result.saleId });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
-    return jsonError(message === 'not-found' ? 'Apartado no encontrado' : message === 'cash' ? 'El efectivo recibido es insuficiente' : message === 'conversion-missing' ? 'El apartado convertido no tiene una venta asociada' : 'No fue posible actualizar el apartado', message === 'not-found' ? 404 : 409);
+    return jsonError(message === 'not-found' ? 'Apartado no encontrado' : message === 'cash' ? 'El efectivo recibido es insuficiente' : message === 'conversion-missing' ? 'El apartado convertido no tiene una venta asociada' : message === 'manual-review' ? 'Este apartado tiene un anticipo histórico; requiere revisión manual antes de continuar.' : 'No fue posible actualizar el apartado', message === 'not-found' ? 404 : 409);
   }
 }
 
