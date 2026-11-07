@@ -1,4 +1,6 @@
 .git
+.agents
+.opencode
 .next
 .next-e2e
 .next-build

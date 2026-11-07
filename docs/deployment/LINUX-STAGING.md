@@ -19,9 +19,10 @@ chmod 0600 .staging/config .staging/db_password
 ```bash
 STAGING_LAN_IP=192.168.1.20
 STAGING_DB_PASSWORD=REEMPLAZAR_POR_64_CARACTERES_HEX
+SESSION_SECRET=REEMPLAZAR_POR_64_CARACTERES_HEX
 ```
 
-Ponga la misma contraseña aleatoria en ambos archivos (config y `db_password`). No imprima ni copie el contenido a logs/tickets. Reemplace la dirección de ejemplo por la IPv4 asignada a la interfaz LAN de este host. Compruebe con `stat -c '%a %n' .staging .staging/config .staging/db_password` los modos `700`, `600`, `600` y `git check-ignore .staging/config .staging/db_password`.
+Ponga la misma contraseña aleatoria en `STAGING_DB_PASSWORD` y `db_password`; genere `SESSION_SECRET` aleatoriamente y no lo reutilice en otros entornos. La implementación actual de sesión crea tokens aleatorios y guarda sus hashes; `SESSION_SECRET` queda configurado para el contrato de entorno y no sustituye esa implementación. No imprima ni copie secretos a logs/tickets. Reemplace la dirección de ejemplo por la IPv4 asignada a la interfaz LAN de este host. Compruebe con `stat -c '%a %n' .staging .staging/config .staging/db_password` los modos `700`, `600`, `600` y `git check-ignore .staging/config .staging/db_password`.
 
 Antes de desplegar, configure UFW conforme a la política de red local, por ejemplo restringiendo el origen al CIDR LAN aprobado. No use una regla global `allow 3000/tcp`. Confirme desde un cliente externo a la LAN que no hay ruta de acceso; el script bloquea si UFW está inactivo, pero la revisión de la política WAN/LAN es responsabilidad del operador de red.
 

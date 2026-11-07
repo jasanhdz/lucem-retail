@@ -24,6 +24,7 @@ set -a
 source .staging/config
 set +a
 [[ "${STAGING_DB_PASSWORD:-}" =~ ^[A-Za-z0-9_-]{32,}$ ]] || fail 'STAGING_DB_PASSWORD must contain at least 32 URL-safe characters.'
+[[ "${SESSION_SECRET:-}" =~ ^[A-Za-z0-9_-]{32,}$ ]] || fail 'SESSION_SECRET must contain at least 32 URL-safe characters.'
 db_password="$(<.staging/db_password)"
 [[ "$STAGING_DB_PASSWORD" == "$db_password" ]] || fail 'protected config and PostgreSQL secret file must contain the same password.'
 unset db_password
@@ -33,7 +34,12 @@ command -v ufw >/dev/null || fail 'UFW is required to verify LAN-only ingress.'
 ufw status | grep -q '^Status: active$' || fail 'UFW is not active; refusing to publish.'
 ufw status numbered | grep -Fq "$STAGING_LAN_IP 3000/tcp" || fail 'add a reviewed UFW allow rule limited to the intended LAN CIDR and this address/port; no LAN ACL was verified.'
 ip route get 1.1.1.1 >/dev/null 2>&1 || fail 'cannot inspect default route; WAN isolation is unverified.'
-if ss -H -ltn '( sport = :3000 )' | grep -q .; then fail 'host port 3000 is occupied; no process will be stopped and no alternate port will be used.'; fi
+if ss -H -ltn '( sport = :3000 )' | grep -q .; then
+  app_id="$("${COMPOSE[@]}" ps -q app)"
+  [[ -n "$app_id" ]] || fail 'host port 3000 is occupied by a service outside this Compose project.'
+  app_binding="$(docker inspect --format '{{range (index .NetworkSettings.Ports "3000/tcp")}}{{.HostIp}}:{{.HostPort}}{{end}}' "$app_id")"
+  [[ "$app_binding" == "${STAGING_LAN_IP}:3000" ]] || fail 'host port 3000 is not owned by this app on the configured LAN IP.'
+fi
 if docker inspect n8n_server >/dev/null 2>&1; then
   n8n_before="$(docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Running}}' n8n_server)"
   [[ "$(docker inspect --format '{{.State.Running}}' n8n_server)" == true ]] || fail 'n8n_server is not running; refusing to proceed.'
@@ -48,7 +54,13 @@ printf 'Preflight passed: branch=%s HEAD=%s; port 3000 free; n8n_server=%s\n' "$
 "${COMPOSE[@]}" run --rm migrate
 "${COMPOSE[@]}" run --rm migrate npx prisma migrate status
 "${COMPOSE[@]}" up -d app
-curl --fail --silent --show-error --output /dev/null --write-out 'HTTP %{http_code}\n' "http://${STAGING_LAN_IP}:3000/login"
+for attempt in $(seq 1 30); do
+  if curl --fail --silent --show-error --output /dev/null --write-out 'HTTP %{http_code}\n' "http://${STAGING_LAN_IP}:3000/login"; then
+    break
+  fi
+  if [[ "$attempt" -eq 30 ]]; then fail 'Next.js did not respond successfully within 30 seconds.'; fi
+  sleep 1
+done
 [[ "$(ss -H -ltn '( sport = :3000 )' | wc -l)" -eq 1 ]] || fail 'expected exactly one listener on port 3000.'
 if [[ "$n8n_before" != absent ]]; then
   n8n_after="$(docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Running}}' n8n_server)"
