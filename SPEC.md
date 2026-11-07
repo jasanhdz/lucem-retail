@@ -364,3 +364,85 @@ Todos los criterios son binarios. `PASS` exige evidencia reproducible del comand
 - `Reservation.saleId` es opcional y único para que repetir completar sea idempotente y no cree una segunda venta ni movimientos duplicados. Conversiones antiguas sin venta se reportan como conflicto de integridad.
 - DEV-06 no agrega anticipos, pagos parciales, deuda, clientes obligatorios ni vencimiento automático desde la interfaz.
 - La suite aislada `test:e2e:reservations` verifica saldos persistidos, sobre-reserva, concurrencia, doble liberación/completado, Kardex, permisos, aislamiento y capturas responsive.
+
+## DEV-12 — Refinamiento MVP de Apartados, anticipos bloqueados y auditoría visual
+
+### Objetivo
+
+Completar un refinamiento acotado del MVP de Apartados y sus superficies relacionadas, corrigiendo UX P0/P1 respaldada por los contratos actuales, validando el recorrido comercial y comparando la UI runtime con las referencias Stitch. Evitar que la interfaz o API afirmen que un anticipo fue recibido cuando no existe un modelo ni un ledger que lo respalde. Toda decisión de política monetaria de anticipos queda pendiente de aprobación; por ello, el soporte monetario de anticipos es BLOCKED y no aprobado para el MVP.
+
+### Scope
+
+**Incluye**
+
+- Corregir la captura de Apartados para impedir introducir o afirmar anticipos recibidos sin backend y política aprobados. La UI no ofrece captura de monto, método, efectivo recibido, cambio ni saldo de anticipo. La API rechaza explícitamente nuevas solicitudes con `deposit` distinto de cero, en lugar de persistir una obligación monetaria aparente; compatibilidad de solicitudes sin anticipo debe conservar los contratos de DEV-06.
+- Tratar registros históricos con `deposit > 0` como obligación monetaria no resuelta: bloquear release, expire y conversion si pueden borrar, duplicar o alterar esa obligación; mostrar un mensaje de revisión manual. No reembolsar, retener, aplicar a venta ni transformar el depósito automáticamente. Sólo se admite otro comportamiento si el Generator comprueba un mecanismo seguro ya cubierto por decisiones aprobadas; no inventar política.
+- Resolver creación de apartados multi-producto para que fallos parciales o de red no dependan de rollback compensatorio inseguro. El comportamiento debe ser atómico y conservar aislamiento, saldo y trazabilidad conforme a contratos existentes; cualquier extensión de API/esquema requiere justificación y no puede crear modelo de pagos sin política aprobada.
+- Refinar la UX P1 del modal conservando la composición de Stitch. El CTA de conversión debe decir “Completar apartado y registrar venta”. Corregir detalles visuales y de coherencia necesarios en Apartados, Productos, Inventario y POS, sin rediseñar ni reconstruir módulos.
+- Validar regresiones del ciclo de reservas DEV-06 y DEV-09, incluida persistencia, concurrencia, replay/idempotencia, balances, permisos, aislamiento y adaptabilidad responsive.
+- Producir `docs/quality/DEV-12-MVP-REFINEMENT.md`, `docs/quality/DEV-12-ADVANCE-PAYMENTS.md`, `docs/quality/DEV-12-VISUAL-AUDIT.md` y evidencia runtime real, sanitizada, en `docs/quality/dev-12-visual-evidence/`. Registrar las decisiones de anticipos como pendientes y el bloqueo del MVP por ausencia de política. No fabricar capturas ni inferir PASS de que una ruta cargue.
+- Antes de cualquier acción de ejecución Git, volver a validar rama, HEAD, estado, remoto y base. El estado inspeccionado es rama `feature/lucem-ui-redesign-v1`, HEAD `bcdc25d73b6d058ff0d2b3603e88ccbbb2bd3fdc`, remoto `origin` en `git@github.com:jasanhdz/lucem-retail.git`, con sólo `.DS_Store` y `diseno/.DS_Store` untracked. Preservar esos archivos y cualquier cambio ajeno; `diseno/` nunca se modifica. Sólo crear los commits específicos solicitados por el prompt DEV-12 y hacer push a `origin/feature/lucem-ui-redesign-v1` si la base/remoto siguen siendo los esperados, sin force ni merge.
+
+**Fuera de alcance y prohibiciones**
+
+- No reconstruir ni reinventar Apartados, Productos, Inventario, POS u otros módulos; no agregar módulos o rediseñar las pantallas. Limitar el cambio a defectos reproducibles y a los ajustes P0/P1 indicados.
+- No modificar `diseno/`, sus HTML/PNG originales, ni reescribir `FINDINGS.md` o `docs/ui-redesign/DEV-01C-RUNTIME-AUDIT.md`; DEV-01C es auditoría histórica. Preservar íntegramente toda sección histórica de este SPEC.
+- No presentar `Reservation.deposit` como pago recibido ni como saldo disponible: el campo Decimal existente no representa pago, método, efectivo recibido/cambio ni ledger. No agregar métodos de pago, movimientos monetarios, reembolsos, retenciones, aplicación a ventas o políticas de expiración/liberación sin decisión aprobada.
+- No liberar, vencer ni convertir automáticamente una reserva histórica con depósito positivo si la operación puede borrar o duplicar la obligación; requiere revisión manual salvo comportamiento seguro ya aprobado y demostrado.
+- No usar rollback compensatorio de operaciones independientes como garantía de atomicidad monetaria; no duplicar ventas o movimientos ante reintentos o fallos de red.
+- No usar mocks como evidencia de integración, no usar `DATABASE_URL` como fallback, no conectar suites a bases de desarrollo/producción/compartidas, no exponer secretos y no modificar ni reutilizar credenciales productivas.
+- No considerar `localhost:3000` obsoleto ni detener/reiniciar su proceso sin revalidar listener, padre, cwd y contenido; el listener observado (PID 26224, `next-server v15.5.28`, cwd del repo) agotó timeout en `curl -I` y su contenido servido no fue verificado.
+
+### User flows
+
+1. **Preflight y aislamiento** — Registrar branch, HEAD y `git status --short` sin secretos; verificar remoto/base antes de cualquier Git mutante. Revalidar el listener de `localhost:3000` antes de actuar sobre él. `E2E_DATABASE_URL` debe existir y validar loopback, namespace `lucem_retail_e2e`, puerto `55432`, usuario `lucem_e2e` y credenciales DEV-TEST. Si falta o falla una guarda, declarar `BLOCKED: E2E PostgreSQL unavailable: ...`; nunca recurrir a `DATABASE_URL`.
+2. **Creación sin anticipo** — Como rol autorizado, crear apartado conforme a DEV-06 y comprobar reserva de stock, Kardex, auditoría y persistencia. UI no presenta controles que afirmen recepción monetaria. API acepta el contrato sin anticipo; solicitud nueva con `deposit` positivo (o cualquier valor no cero) se rechaza sin crear apartado, reserva ni movimiento.
+3. **Creación multi-producto y fallo** — Crear apartado con varias líneas/productos; comprobar atomicidad de resultado. Provocar fallo controlado entre operaciones y una respuesta de red incierta: no debe quedar apartado parcial, saldo/Kardex inconsistente ni duplicación al reintentar según la estrategia aprobada.
+4. **Operaciones ordinarias** — Liberar, vencer y completar una reserva sin anticipo positivo. Comprobar permisos, aislamiento, idempotencia, stock/Kardex y que la conversión crea venta por el saldo comercial íntegro conforme a DEV-06; la interfaz usa CTA “Completar apartado y registrar venta”.
+5. **Registro histórico con anticipo** — En fixture real E2E, intentar release, expire y convert de reserva con `deposit > 0`. Cada operación potencialmente destructiva queda bloqueada y comunica revisión manual; se preservan registro y valor, no aparece reembolso ni aplicación automática a venta y no se crean movimientos/ventas duplicados.
+6. **Revisión visual responsive** — Comparar runtime autenticado con referencias `diseno/desktop_nuevo_apartado_con_anticipo`, `desktop_nuevo_apartado_sin_anticipo` y `mobile_web_nuevo_apartado_con_anticipo`, además de referencias pertinentes de Productos, Inventario y POS. Registrar diferencias y capturas reales a 1440x900, 768x1024 y 390x844; comprobar sin overflow horizontal, interacción usable y coherencia de navegación/modal. Los diseños son autoridad visual, sólo lectura.
+7. **Regresión y cierre** — Ejecutar lint, typecheck, `npm test`, `prisma validate`, build, suites E2E dirigidas y DEV-09, además de `git diff --check`. Ejecutar preparación/cleanup exclusivamente sobre DB E2E validada. Si falta `E2E_DATABASE_URL`, Docker/PostgreSQL o autenticación/dataset real, marcar las suites E2E y evaluación visual autenticada `BLOCKED` con causa exacta; no presentar mocks, capturas estáticas o simple carga de ruta como PASS. Sanitizar artefactos y salidas.
+
+### Modelo de datos
+
+- El modelo actual `Reservation.deposit Decimal?` (precision 12,2) almacena un valor, pero no existe entidad de pago/anticipo, método, importe en efectivo recibido, cambio, estado de liquidación ni ledger. El campo aislado no prueba que se haya recibido dinero.
+- POST `/api/reservations` actualmente admite `deposit` sin validar monto y persiste reserva/movimiento en una transacción. La UI muestra monto, método, recibido, cambio y saldo, aunque sólo envía el depósito real y representa método como texto libre en notes. El plan requiere bloquear nuevas cantidades no cero tanto en presentación como en API.
+- La creación multi-producto actual hace varios POST independientes y usa compensación liberando reservas ante fallo; esto no garantiza atomicidad frente a fallos de red u operaciones monetarias. La corrección debe asegurar resultado atómico o documentar BLOCKED si la arquitectura segura requiere una decisión no aprobada.
+- La conversión actual crea venta por el total completo e ignora `deposit`; release/expire no procesan depósitos y Return sólo vincula reembolso a venta, no a depósitos. No inferir una relación monetaria inexistente ni usar `Return` para liquidar anticipos.
+- Datos históricos con `deposit > 0` mantienen valor y registro sin automatización. Se bloquean transiciones que borren o dupliquen la obligación y se solicita revisión manual. Reembolso, retención, aplicación, caducidad de obligación y reconciliación son decisiones pendientes, no defaults del sistema.
+- MXN se expresa con dos decimales; venta cash requiere efectivo recibido al menos igual al total y reembolsos de DEV-07 corresponden a líneas. Estas reglas no definen una política de anticipos y no deben extrapolarse.
+
+### Stack y decisiones técnicas
+
+- Conservar Next.js, React, TypeScript, Prisma y PostgreSQL existentes, así como los contratos de DEV-06/DEV-09 salvo cambios estrictamente necesarios para rechazar depósitos nuevos no cero y para garantizar atomicidad. No agregar dependencias ni un proveedor de pagos.
+- Las referencias de `diseno/` son fuente visual de sólo lectura. Mantener composición del modal Stitch y hacer sólo refinamiento P1; respetar roles, shell, componentes y estilos actuales. La etiqueta de conversión exacta es “Completar apartado y registrar venta”.
+- La ausencia de modelo/ledger y de política aprobada significa que anticipos monetarios quedan BLOCKED y no aprobados para el MVP. Registrar esa decisión en el entregable de anticipos; ningún estado visual puede sugerir cobro confirmado.
+- La guarda Playwright exige exclusivamente `E2E_DATABASE_URL` loopback, namespace `lucem_retail_e2e`, puerto 55432, usuario `lucem_e2e` y secretos DEV-TEST. La variable está actualmente ausente; `docker version` confirma server 29.5.2, lo cual por sí solo no habilita E2E. Nunca hacer fallback a `DATABASE_URL`.
+- Los checks incluyen lint, typecheck, npm test, `prisma validate`, build, E2E dirigidos de Apartados y áreas afectadas, DEV-09 y `git diff --check`. E2E y evaluación visual autenticada sólo se consideran PASS con DB y dataset reales aislados. Bloqueo de infraestructura se registra como `BLOCKED`, jamás como PASS ni FAIL de producto.
+- Entregables: `docs/quality/DEV-12-MVP-REFINEMENT.md`, `docs/quality/DEV-12-ADVANCE-PAYMENTS.md`, `docs/quality/DEV-12-VISUAL-AUDIT.md` y capturas/evidencia runtime sanitizada real en `docs/quality/dev-12-visual-evidence/`. No incluir secretos, datos personales reales ni capturas inventadas.
+- La instrucción de commits/push del prompt sólo se ejecuta tras comprobar remoto, base, commits incluidos y estado de worktree; preservar untracked ajenos, no stagear `.DS_Store`, no hacer force ni merge y no exponer secretos.
+
+### Assumptions
+
+- DEV-06 y DEV-09 son contratos de regresión vigentes para reservas, liberación, expiración, conversión, concurrencia, replay, balances, permisos, aislamiento y responsive.
+- No existe política comercial aprobada para reembolsar o retener un anticipo al liberar/expirar, ni para aplicarlo a una conversión. Por tanto, soporte monetario de anticipos queda pendiente y el MVP no se aprueba como flujo con anticipos.
+- Cualquier registro con depósito histórico positivo requiere revisión manual antes de una transición que pueda alterar su obligación. No se supone que sea pago recibido, deuda válida, crédito de cliente o importe reembolsable.
+- La meta visual es preservar composición Stitch y corregir P0/P1 puntuales; la revisión no autoriza rediseñar módulos, inventar estados ni ampliar funcionalidades comerciales.
+- El worktree observado tenía sólo `.DS_Store` y `diseno/.DS_Store` untracked. Son potenciales cambios ajenos y deben preservarse, nunca añadirse a commits.
+- `localhost:3000` tiene un proceso `next dev` en cwd del repo, pero el contenido servido no pudo verificarse por timeout; no asumir que es obsoleto ni usar su disponibilidad como evidencia de implementación.
+- La ausencia observada de `E2E_DATABASE_URL` implica bloqueo hasta que se habilite una DB E2E válida; Docker Engine disponible no sustituye configuración, preparación, autenticación y dataset comprobables.
+
+### Rubric de evaluación
+
+Todos los criterios son binarios y reproducibles. `PASS` exige evidencia del comportamiento/artefacto indicado. `FAIL` significa que la comprobación pudo ejecutarse y contradijo el requisito. `BLOCKED` se permite sólo cuando falta infraestructura, autenticación o dataset real imprescindible; no cuenta como PASS y debe incluir causa y comando/validación sanitizados. Los anticipos no aprobados impiden declarar el MVP completo/aprobado aunque los demás criterios pasen.
+
+1. **P0 — Anticipos nuevos deshabilitados** — UI no permite capturar ni afirmar anticipo; POST rechaza todo `deposit` nuevo no cero y no persiste reserva, movimiento ni efecto parcial. PASS exige prueba reproducible de UI/API contra contrato; cualquier aceptación o afirmación de cobro es FAIL.
+2. **P0 — Históricos protegidos** — En dataset E2E con `deposit > 0`, release, expire y convert no borran ni duplican la obligación ni producen reembolso, aplicación o venta automáticos; muestran revisión manual y preservan datos. Sin dataset E2E real, BLOCKED, nunca inferido por mocks.
+3. **P0 — Política y aprobación** — `DEV-12-ADVANCE-PAYMENTS.md` identifica decisiones pendientes (reembolso/retención, aplicación a venta y tratamiento al liberar/expirar) y declara anticipos BLOCKED/no aprobados para MVP. Cualquier política inventada o afirmación de MVP aprobado es FAIL.
+4. **Atomicidad multi-producto** — Éxito y fallos controlados/red incierta no dejan apartados parciales, reservas o movimientos inconsistentes ni duplican operaciones; evidencia E2E real y balances/Kardex persistidos. Si infraestructura no está disponible, BLOCKED; compensación no demostrada como atómica es FAIL.
+5. **Regresión comercial** — DEV-06 y DEV-09 dirigidas verifican reserva, release, expire, conversión sin anticipo, concurrencia/replay, idempotencia, permisos, aislamiento y balances sin duplicación. Cada suite debe reportar PASS real o BLOCKED explícito por infraestructura.
+6. **UX y referencia Stitch** — Modal conserva composición de referencia, CTA de conversión tiene texto exacto y cambios P1 en Apartados/Productos/Inventario/POS se limitan a diferencias documentadas. Auditoría usa runtime autenticado y referencias originales sin modificar `diseno/`; ruta que sólo carga no es evidencia.
+7. **Responsive y regresión visual** — Evidencia real cubre 1440x900, 768x1024 y 390x844, sin overflow horizontal y con interacciones legibles/usables. Evaluación autenticada queda BLOCKED si no hay DB/dataset E2E real; no se aceptan screenshots inventadas, estáticas o sin contexto runtime.
+8. **Artefactos auditables** — Existen los tres documentos de calidad requeridos y evidencia sanitizada en `docs/quality/dev-12-visual-evidence/`; resultados distinguen PASS/FAIL/BLOCKED, informan cobertura y diferencias, no contienen secretos y no declaran PASS por mera carga de ruta. Falta de cualquier entregable es FAIL.
+9. **Checks de código** — Lint, typecheck, `npm test`, `prisma validate`, build y `git diff --check` terminan con código cero. E2E dirigido y DEV-09 terminan PASS real o BLOCKED con causa reproducible; mocks/fallback invalidan evidencia y son FAIL.
+10. **Límites, Git y MVP** — Diff no modifica `diseno/` ni reescribe secciones históricas, FINDINGS.md o DEV-01C; conserva untracked ajenos, no stagea `.DS_Store`, no expone secretos y cualquier commit/push pedido respeta remoto/base validados, rama destino, ausencia de force/merge. El dictamen final declara MVP de anticipos no aprobado mientras no exista política y soporte seguro aprobado.
