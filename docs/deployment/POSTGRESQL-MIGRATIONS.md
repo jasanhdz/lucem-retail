@@ -4,6 +4,8 @@ Compose fija `postgres:16.10-bookworm`, crea exclusivamente `lucem_staging` y co
 
 El servicio `migrate` espera el healthcheck de PostgreSQL y ejecuta `npx prisma migrate deploy`. La app espera su salida exitosa. La comprobación permitida es:
 
+Las cinco migraciones aplicadas en el staging inicial son `0001_init`, `0002_reservation_sale`, `0003_return_idempotency`, `0004_onboarding_business` y `0005_reservation_batch_idempotency`. La consulta a `public._prisma_migrations` y `prisma migrate status` confirmó las cinco como aplicadas y ninguna pendiente.
+
 ```bash
 docker compose -p lucem-retail-staging -f compose.staging.yml run --rm migrate npx prisma migrate status
 ```

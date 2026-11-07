@@ -2,6 +2,10 @@
 
 Este despliegue es un stack independiente `lucem-retail-staging`; no modifica ni administra otros proyectos. Requiere Ubuntu, Docker Engine/Compose v2, Git limpio en `feature/lucem-ui-redesign-v1`, IPv4 LAN local, puerto host 3000 libre y UFW activo con una regla revisada que permita 3000 únicamente desde la CIDR LAN de confianza. Si esas condiciones no se pueden demostrar, no desplegar.
 
+## Forge
+
+Forge está instalado en `.agents/skills/forge/` y `.opencode/skills/forge/` en la raíz del repositorio. Se versionan las dos copias del skill y el runner para que Planner/Generator/Evaluator sean reproducibles en Codex y OpenCode; las referencias previas `SPEC.md` y `FINDINGS.md` se conservan en el historial bajo la tarea anterior (`FINDINGS.pre-DEV-DEPLOY-01.md` preserva la evidencia). OpenCode carga skills al iniciar: abrir/reiniciar la sesión desde este directorio permite descubrir `/forge`. Ejecución CLI: `.agents/skills/forge/scripts/forge-run.sh --backend opencode "prompt"`.
+
 ## Preparación privada
 
 Desde la raíz del repositorio, cree el directorio privado y los dos archivos ignorados:
