@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { printf '%s\n' 'ERROR: run from inside the Git repository.' >&2; exit 1; }
+ROOT="$(git -c "safe.directory=$PWD" rev-parse --show-toplevel 2>/dev/null)" || { printf '%s\n' 'ERROR: run from inside the Git repository.' >&2; exit 1; }
+git() { command git -c "safe.directory=$ROOT" "$@"; }
 cd "$ROOT"
 PROJECT=lucem-retail-staging
 COMPOSE=(docker compose -p "$PROJECT" -f compose.staging.yml)
