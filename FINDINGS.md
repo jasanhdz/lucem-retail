@@ -1,0 +1,32 @@
+# Findings — pass 2
+
+## Resumen
+19/19 criterios del rubric pasan. F-01 del pass 1 queda resuelto: se verificó el flujo autenticado de imagen y su persistencia tras recrear únicamente `app`. Los resultados detallados de los criterios no revalidados conservan la evidencia del pass 1.
+
+## Abiertos
+
+## Resueltos (verificados este pass)
+- [x] F-01 · criterio #12 — Resuelto. El operador ejecutó contra staging registro POST real con credenciales temporales aleatorias (201), login (200), creación de negocio de prueba con clave idempotente única (201), páginas autenticadas dashboard/productos/inventario/POS/apartados/devoluciones (todas 200), APIs autenticadas businesses/dashboard/products/inventory/reservations/returns (todas 200) y upload PNG autenticado (POST 201, GET autenticado 200 `image/png`). Tras recrear únicamente `app`, el GET autenticado persistió con 200 `image/png` y dashboard con 200. Se eliminó el archivo exacto; la limpieza transaccional eliminó únicamente los AuditLog/BusinessCreationIdempotency/Session/Business/User identificados con los IDs de prueba y la comprobación posterior dio User=0 y Business=0. Credenciales/cookie aleatorias y el estado privado temporal no se conservaron en logs ni repositorio.
+- [x] Revalidación de lecturas seguras — `docker ps --all --format '{{.Names}} {{.Status}}'`: `lucem-retail-staging-app-1` healthy, `lucem-retail-staging-db-1` healthy, migrate `Exited (0)`; `docker exec lucem-retail-staging-db-1 ...` consultó conteos y devolvió `User=0`, `Business=0`; `docker exec lucem-retail-staging-app-1 npx prisma migrate status` informó 5 migraciones y schema up to date. `curl` a `http://192.168.1.117:3000/login` y `/registro` devolvió 200; `/api/businesses` anónimo devolvió 401. `git diff --check` pasó; rama `feature/lucem-ui-redesign-v1`, HEAD `74ec62e6828293f8d865ab7caf21c01fab672c35`, cinco commits ahead del remoto; `FINDINGS.md` continúa siendo el único archivo no rastreado/cambiado en el estado del repositorio.
+- [x] Criterio #1 PASS — `SPEC.md` contiene las siete secciones requeridas; `git log --oneline --all -- SPEC.md` muestra historial previo de especificaciones, incluida `637b3ba docs(spec): plan DEV-SEC-01 audit security fix`.
+- [x] Criterio #2 PASS — No se reportan cambios de producto; el estado observado corresponde al despliegue y al `FINDINGS.md` nuevo.
+- [x] Criterio #3 PASS — `docker compose -p lucem-retail-staging -f compose.staging.yml config --quiet` pasó con valores placeholder sólo para interpolación, LAN `192.168.1.117`. Configuración observada aislada con `db`, `migrate` y `app`.
+- [x] Criterio #4 PASS — PostgreSQL 16.10 healthy y `pg_isready` satisfactorio según comprobaciones de esta evaluación.
+- [x] Criterio #5 PASS — DB sin puertos publicados, volumen dedicado `lucem-retail-staging-db` y base `lucem_staging`; configuración reportada con URL interna hacia `db`/`lucem_staging`.
+- [x] Criterio #6 PASS — Migración terminó exit 0; cinco migraciones confirmadas y `prisma migrate status` up-to-date. Sólo se ejecutó `migrate deploy`/`status` en staging.
+- [x] Criterio #7 PASS — Build de producción `npm run build` pasó; contenedor app healthy y usuario no root `1001:1001` según inspección observada.
+- [x] Criterio #8 PASS — App ligada a `192.168.1.117:3000`; DB sin publicación. `n8n_server` conservó ID `7b4846b7d07d6402028e49c9eb99c0806ea73a42ec381ab6ae70bf557ae67341`, estado running, `RestartCount 0` y listener 5678 intacto.
+- [x] Criterio #9 PASS — Regla UFW verificada privilegiadamente permite sólo `192.168.1.0/24` hacia `192.168.1.117:3000`; bind limitado a IPv4 LAN y no se observó router forwarding.
+- [x] Criterio #10 PASS — Configuración/archivos operativos con permisos observados: directorio 0700 y archivos 0600; no se incluyeron valores secretos en esta evidencia.
+- [x] Criterio #11 PASS — Volumen PostgreSQL dedicado observado; la persistencia de uploads sobrevivió la recreación de `app`. En esta revalidación los conteos de `User` y `Business` fueron ambos cero.
+- [x] Criterio #12 PASS — Persistencia de imágenes demostrada por upload PNG y GET autenticados HTTP 201/200, con GET autenticado 200 `image/png` tras recrear sólo `app`; archivo exacto de prueba eliminado. Véase evidencia de F-01 arriba.
+- [x] Criterio #13 PASS — Revalidación `curl`: login/registro HTTP 200 y `/api/businesses` anónimo HTTP 401. Además, evidencia autenticada del operador: páginas dashboard/productos/inventario/POS/apartados/devoluciones y APIs businesses/dashboard/products/inventory/reservations/returns HTTP 200; login real HTTP 200. No se repitieron flujos mutantes.
+- [x] Criterio #14 PASS — Backup PostgreSQL y tar de uploads creados/verificados previamente; `sha256sum -c` pasó para los artefactos, con permisos privados observados.
+- [x] Criterio #15 PASS — Restore reproducido en contenedor aislado `--network none`, sin puertos ni volúmenes; cinco migraciones restauradas y Prisma status up-to-date.
+- [x] Criterio #16 PASS — Inspección de `scripts/deploy-staging.sh`: valida Linux/Ubuntu, Docker/Compose, rama/árbol, archivos y permisos, LAN/UFW y puerto; usa Compose con `-p`/`-f`, no contiene comandos Docker globales ni destructivos y comprueba la identidad/estado de n8n antes/después. No se volvió a ejecutar el script para evitar operaciones en staging.
+- [x] Criterio #17 PASS — Las guías operativas requeridas están presentes en `docs/deployment/`; documentación y comandos operativos revisados en la evaluación.
+- [x] Criterio #18 PASS — En esta pasada: `npm run lint`, `npm run typecheck`, `npm test` (28 tests), `npm run build`, `npx prisma validate` con `DATABASE_URL` placeholder local, compose config con placeholders y `git diff --check` pasaron. `npx prisma validate` sin `DATABASE_URL` produjo P1012 (variable requerida); reejecutado con placeholder local pasó. `typecheck` tuvo un primer fallo transitorio mientras build regeneraba `.next/types`; reejecutado tras build pasó. No se usaron URL ni secretos reales.
+- [x] Criterio #19 PASS — Rama `feature/lucem-ui-redesign-v1`, HEAD `74ec62e6828293f8d865ab7caf21c01fab672c35`; estado inicial limpio salvo `FINDINGS.md` nuevo, sin merge ni force push. El historial local reporta cinco commits por delante del remoto.
+
+## Flujos no verificados
+- No se repitieron flujos mutantes en pass 2. Para el conjunto de pruebas autenticadas temporales se conservan únicamente los resultados sanitizados indicados en F-01; identidades, credenciales, cookies y estado privado temporal fueron eliminados.
