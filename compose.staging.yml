@@ -41,6 +41,7 @@ services:
     environment:
       DATABASE_URL: postgresql://lucem_staging:${STAGING_DB_PASSWORD:?Set STAGING_DB_PASSWORD in protected config}@db:5432/lucem_staging?schema=public
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in protected config}
+      LUCEM_ALLOWED_ORIGINS: ${LUCEM_ALLOWED_ORIGINS:-}
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: 0.0.0.0
