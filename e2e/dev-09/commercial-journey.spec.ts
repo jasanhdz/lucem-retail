@@ -10,7 +10,7 @@ async function body(response: import('@playwright/test').APIResponse) { return r
 async function capture(page: import('@playwright/test').Page, name: string) {
   for (const [width, height, label] of viewports) {
     await page.setViewportSize({ width, height });
-    const overflow = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: window.innerWidth, elements: [...document.querySelectorAll<HTMLElement>('*')].filter(element => element.scrollWidth > element.clientWidth + 1).slice(0, 5).map(element => ({ tag: element.tagName, className: element.className, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth })) }));
+    const overflow = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: window.innerWidth, elements: [...document.querySelectorAll<HTMLElement>('*')].filter(element => element.getBoundingClientRect().right > window.innerWidth + 1).slice(0, 20).map(element => { const style = getComputedStyle(element); const parent = element.parentElement; const rect = element.getBoundingClientRect(); return { tag: element.tagName, className: element.className, right: Math.round(rect.right), left: Math.round(rect.left), width: Math.round(rect.width), minWidth: style.minWidth, flex: style.flex, overflowX: style.overflowX, parentClass: parent?.className ?? '', parentWidth: parent ? Math.round(parent.getBoundingClientRect().width) : null }; }) }));
     expect(overflow.width <= overflow.viewport, `${name} overflows at ${width}x${height}: ${JSON.stringify(overflow)}`).toBeTruthy();
     await page.screenshot({ path: `docs/testing/dev-09-visual-evidence/${name}-${label}.png`, fullPage: false });
   }

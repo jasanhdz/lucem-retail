@@ -117,8 +117,20 @@ test.describe('DEV-06 apartados', () => {
     const created = await request.post('/api/reservations', { data: { variantId: variant.id, quantity: 1, expiresAt: new Date(Date.now() + 86400000).toISOString(), notes: 'DEV-06 concurrent convert' } });
     const reservation = await created.json();
     const responses = await Promise.all([request.post(`/api/reservations/${reservation.id}/convert`, { data: { confirmation: true, paymentMethod: 'TRANSFER' } }), request.post(`/api/reservations/${reservation.id}/convert`, { data: { confirmation: true, paymentMethod: 'TRANSFER' } })]);
-    expect(responses.filter((response) => response.status() === 200)).toHaveLength(1);
     expect(responses.every((response) => [200, 409].includes(response.status()))).toBeTruthy();
+    const successful = await Promise.all(responses.filter((response) => response.status() === 200).map((response) => response.json()));
+    expect(successful.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(successful.map((result: { saleId: string }) => result.saleId)).size).toBe(1);
+    process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
+    const { PrismaClient } = await import('@prisma/client');
+    const db = new PrismaClient();
+    try {
+      const stored = await db.reservation.findUniqueOrThrow({ where: { id: reservation.id } });
+      expect(stored.status).toBe('CONVERTED');
+      expect(stored.saleId).toBe(successful[0].saleId);
+      expect(await db.sale.count({ where: { id: successful[0].saleId } })).toBe(1);
+      expect(await db.inventoryMovement.count({ where: { referenceType: 'Reservation', referenceId: reservation.id, type: 'SALE' } })).toBe(1);
+    } finally { await db.$disconnect(); }
     const manager = await browser.newContext({ storageState: 'playwright/.auth/inventory.json' });
     const managerProducts = await manager.request.get('/api/products?available=true');
     const managerReservation = await manager.request.post('/api/reservations', { data: { variantId: (await managerProducts.json())[0].id, quantity: 1, expiresAt: new Date(Date.now() + 86400000).toISOString(), notes: 'DEV-06 manager' } });

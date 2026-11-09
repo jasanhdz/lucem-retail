@@ -79,7 +79,7 @@ test.describe('DEV-04 inventory', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await page.getByLabel('Cantidad').fill('1');
+    await page.getByRole('spinbutton', { name: 'Cantidad' }).fill('1');
     await page.getByLabel('Referencia u observación').fill('DEV-04-ui');
     let requests = 0;
     page.on('request', (request) => { if (request.url().endsWith('/api/inventory/movements') && request.method() === 'POST') requests += 1; });
@@ -89,7 +89,7 @@ test.describe('DEV-04 inventory', () => {
     await page.getByRole('button', { name: 'Realizar ajuste' }).click();
     await expect(page.getByRole('dialog', { name: 'Ajuste de existencias' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Disminuir stock/ })).toHaveAttribute('aria-pressed', 'true');
-    await page.getByLabel('Cantidad').fill('1');
+    await page.getByRole('spinbutton', { name: 'Cantidad' }).fill('1');
     await page.getByLabel('Detalle o justificación obligatoria').fill('DEV-04-ui-adjustment');
     await expect(page.getByText('-1 pzas')).toBeVisible();
     await page.getByRole('button', { name: /Confirmar ajuste/ }).click();

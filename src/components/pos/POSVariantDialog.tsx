@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Copy, Minus, Plus, ShoppingCart } from 'lucide-react';
-import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { effectivePrice } from '@/lib/pos-cart';
 import type { ProductGroup, ProductVariant } from './pos-utils';
 
@@ -18,7 +18,7 @@ const colorSwatch = (color: string) => {
   return '#d1e7e1';
 };
 
-export function POSVariantDialog({ product, onClose, onSelect, returnFocusRef }: { product: ProductGroup; onClose: () => void; onSelect: (variant: ProductVariant, quantity: number) => void; returnFocusRef: RefObject<HTMLButtonElement | null> }) {
+export function POSVariantDialog({ product, onClose, onSelect }: { product: ProductGroup; onClose: () => void; onSelect: (variant: ProductVariant, quantity: number) => void }) {
   const availableVariants = product.variants.filter((variant) => Number(variant.stock) > 0);
   const allColors = [...new Set(product.variants.map((variant) => variant.color).filter((color): color is string => Boolean(color)))];
   const [selectedColor, setSelectedColor] = useState<string | null>(() => {
@@ -81,9 +81,8 @@ export function POSVariantDialog({ product, onClose, onSelect, returnFocusRef }:
     return () => {
       document.removeEventListener('keydown', handleKey);
       document.body.style.overflow = previousOverflow;
-      window.setTimeout(() => returnFocusRef.current?.focus(), 0);
     };
-  }, [returnFocusRef]);
+  }, []);
 
   function chooseColor(color: string) {
     setSelectedColor(color);
@@ -156,7 +155,7 @@ export function POSVariantDialog({ product, onClose, onSelect, returnFocusRef }:
         </div>
 
         <footer className="pos-variant-footer">
-          <button ref={cancelRef} className="pos-variant-cancel" type="button" aria-label="Cerrar variantes" onClick={onClose}>Cancelar selección (ESC)</button>
+          <button ref={cancelRef} autoFocus className="pos-variant-cancel" type="button" aria-label="Cerrar variantes" onClick={onClose}>Cancelar selección (ESC)</button>
           <button className="pos-variant-add" type="button" disabled={!selectedVariant || available <= 0} onClick={addToTicket}><ShoppingCart size={18} aria-hidden="true" />Agregar al carrito ({currency.format(subtotal)} MXN)<kbd>ENTER</kbd></button>
         </footer>
       </section>

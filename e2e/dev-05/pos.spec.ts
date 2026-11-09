@@ -9,6 +9,11 @@ async function variant(page: Page, sku: string) {
   return row as { id: string; stock: string; price: string; promoPrice?: string | null; product: { name: string } };
 }
 
+async function addVariant(page: Page, sku: string) {
+  await page.getByRole('button', { name: new RegExp(`SKU ${sku}`) }).click();
+  await page.getByRole('button', { name: /Agregar al carrito/ }).click();
+}
+
 test.describe('DEV-05 POS', () => {
   test('loads real catalog, searches and selects an available variant', async ({ page }) => {
     const response = await page.request.get('/api/products?available=true&q=DEV-TEST-01-NORMAL');
@@ -37,15 +42,15 @@ test.describe('DEV-05 POS', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await page.getByRole('button', { name: /SKU DEV-TEST-01-LOW/ }).click();
-    await page.getByRole('button', { name: /Agregar al carrito/ }).click();
-    await expect(page.getByText('DEV-TEST-01 Centro Catalog')).toBeVisible();
+    await addVariant(page, 'DEV-TEST-01-LOW');
+    await expect(page.getByRole('complementary', { name: 'Carrito de venta' }).getByText('DEV-TEST-01 Centro Catalog')).toBeVisible();
   });
 
   test('validates cash and preserves the cart while capturing exact POS viewports', async ({ page }) => {
     await page.goto('/pos');
-    await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-LOW');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await addVariant(page, 'DEV-TEST-01-LOW');
+    await expect(page.locator('.pos-cart-line')).toBeVisible();
     for (const button of await page.locator('.pos-stepper button').all()) {
       const box = await button.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(30);
@@ -63,7 +68,8 @@ test.describe('DEV-05 POS', () => {
     await page.locator('.pos-payment-heading .app-breadcrumbs').getByRole('link', { name: 'Punto de venta' }).click();
     for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) {
       await page.setViewportSize(viewport);
-      expect(await page.locator('.pos-page').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
+      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(documentWidth, `${name} document width ${documentWidth} exceeds viewport ${viewport.width}`).toBeLessThanOrEqual(viewport.width);
       await page.screenshot({ path: test.info().outputPath(`pos-${name}.png`), fullPage: false });
     }
   });
@@ -72,8 +78,8 @@ test.describe('DEV-05 POS', () => {
     const row = await variant(page, 'DEV-TEST-01-NORMAL');
     const before = Number(row.stock);
     await page.goto('/pos');
-    await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await addVariant(page, 'DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
@@ -119,8 +125,8 @@ test.describe('DEV-05 POS', () => {
     ]);
     expect([first.status(), second.status()].sort()).toEqual([201, 409]);
     await page.goto('/pos');
-    await page.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await addVariant(page, 'DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
@@ -148,8 +154,8 @@ test.describe('DEV-05 POS', () => {
     expect(rows.length).toBeGreaterThan(0);
     const sellerPage = await seller.newPage();
     await sellerPage.goto('/pos');
-    await sellerPage.getByRole('textbox', { name: 'Buscar productos' }).fill('DEV-TEST-01-NORMAL');
     await sellerPage.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
+    await addVariant(sellerPage, 'DEV-TEST-01-NORMAL');
     await sellerPage.getByRole('button', { name: 'Cobrar', exact: true }).click();
     await expect(sellerPage).toHaveURL(/\/pos\/cobro$/);
     await sellerPage.getByLabel('Monto recibido').fill('150');
@@ -158,5 +164,20 @@ test.describe('DEV-05 POS', () => {
     await expect(sellerPage).toHaveURL(/\/tickets\//);
     await sellerPage.close();
     await seller.close();
+  });
+
+  test('persists sale details only in its business and rejects a cross-business variant ID', async ({ browser, page }) => {
+    const normal = await variant(page, 'DEV-TEST-01-NORMAL');
+    const created = await page.request.post('/api/sales', { data: { items: [{ variantId: normal.id, quantity: 1 }], paymentMethod: 'CARD', idempotencyKey: 'DEV-05-business-isolation' } });
+    expect(created.status()).toBe(201);
+    const sale = await created.json();
+    const norte = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
+    expect((await norte.request.get(`/api/sales/${sale.id}`)).status()).toBe(404);
+    expect(await (await norte.request.get(`/api/sales?search=${sale.folio}`)).json()).toEqual([]);
+    const crossBusiness = await norte.request.post('/api/sales', { data: { items: [{ variantId: normal.id, quantity: 1 }], paymentMethod: 'CARD', idempotencyKey: 'DEV-05-cross-business' } });
+    expect(crossBusiness.status()).toBe(400);
+    const norteInventory = await norte.request.get('/api/inventory');
+    expect((await norteInventory.json()).every((item: { sku: string }) => !item.sku.startsWith('DEV-TEST-01-CENTRO'))).toBeTruthy();
+    await norte.close();
   });
 });

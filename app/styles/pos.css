@@ -158,7 +158,7 @@
 .workspace-topbar-main .topbar-notifications { order:4; }
 .workspace-topbar-main .topbar-user-wrap { order:5; }
 @media(min-width:761px){.workspace-topbar-main{padding-inline:22px}.workspace-topbar-main .topbar-operation-search{flex:1 1 auto}}
-@media(max-width:1023px) and (min-width:761px){.workspace-topbar-main{gap:8px;padding-inline:16px}.workspace-topbar-main .topbar-switch-wrap{flex:0 1 220px;min-width:140px}.workspace-topbar-main .topbar-user-copy{display:none}.workspace-topbar-main .topbar-user{gap:0}.workspace-topbar-main .topbar-cta{padding-inline:12px;white-space:nowrap}}
+@media(max-width:1023px) and (min-width:761px){.workspace-topbar-main{min-width:0;gap:8px;padding-inline:12px}.workspace-topbar-main .topbar-switch-wrap{flex:0 1 140px;min-width:0}.workspace-topbar-main .topbar-operation-search{flex:1 1 80px;min-width:0}.workspace-topbar-main .topbar-operation-search input{min-width:0}.workspace-topbar-main .topbar-user-copy{display:none}.workspace-topbar-main .topbar-user{gap:0}.workspace-topbar-main .topbar-cta{padding-inline:12px;white-space:nowrap}}
 @media(max-width:760px){.workspace-topbar-main{display:flex;gap:8px;padding-inline:12px}.workspace-topbar-main .topbar-brand{display:none}.workspace-topbar-main .topbar-switch-wrap{flex:0 1 145px;min-width:110px}.workspace-topbar-main:not(:has(.topbar-operation-search)) .topbar-switch-wrap{flex:1;min-width:0}.workspace-topbar-main .topbar-operation-search{order:2;min-width:70px;padding-inline:8px}.workspace-topbar-main .topbar-cta{order:3;flex:none;gap:5px;padding-inline:8px;font-size:11px;white-space:nowrap}.workspace-topbar-main .topbar-notifications,.workspace-topbar-main .topbar-user-copy{display:none}.workspace-topbar-main .topbar-user-wrap{order:5;margin-left:0}.workspace-topbar-main .topbar-user{gap:0}}
 .workspace .sidebar { border-right-color: #c1d9d0; background: #e2f9f2; }
 .workspace .sidebar > .brand { padding-bottom: 28px; }
@@ -276,7 +276,8 @@
 
 @media (min-width: 761px) and (max-width: 1100px) {
   .workspace-operations .workspace-topbar { display: flex; gap: 8px; padding-inline: 12px; }
-  .workspace-operations .topbar-switch-wrap { flex: 0 1 140px; min-width: 100px; }
+  .workspace-operations .topbar-switch-wrap { flex: 0 1 140px; min-width: 0; }
+  .workspace-operations .topbar-switch { min-width: 0; max-width: 100%; }
   .workspace-operations .topbar-operation-search { min-width: 80px; padding-inline: 8px; }
   .workspace-operations .topbar-notifications,.workspace-operations .topbar-user-copy { display: none; }
   .workspace-operations .topbar-cta { flex: none; gap: 5px; padding-inline: 8px; font-size: 11px; }
@@ -445,6 +446,15 @@
   .ticket-print-action,.ticket-download-action { flex:1; min-width:0; }
 }
 
+@media (min-width: 761px) and (max-width: 1023px) {
+  .workspace-content > .ticket-success-page { width: 100%; max-width: none; box-sizing: border-box; margin: 0; padding-inline: 0; }
+  .ticket-success-banner { flex-wrap: wrap; }
+  .ticket-next-sale { flex-basis: 100%; justify-content: center; }
+  .ticket-success-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .ticket-success-actions { order: 1; }
+  .ticket-receipt { order: 2; }
+}
+
 @media (min-width: 761px) {
   .workspace-operations:has(.inventory-page) .inventory-toolbar .inventory-search,
   .workspace-operations:has(.reservations-page) .reservations-toolbar .reservations-search { display: none; }
@@ -486,7 +496,7 @@
 .pos-payment-method-heading h2,.pos-cash-quick-label { margin: 0; color: #727878; font-size: 9px; font-weight: 750; letter-spacing: .07em; }
 .pos-payment-method-heading span { color: #166b55; font-size: 9px; }
 .pos-method-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px; border-radius: 10px; background: #e2f9f2; }
-.pos-method-options button { position: relative; display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 6px; padding: 0 7px; border: 0; border-radius: 8px; background: transparent; color: #414847; font-size: 10px; font-weight: 650; }
+.pos-method-options button { position: relative; display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 6px; padding: 0 7px; border: 0; border-radius: 8px; background: transparent; color: #414847; font-size: 10px; font-weight: 650; }
 .pos-method-options button.is-selected { background: #fff; color: #102b2a; box-shadow: 0 1px 5px #102b2a12; }
 .pos-method-options button.is-selected svg { color: #166b55; }
 .pos-method-options button.is-selected i { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: #16815f; }
@@ -536,7 +546,7 @@
   .pos-payment-order,.pos-payment-form { padding: 14px; }
   .pos-payment-form { gap: 11px; }
   .pos-payment-method-heading h2 { font-size: 8px; }
-  .pos-method-options button { min-height: 40px; gap: 3px; font-size: 9px; }
+  .pos-method-options button { min-height: 44px; gap: 3px; font-size: 9px; }
   .pos-cash-quick-amounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pos-payment-order-total > strong { font-size: 22px; }
 }

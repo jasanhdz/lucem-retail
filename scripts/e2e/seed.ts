@@ -41,6 +41,10 @@ export async function clearE2eData(db: PrismaClient) {
       await tx.user.deleteMany({ where: { id: { in: users } } });
     });
   }
+  // Registration audit rows have no business and their user FK is nulled when the
+  // DEV-09 teardown removes its generated user. In the strictly guarded E2E DB,
+  // remove only those unlinked registration records left by that teardown.
+  await db.auditLog.deleteMany({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } });
   const remaining = await Promise.all([
     db.business.count({ where: { id: { in: [ids.centro, ids.norte] }, name: { startsWith: 'DEV-TEST-01-' } } }),
     db.user.count({ where: { email: { in: Object.values(emails) } } }),
@@ -48,6 +52,7 @@ export async function clearE2eData(db: PrismaClient) {
     db.product.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
     db.productVariant.count({ where: { sku: { startsWith: 'DEV-TEST-01-' } } }),
     db.sale.count({ where: { id: { in: [ids.centroSaleOne, ids.centroSaleTwo] } } }),
+    db.auditLog.count({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } }),
   ]);
   if (remaining.some(count => count !== 0)) throw new Error(`E2E cleanup left namespace rows: ${remaining.join(',')}`);
 }

@@ -59,6 +59,13 @@ export function POSPage() {
     window.localStorage.setItem(CART_DRAFT_KEY, JSON.stringify(cart));
     router.push('/pos/cobro');
   }
+  function restoreVariantFocus() {
+    window.requestAnimationFrame(() => variantTrigger.current?.focus());
+  }
+  function closeVariants() {
+    setSelected(null);
+    restoreVariantFocus();
+  }
   checkoutRef.current = openCheckout;
 
   useEffect(() => {
@@ -83,7 +90,7 @@ export function POSPage() {
     <div className="pos-page">
       <POSCatalog onVariant={choose} />
       <POSCart cart={cart} setCart={setCart} onCheckout={openCheckout} />
-      {selected && <POSVariantDialog product={selected} returnFocusRef={variantTrigger} onClose={() => setSelected(null)} onSelect={(variant, quantity) => choose(variant, selected, quantity)} />}
+      {selected && <POSVariantDialog product={selected} onClose={closeVariants} onSelect={(variant, quantity) => { choose(variant, selected, quantity); restoreVariantFocus(); }} />}
     </div>
   );
 }

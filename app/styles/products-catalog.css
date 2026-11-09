@@ -429,6 +429,7 @@
 @media (min-width: 761px) and (max-width: 1023px) {
   .products-master-page > *,.products-master-filters,.products-master-filter-row,.products-master-filter-controls,.products-quick-filters { min-width: 0; max-width: 100%; }
   .products-page:has(.products-master-page) { padding: 0 16px 36px; }
+  .workspace-content > .products-page:has(.products-master-page) { width: 100%; max-width: none; margin: 0; box-sizing: border-box; }
   .products-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .products-master-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .products-catalog-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }

@@ -20,7 +20,11 @@ export default async function teardown(_config: FullConfig) {
       await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
       await tx.reservation.deleteMany({ where: { businessId: { in: businessIds } } });
       await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businessIds } } });
-      await tx.auditLog.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.auditLog.deleteMany({ where: { OR: [
+        { businessId: { in: businessIds } },
+        { userId: { in: userIds } },
+        { action: 'REGISTER', entityType: 'User', entityId: { in: userIds } },
+      ] } });
       await tx.session.deleteMany({ where: { OR: [{ userId: { in: userIds } }, { activeBusinessId: { in: businessIds } }] } });
       await tx.productVariant.deleteMany({ where: { businessId: { in: businessIds } } });
       await tx.product.deleteMany({ where: { businessId: { in: businessIds } } });
