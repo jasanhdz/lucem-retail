@@ -10,16 +10,15 @@ Suites Playwright ejecutadas contra PostgreSQL real y aislado:
 
 | Suite | Resultado | Cobertura principal |
 | --- | --- | --- |
-| `npm run test:e2e:security` | 9/9 PASS | `/api/audit`, proyección sin campos sensibles, auth, roles, aislamiento por negocio/imágenes, CSRF/origen, cabeceras y throttling |
+| `npm run test:e2e:security` | 10/10 PASS | `/api/audit`, proyección sin campos sensibles, auth incl. cuenta inactiva, roles, aislamiento por negocio/imágenes, CSRF/origen, cabeceras y throttling |
 | `npm run test:e2e:inventory` | 6/6 PASS | entrada, ajuste, kardex, stock reservado, conflictos, roles y negocios |
 | `npm run test:e2e:pos` | 7/7 PASS | CASH/cambio/ticket, CARD, TRANSFER, stock exactamente una vez, idempotencia/replay, concurrencia, roles, aislamiento y viewports |
 | `npm run test:e2e:reservations` | 9/9 PASS | creación por lote/idempotencia, disponibilidad/físico/reservado, liberación, expiración, conversión a venta, concurrencia y aislamiento |
 | `npm run test:e2e:returns` | 7/7 PASS | parcial/completa, importe exacto conforme al backend, validación, idempotencia, kardex, rollback por fallo de auditoría, roles y aislamiento |
 | `npm run test:e2e:dev-09` | 1/1 PASS | viaje API de onboarding→producto simple/variantes→entrada→venta en efectivo→apartado/conversión→devolución→balances persistidos |
+| `npm run test:e2e:dev-10` | 5/5 PASS | expiración idle, renovación Route Handler, revocación/logout y rollback atómico de venta/inventario/apartado |
 
-Total: **39 pruebas E2E enfocadas PASS**. Las suites E2E hacen las escrituras, concurrencia y lecturas Prisma; no se inventaron cobros bancarios, transferencias reales ni reembolsos externos. CARD/TRANSFER indican sólo el método registrado por Lucem.
-
-La suite `npm run test:e2e:dev-10` pasó **4/4**, validando renovación de sesión sólo por Route Handler, revocación/logout, rollback de venta al fallar auditoría y rollback de inventario/apartados con reintento.
+Total: **45 pruebas E2E PASS**. Las suites E2E hacen las escrituras, concurrencia y lecturas Prisma; no se inventaron cobros bancarios, transferencias reales ni reembolsos externos. CARD/TRANSFER indican sólo el método registrado por Lucem.
 
 E2E adicional de imagen autenticada: upload PNG desde negocio Centro (201), lectura en Centro (200 `image/png`) y lectura de la misma ruta desde negocio Norte (404); se eliminó el archivo exacto de prueba. El handler ahora incluye el negocio dueño en el nombre UUID nuevo y valida negocio activo. Imágenes legacy mantienen lectura autenticada sólo si un Product del negocio las referencia en `photoPath`.
 

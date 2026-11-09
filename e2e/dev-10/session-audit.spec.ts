@@ -48,6 +48,18 @@ test('does not renew a revoked session and logout remains effective', async ({ r
   expect((await request.get('/api/dashboard')).status()).toBe(401);
 });
 
+test('rejects an expired idle session and does not extend its database expiry', async ({ request }) => {
+  await login(request);
+  const id = await sessionId(request);
+  const expiredAt = new Date(Date.now() - 1000);
+  await db.session.update({ where: { id }, data: { expiresAt: expiredAt } });
+  const rejected = await request.get('/api/dashboard');
+  expect(rejected.status()).toBe(401);
+  expect(rejected.headers()['set-cookie'] ?? '').not.toContain('lucem_session=');
+  const persisted = await db.session.findUniqueOrThrow({ where: { id } });
+  expect(persisted.expiresAt.getTime()).toBe(expiredAt.getTime());
+});
+
 test('rolls back a sale when its atomic audit fails, then retries idempotently', async ({ request }) => {
   await login(request);
   const before = (await (await request.get('/api/inventory')).json()).find((row: { sku: string }) => row.sku === 'DEV-TEST-01-NORMAL');

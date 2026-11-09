@@ -61,6 +61,25 @@ test('throttles bad login attempts generically without blocking another fixture 
   expect(seller.status()).toBe(200);
 });
 
+test('returns the same generic login failure for an inactive fixture account', async ({ request }) => {
+  const { PrismaClient } = await import('@prisma/client');
+  const db = new PrismaClient();
+  try {
+    await db.user.update({ where: { id: 'dev-test-01-admin' }, data: { active: false } });
+    const inactive = await request.post('/api/auth/login', {
+      data: { email: 'dev-test-01-admin@invalid.test', password: process.env.E2E_ADMIN_PASSWORD },
+    });
+    const absent = await request.post('/api/auth/login', {
+      data: { email: 'absent-account@invalid.test', password: 'invalid-temporary-password' },
+    });
+    expect(inactive.status()).toBe(401);
+    expect(await inactive.text()).toBe(await absent.text());
+  } finally {
+    await db.user.update({ where: { id: 'dev-test-01-admin' }, data: { active: true } });
+    await db.$disconnect();
+  }
+});
+
 test('issues a loopback login cookie with the documented session protections', async ({ request }) => {
   const response = await request.post('/api/auth/login', {
     data: { email: 'dev-test-01-seller@invalid.test', password: process.env.E2E_SELLER_PASSWORD },

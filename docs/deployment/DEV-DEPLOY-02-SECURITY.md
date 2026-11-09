@@ -12,6 +12,36 @@ Los login fallidos se limitan por email normalizado: cinco fallos en una ventana
 
 Todas las respuestas incluyen `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy: camera=(), microphone=(), geolocation=()` y CSP `frame-ancestors 'none'`. Esta CSP sólo proporciona protección anti-frame, no una política completa de ejecución de scripts. HSTS/TLS del hostname público aún no está configurado; Cloudflare no se habilita sin Access/dominio aprobados.
 
+## Inventario de endpoints y autorización
+
+`401` = falta sesión/negocio activo; `403` = rol/pertenencia no autorizado; `404` = recurso no existe o no pertenece al negocio activo. Todos los métodos no seguros `/api/*` pasan por middleware CSRF Origin/Fetch Metadata. Todo GET de negocio requiere sesión y limita el query a `auth.business.id` salvo `GET /api/businesses`, que lista sólo memberships del propio usuario.
+
+| Ruta y método | Acceso esperado |
+| --- | --- |
+| `/api/auth/register` POST | Público; valida campos; no serializa hash |
+| `/api/auth/login` POST | Público; mensaje 401 genérico, limitador por email |
+| `/api/auth/logout` POST | Sesión opcional; revoca sesión propia; idempotente |
+| `/api/businesses` GET | Sesión; sólo memberships del usuario |
+| `/api/businesses` POST | Sesión; crea negocio propio + membresía ADMIN; idempotencia |
+| `/api/businesses/select` POST | Sesión; businessId debe pertenecer a membership propia (403 si no) |
+| `/api/categories` GET | Sesión + negocio activo; sólo categorías del negocio |
+| `/api/products` GET, `/api/products/[id]` GET, `/api/products/[id]/history` GET | Sesión + negocio activo; recurso ajeno no visible (404/vacío) |
+| `/api/products` POST; `/api/products/[id]` PUT/DELETE | ADMIN o INVENTORY_MANAGER; categorías/IDs del negocio; delete archiva |
+| `/api/products/image` POST | ADMIN o INVENTORY_MANAGER; upload asociado a business id |
+| `/api/products/image/[filename]` GET | Sesión + negocio activo; filename nuevo exige mismo business; UUID legacy requiere referencia en Product.photoPath del negocio |
+| `/api/inventory` GET, `/api/inventory/movements` GET | Sesión + negocio activo; movimiento filtrado por businessId |
+| `/api/inventory` POST, `/api/inventory/movements` POST | ADMIN o INVENTORY_MANAGER; variant debe pertenecer al negocio; operación transaccional |
+| `/api/sales` GET/POST, `/api/sales/[id]` GET | Sesión + negocio activo; checkout según contrato actual, sale ajena 404 |
+| `/api/sales/[id]/cancel` POST | ADMIN o membership `canCancelSales`; confirmación y motivo obligatorios; sale ajena 404 |
+| `/api/reservations` GET | Sesión + negocio activo |
+| `/api/reservations` POST, `/api/reservations/[id]` POST/PATCH, `/api/reservations/expire` POST | ADMIN o INVENTORY_MANAGER; recurso/variant del negocio; depósito positivo nuevo rechazado; históricos requieren revisión |
+| `/api/returns` GET | Sesión + negocio activo |
+| `/api/returns` POST | ADMIN o INVENTORY_MANAGER; venta/líneas del negocio; importe validado contra líneas; transacción serializable |
+| `/api/dashboard`, `/api/reports/sales`, `/api/reports/export.csv`, `/api/reports/export.xlsx` GET | Sesión + negocio activo; salida y filtros acotados al negocio |
+| `/api/audit` GET | Sólo ADMIN con negocio activo; query limitada a ese negocio y campos allowlist |
+
+Pantallas `/login`, `/registro` y shell de selección/creación de negocio son parte del onboarding autenticado según contrato; `/dashboard`, `/productos`, `/inventario`, `/pos`, `/apartados`, `/devoluciones`, `/reportes`, `/auditoria`, perfil y tickets dependen de sesión/negocio activo en layout/handlers. Los estados y permisos de navegación no sustituyen la autorización server-side de la matriz anterior.
+
 ## Auditoría, sesiones, roles y API
 
 La alerta histórica `GET /api/audit exposes passwordHash` se investigó contra el HEAD actual. El fix `eae053c` ya está presente: Prisma proyecta explícitamente campos de AuditLog y del actor (`id`, `name`, `email`, `active`) y excluye `passwordHash`, `tokenHash`, tokens, cookies y relaciones de sesión. El E2E real ejecutó `/api/audit` sin sesión (401), como SELLER/INVENTORY_MANAGER (403) y ADMIN (200), y recorrió la respuesta JSON recursivamente para detectar campos sensibles; confirmó aislamiento Centro/Norte. Por tanto el hallazgo histórico está corregido, no es una vulnerabilidad actual.
@@ -23,7 +53,7 @@ La sesión persiste el hash SHA-256 del token aleatorio; el valor plano sólo se
 ## Verificaciones
 
 - `npm run lint`, `npm run typecheck`, `npm test` (32 tests), `npm run build`, `npx prisma validate` y `git diff --check`: PASS.
-- PostgreSQL E2E loopback: seguridad 9/9, inventario 6/6, POS 7/7, reservas 9/9, devoluciones 7/7, journey comercial 1/1 y DEV-10 lifecycle/atomicity 4/4; **43 E2E PASS**.
+- PostgreSQL E2E loopback: seguridad 10/10, inventario 6/6, POS 7/7, reservas 9/9, devoluciones 7/7, journey comercial 1/1 y DEV-10 lifecycle/atomicity 5/5; **45 E2E PASS**.
 - Limpieza final de E2E: suma de filas en 18 tablas de aplicación igual a cero.
 - Cloudflare Tunnel/Access permanece BLOCKED; no se creó hostname, DNS ni ruta pública.
 

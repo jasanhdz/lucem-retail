@@ -16,6 +16,8 @@ La documentación oficial indica que una aplicación self-hosted pública requie
 6. Establecer `LUCEM_ALLOWED_ORIGINS` con los orígenes exactos aprobados, incluyendo `https://<hostname-aprobado>` y, si se conserva acceso LAN, `http://192.168.1.117:3000`. No confiar en `X-Forwarded-*` del usuario; Cloudflare debe suministrar los valores de proxy. HSTS debe configurarse en el borde Cloudflare cuando el hostname/TLS quede activo.
 7. Probar desde navegador y cliente externo: anónimo, email no listado y acceso directo al origin rechazados; email aprobado pasa Access y después el login Lucem; logout, cookies Secure/HttpOnly/SameSite, API, imágenes y aislamiento cross-business funcionan. Certificado HTTPS válido; postgres 5432 inaccesible; LAN local sigue disponible; `n8n_server` y listener 5678 conservan identidad/estado.
 
+Cloudflare documenta una alternativa Quick Tunnel `trycloudflare.com` con uno o más `--allowed-mail` para OTP sin dominio/cuenta; la describe como temporal y para testing/desarrollo, URL cambia/revoca al parar y cualquier persona con URL empieza el challenge por email. No se eligió ni inició porque el objetivo seleccionado aquí es un dominio propio persistente con Access, `cloudflared` no está instalado y aún no se han suministrado emails. No abrir esa alternativa como sustituto silencioso de la configuración aprobada.
+
 No crear una ruta o Quick Tunnel temporal pública para sustituir Access. Quick Tunnels están orientados a desarrollo y no resuelven el requisito persistente de hostname/domino y política de acceso para socios. Sin cuenta, dominio y lista autorizada, mantener todo bloqueado.
 
 ## Credenciales y DNS
