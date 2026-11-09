@@ -106,3 +106,59 @@ Rúbrica consultada: `SPEC.md`, sección «Rubric de evaluación». No se encont
 ## Historial y límites de esta pasada
 
 Pass 1 se conserva íntegro antes de esta sección. No se inició ni reinició servidor, no se realizaron E2E ni escrituras comerciales/staging, no se inspeccionaron secretos/backups, y no se crearon commits. Única modificación efectuada en esta pasada: `FINDINGS.md`.
+
+---
+
+# Findings — pass 3
+
+## Resumen
+
+**24/27 PASS, 3/27 BLOCKED, 0 FAIL.** La publicación externa sigue BLOCKED exclusivamente en los criterios #21–23: esta pasada no encontró evidencia de que estén disponibles dominio activo, credenciales/configuración Cloudflare y correos individuales aprobados. No se creó túnel, DNS ni ruta pública.
+
+HEAD previo a esta edición: `7568990f8bfda1a447d0f0ad42efc8735ec316e1`; su padre es `3037daa3d5eca79a09c794c458842d2cddf87167` (el HEAD de código indicado en el contexto previo). Rama `feature/lucem-ui-redesign-v1`, árbol limpio antes de editar este archivo; estaba ahead 9 de `origin/feature/lucem-ui-redesign-v1`. La pasada 3 sólo actualiza este FINDINGS.md, sin commit. La instrucción de evaluación fue `.opencode/skills/forge/references/evaluator.md`; el rubric está en `SPEC.md`.
+
+Revalidación de sólo lectura: `GET /login` y `/registro` en `192.168.1.117:3000` devolvieron 200; `GET /api/businesses` anónimo devolvió 401. Docker reportó app staging saludable, publicada únicamente en `192.168.1.117:3000`, DB saludable y sin puerto publicado; n8n conserva ID `7b4846b7d07d6402028e49c9eb99c0806ea73a42ec381ab6ae70bf557ae67341`, RestartCount 0 y puerto 5678. El contenedor app usa imagen `sha256:47de4b50b12d69928048e6b3531b602140d39126506f03f9e5644aa3df818ecc`. No se inspeccionaron secretos ni directorios externos de backups. No se iniciaron/reiniciaron contenedores, no se desplegó, y no se ejecutaron E2E ni mutaciones.
+
+## Estado de los 27 criterios
+
+1. **PASS — Baseline e historial.** Referencias históricas del rubric conservadas y diferenciadas: baseline `5cb15dbc8a8c58df470fa256fdc3ee1b94690311` y HEAD de preservación `63c9c26ee45a4f85e8c137efdaba1d5dc85bf82d`. No se reporta discrepancia de baseline.
+2. **PASS — Inventario de superficie.** Evidencia de pass 2 conservada: matriz documentada de endpoints/métodos, rutas dinámicas, pantallas, roles, negocio y estados esperados.
+3. **PASS — Login/registro/logout y sesión.** Evidencia E2E de pass 2 conservada: usuario inactivo con respuesta genérica, expiración sin renovación, renovación sólo por Route Handler, revocación/logout y rollback; seguridad y DEV-10 reportados como parte de 45 E2E PASS.
+4. **PASS — Cookie.** Evidencia documentada de atributos HttpOnly, SameSite, Path, expiración y Secure en producción, con excepción de loopback HTTP para E2E.
+5. **PASS — CSRF.** Evidencia documentada same-origin permitido y cross-origin rechazado sin mutaciones.
+6. **PASS — Host/forwarded headers.** Evidencia previa documenta pruebas de headers y rechazo de confianza en valores arbitrarios.
+7. **PASS — Cabeceras de seguridad.** Matriz E2E/documental previa para nosniff, Referrer-Policy, anti-frame, Permissions-Policy y CSP.
+8. **PASS — Respuesta/API.** En esta pasada, GET anónimo a `/api/businesses` respondió 401; `/login` y `/registro` respondieron 200. Evidencia E2E previa documenta respuestas seguras sin campos sensibles.
+9. **PASS — Autorización de roles.** Evidencia E2E de pass 2 conservada para Admin/Seller/Inventory Manager y permisos positivos/negativos.
+10. **PASS — Aislamiento business.** Evidencia E2E autenticada previa reporta Centro 200/Norte 404 para recurso de imagen. En esta inspección, el contenedor app está ejecutando imagen `sha256:47de4b50b12d69928048e6b3531b602140d39126506f03f9e5644aa3df818ecc`, consistente con el digest registrado en pass 2; el código compilado previamente fue atribuido a build-context HEAD `0327d8bc58fd727218ec1149252f85f4fd8529d0`. No se repitió E2E.
+11. **PASS — Guard E2E de DB.** Los 7 tests unitarios de guarda incluidos en la suite de 32 pasan; evidencia y restricciones loopback se conservan de pass 2.
+12. **PASS — Venta/POS.** E2E PostgreSQL aislado 7/7 PASS, según evidencia registrada previamente.
+13. **PASS — Inventario.** E2E PostgreSQL aislado 6/6 PASS, según evidencia registrada previamente.
+14. **PASS — Apartados/reservas.** E2E PostgreSQL aislado 9/9 PASS, según evidencia registrada previamente.
+15. **PASS — Devoluciones.** E2E PostgreSQL aislado 7/7 PASS, según evidencia registrada previamente.
+16. **PASS — Journey comercial cruzado.** DEV-09 1/1 PASS y suites relacionadas según evidencia registrada previamente.
+17. **PASS — Cleanup sin residuos.** Evidencia de pass 2 reporta cero filas en 18 tablas y recursos E2E temporales retirados. No se ejecutó cleanup en pass 3.
+18. **PASS — Aislamiento de staging y n8n.** Inspección Docker no mutante confirma app staging `d6c3cc7bdb99591fef0a27a388614a9d54eb14552b1699e6c9d1d1c7e8f71a96` saludable (sin reinicios), DB `50b0868e4945d8e56e6ee5948ae51bbb5bd02363a83e84b7c8a20c249f0f52aa` saludable y sin puerto publicado, y n8n ID sin cambios, RestartCount 0 y puerto 5678. Comprobación pre/post e información de volúmenes quedan respaldadas por evidencia documentada en pass 2; no se realizó operación sobre estos contenedores.
+19. **PASS — Actualización/backups.** Procedimiento y verificación de backup previo están documentados en pass 2; backups no se leyeron ni inspeccionaron en esta pasada.
+20. **PASS — Preparación Cloudflare.** Prerequisitos y ausencia de cloudflared/configuración publicable están documentados previamente. No se leyeron credenciales.
+21. **BLOCKED — Access antes de ruta pública.** Sin prerequisitos externos explícitos no es posible validar política Access delante de una ruta; no se creó ruta.
+22. **BLOCKED — Allow-list y denegación externa.** No se proporcionaron correos autorizados/configuración para comprobar acceso externo; no se intentaron identidades inventadas.
+23. **BLOCKED — TLS y no bypass.** Sin hostname/túnel/Access configurados no existe ruta externa donde verificar TLS extremo a extremo o bypass.
+24. **PASS — No publicar sin credenciales.** Confirmado servicio sólo en la IP LAN `192.168.1.117:3000`, DB sin puerto publicado y n8n en su puerto existente 5678; no se creó ruta pública. Esto no acredita disponibilidad WAN.
+25. **PASS — Calidad y evidencia.** Ejecutado en esta pasada `npm test -- --run` (12 archivos, 32/32 tests PASS), `npm run lint` (PASS), `npm run typecheck` (PASS) y `git diff --check` (PASS, incluyendo esta edición). `npm run build`, Prisma validate y los 45 E2E PASS constan como evidencia de pass 2; no se repitieron build, Prisma ni E2E en esta pasada.
+26. **PASS — Documentación.** Guías de seguridad, operación staging, backups/restore, E2E y prerequisitos Cloudflare fueron revisadas/evidenciadas en pass 2; siguen siendo la base documental registrada.
+27. **PASS — Git/entrega.** Rama `feature/lucem-ui-redesign-v1`; HEAD pre-edición `7568990f8bfda1a447d0f0ad42efc8735ec316e1`, cuyo padre es `3037daa3d5eca79a09c794c458842d2cddf87167`. HEAD baseline y de preservación constan por separado en #1. No se creó commit. Esta pasada sólo modifica `FINDINGS.md`.
+
+## Abiertos / bloqueos externos
+
+- [ ] F-07 · major · criterios #21–23 — Proporcionar dominio activo, acceso/configuración Cloudflare autorizados y allow-list de correos individuales aprobados. Hasta entonces no crear túnel/ruta ni afirmar TLS o acceso externo.
+
+## Resueltos desde pass 2
+
+- [x] Criterio #8 — GETs de páginas públicas y API anónima revalidados: 200, 200 y 401 respectivamente.
+- [x] Criterios #10 y #18 — Digest y estado de contenedores staging/n8n verificados en modo sólo lectura; pruebas E2E previas de aislamiento preservadas.
+- [x] Criterio #25 — Suite de 32 tests, lint, typecheck y diff-check ejecutados y aprobados.
+
+## Historial y límites de esta pasada
+
+Se conserva íntegro el historial de pass 1 y pass 2, incluyendo todos los IDs F-01 a F-07. No se ejecutaron E2E, no se realizaron mutaciones ni reinicios/despliegues, no se inspeccionaron secretos ni backups externos. Sólo se modifica `FINDINGS.md`; no se crea commit.
