@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   else if (bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') { extension = 'webp'; contentType = 'image/webp'; }
   else if (bytes.length >= 6 && /^GIF8[79]a$/.test(bytes.toString('ascii', 0, 6))) { extension = 'gif'; contentType = 'image/gif'; }
   if (!extension || file.type !== contentType) return jsonError('Formato no válido. Usa JPEG, PNG, WebP o GIF');
-  const filename = `${randomUUID()}.${extension}`;
+  const filename = `${auth.business.id}_${randomUUID()}.${extension}`;
   const directory = path.join(process.cwd(), 'public', 'uploads', 'products');
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, filename), bytes, { flag: 'wx', mode: 0o644 });

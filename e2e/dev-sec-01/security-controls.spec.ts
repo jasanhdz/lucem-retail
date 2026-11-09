@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { unlink } from 'node:fs/promises';
+import path from 'node:path';
 
 test('sets security headers on pages and API responses', async ({ request }) => {
   for (const path of ['/login', '/api/businesses']) {
@@ -79,4 +81,41 @@ test('ignores untrusted forwarded headers for protocol and generated locations',
   });
   expect(response.status()).toBe(200);
   expect(response.headers()['location'] ?? '').not.toContain('attacker.invalid');
+});
+
+test('restricts uploaded product images to the owning business', async ({ browser }) => {
+  const center = await browser.newContext({ storageState: 'playwright/.auth/admin-centro.json' });
+  let filename: string | undefined;
+  try {
+    const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j4l8AAAAASUVORK5CYII=', 'base64');
+    const upload = await center.request.post('/api/products/image', {
+      multipart: { file: { name: 'business-scope.png', mimeType: 'image/png', buffer: image } },
+    });
+    expect(upload.status()).toBe(201);
+    const photoPath = String((await upload.json()).photoPath);
+    filename = photoPath.split('/').pop();
+    expect(filename).toMatch(/^dev-test-01-centro_[0-9a-f-]{36}\.png$/);
+    const category = (await (await center.request.get('/api/categories')).json()).find((row: { id: string }) => row.id === 'dev-test-01-centro-category');
+    expect(category).toBeTruthy();
+    const product = await center.request.post('/api/products', {
+      data: {
+        name: 'DEV-TEST-01 scoped image', categoryId: category.id, photoPath,
+        variants: [{ sku: 'DEV-TEST-01-IMAGE-SCOPE', cost: 1, price: 2, stock: 1 }],
+      },
+    });
+    expect(product.status()).toBe(201);
+    const ownRead = await center.request.get(photoPath);
+    expect(ownRead.status()).toBe(200);
+    expect(ownRead.headers()['content-type']).toContain('image/png');
+
+    const north = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
+    try {
+      expect((await north.request.get(photoPath)).status()).toBe(404);
+    } finally { await north.close(); }
+  } finally {
+    await center.close();
+    if (filename && /^[a-z0-9_-]{1,64}_[0-9a-f-]{36}\.png$/i.test(filename)) {
+      await unlink(path.join(process.cwd(), 'public', 'uploads', 'products', filename)).catch(() => undefined);
+    }
+  }
 });

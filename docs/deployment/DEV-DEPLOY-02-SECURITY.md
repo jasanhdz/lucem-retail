@@ -16,12 +16,14 @@ Todas las respuestas incluyen `X-Content-Type-Options: nosniff`, `Referrer-Polic
 
 La alerta histórica `GET /api/audit exposes passwordHash` se investigó contra el HEAD actual. El fix `eae053c` ya está presente: Prisma proyecta explícitamente campos de AuditLog y del actor (`id`, `name`, `email`, `active`) y excluye `passwordHash`, `tokenHash`, tokens, cookies y relaciones de sesión. El E2E real ejecutó `/api/audit` sin sesión (401), como SELLER/INVENTORY_MANAGER (403) y ADMIN (200), y recorrió la respuesta JSON recursivamente para detectar campos sensibles; confirmó aislamiento Centro/Norte. Por tanto el hallazgo histórico está corregido, no es una vulnerabilidad actual.
 
+Se detectó y corrigió una falla adicional de autorización en imágenes: el GET autenticaba usuarios pero no restringía el archivo al negocio activo. Las nuevas cargas incorporan el ID del negocio activo al filename (`businessId_UUID.ext`) y el GET compara el ID con la sesión antes de leerlo; las rutas UUID legacy sólo responden si un `Product` del negocio activo las referencia en `photoPath`. El E2E comprobó lectura 200 desde Centro y 404 desde Norte para la misma imagen; el archivo temporal se eliminó.
+
 La sesión persiste el hash SHA-256 del token aleatorio; el valor plano sólo se entrega en cookie. Las rutas comerciales conservan las comprobaciones existentes de sesión, rol, membresía y `businessId`. No se alteraron reglas de venta/devolución ni la semántica de anticipos.
 
 ## Verificaciones
 
 - `npm run lint`, `npm run typecheck`, `npm test` (32 tests), `npm run build`, `npx prisma validate` y `git diff --check`: PASS.
-- PostgreSQL E2E loopback: seguridad 8/8, inventario 6/6, POS 7/7, reservas 9/9, devoluciones 7/7 y journey comercial 1/1; **38 E2E PASS**.
+- PostgreSQL E2E loopback: seguridad 9/9, inventario 6/6, POS 7/7, reservas 9/9, devoluciones 7/7, journey comercial 1/1 y DEV-10 lifecycle/atomicity 4/4; **43 E2E PASS**.
 - Limpieza final de E2E: suma de filas en 18 tablas de aplicación igual a cero.
 - Cloudflare Tunnel/Access permanece BLOCKED; no se creó hostname, DNS ni ruta pública.
 
