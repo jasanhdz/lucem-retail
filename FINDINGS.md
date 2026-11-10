@@ -1,0 +1,50 @@
+# Findings — pass 3 (final allowed pass)
+
+## Resumen
+21/26 criterios PASS; 5/26 BLOCKED. Evaluación de `1e86bb57dc13ab9e0a215a1c83cdcb5e77cdeaa7`, rama `feature/lucem-ui-redesign-v1`, igual al ref remoto. No hay Quick Tunnel activo ni URL pública. La migración `0006` ya está aplicada tras los prechecks y backup descritos abajo. Esta es la pasada final.
+
+## Abiertos
+- [ ] F-03 · critical · criterios #11, #18, #19 y #22 — Tunnel ausente/inactivo, UFW no inspeccionable sin privilegio interactivo, y WAN sólo confirmado por el usuario. Sin URL ni prueba HTTPS/reversión externa; mantener tunnel detenido.
+- [ ] F-04 · major · criterio #24 — La ACL Docker `user:jasan:rw-` continúa presente según el estado aportado; retirada no comprobada. No se modificó.
+
+## Estado actual comprobado
+- **DB/migraciones — PASS migración y backup;** `docker inspect` identifica DB healthy `50b0868e4945d8e56e6ee5948ae51bbb5bd02363a83e84b7c8a20c249f0f52aa`, sin puerto publicado. SQL read-only a `lucem_staging._prisma_migrations` muestra seis migraciones exitosas, incluida `0006_abuse_rate_limits_upload_quotas`. Catálogo SQL confirma tablas, `BIGINT` para bytes, índice único `(keyHash,windowStart)`, índice `(expiresAt,keyHash)`, unicidad de `businessId` y fila global parcial. Migración aplicada mediante `docker compose run --rm --no-deps migrate` sólo tras inspección read-only de target/estado, backup/restauración, y pruebas aisladas exitosas. Backup `20261110T204349Z`: checksums, listado `pg_restore`, tar de uploads y restore PostgreSQL 16.10 en `--network none` verificados; restauración contenía las cinco migraciones pre-0006. No se alteraron registros comerciales intencionalmente.
+- **n8n — PASS:** `docker inspect` confirma ID `7b4846b7d07d6402028e49c9eb99c0806ea73a42ec381ab6ae70bf557ae67341`, running, puerto 5678 sin cambio.
+- **LAN — PASS:** `curl` actual a `192.168.1.117:3000`: `/login` 200, `/registro` 200, `/api/businesses` anónimo 401, GET de imagen sin autenticar 401 y mutación cross-origin 403. App healthy ID `14c762660dd9609f44d0003503d535bdd232ecc26cefa166fdc8c504d0a06743`, imagen `sha256:ca3aac3b953c7832bad5eb4b995481c8eda52b0c28bdddc43a2f5b7916b38483`, binding efectivo `192.168.1.117:3000->3000/tcp`. La recuperación previa recreó sólo app; IDs DB/n8n conservados.
+- **WAN — BLOCKED como evidencia independiente:** aislamiento WAN confirmado por el usuario; no es prueba del evaluador.
+- **Quick Tunnel — BLOCKED/NOT RUN:** `command -v cloudflared` no encontró ejecutable; `systemctl is-active lucem-retail-quick-tunnel.service` = `inactive`. Sin URL ni HTTPS externo.
+- **UFW — BLOCKED:** `sudo -n ufw status verbose` respondió `sudo: a password is required`. No se solicitó ni eludió privilegio; no se alteró firewall.
+- **ACL Docker — BLOCKED:** `user:jasan:rw-` sigue presente según estado aportado; no retirada ni modificación.
+- **Git — PASS:** `git rev-parse HEAD` y `git ls-remote origin refs/heads/feature/lucem-ui-redesign-v1` coinciden en `1e86bb57dc13ab9e0a215a1c83cdcb5e77cdeaa7`. `git show --stat e1527d8` confirma archivado histórico sin cambios de líneas; `git rev-parse 1b9c63a` coincide con SHA esperado. Fast-forward push reportado como completado previamente; no se hizo push en este pass. `FINDINGS.md` está sin seguimiento porque lo crea el evaluador.
+
+## Rubric (26 criterios)
+1. **PASS — Baseline y archivos:** `git rev-parse 1b9c63a` = `1b9c63a728ea59fd21685e99f03e8216617e2de2`; rama esperada. `git show --stat e1527d8` acredita renombres históricos sin cambios de contenido.
+2. **PASS — Backup e identidad staging:** DB/app/n8n identificados por IDs anteriores; DB sin puerto publicado; backup/restauración y checksums de DB/uploads verificados en `20261110T204349Z` según ejecución aportada. No se inspeccionaron secretos ni datos comerciales.
+3. **PASS — Aislamiento de pruebas:** DB de pruebas y `.env.e2e` retirados. Evidencia inmediatamente previa al retiro registró cero buckets, cuotas y fixtures; no se ejecutó cleanup contra staging.
+4. **PASS — Migración y esquema:** SQL actual confirma `0006` exitosa y tablas/índices/tipos requeridos; migración operacional fue aplicada después de backup verificado y pruebas E2E/migración aisladas. `npx prisma validate` y nueva build pasaron según resultados aportados.
+5. **PASS — Hashing y privacidad:** Suite E2E de seguridad (15 tests) pasó en la ejecución aportada; incluye controles de privacidad/hash. No se consultaron valores sensibles en SQL en este pass.
+6. **PASS — Atomicidad/concurrencia:** Suite E2E de seguridad (15) y pruebas de migración aportadas pasaron en DB aislada; no repetidas en este pass.
+7. **PASS — Login por IP/email:** Evidencia de suite E2E de seguridad (15) reportada PASS; no se enviaron intentos de login a staging.
+8. **PASS — Login válido/targeted lockout:** Evidencia de suites dirigidas de auth/onboarding y seguridad reportada PASS; no se usaron credenciales contra staging.
+9. **PASS — Registro antiabuso/flujo privado:** Onboarding (2) y seguridad (15) reportados PASS; endpoints públicos actuales responden según controles indicados. No se creó cuenta en staging.
+10. **PASS — Cardinalidad/expiración:** E2E de seguridad (15) reportado PASS para expiración y purga acotada; no se repitieron pruebas destructivas.
+11. **BLOCKED — Frontera IP tunnel:** pruebas de cabeceras de la suite de seguridad reportadas PASS; no hay tunnel instalado/activo para probar request efectivamente tunnelizada ni confianza en `CF-Connecting-IP`. Origin LAN no se declara confiable.
+12. **PASS — Upload/middleware:** E2E de seguridad (15) reportado PASS para límites y controles de uploads en entorno aislado; no se subieron archivos a staging.
+13. **PASS — Rate limits por dimensión:** E2E de seguridad (15) reportado PASS tras implementación de general-write y purga; no se repitieron requests que escriban datos.
+14. **PASS — Cuotas/reconciliación:** Suite E2E/migración aislada reportada PASS; SQL actual confirma contadores con bytes BIGINT. No se escribieron cuotas de staging.
+15. **PASS — Serialización cuota/escritura:** Cobertura concurrente de E2E seguridad/migración aislada reportada PASS; no ejecutada de nuevo en staging.
+16. **PASS — Disco/tipos:** Pruebas aisladas de límites y formatos reportadas PASS; sin prueba de escritura nueva sobre runtime staging.
+17. **PASS — Auth/tenant/privacidad:** `curl` actual confirma `/login` 200, `/registro` 200, API negocios anónima 401 e imagen sin autenticar 401; mutación cross-origin 403. Roles, cookie y aislamiento multi-negocio quedan respaldados por suite E2E seguridad reportada PASS.
+18. **BLOCKED — Túnel/red aislados:** PostgreSQL no publicado, n8n conserva ID/estado/5678 y binding LAN actual comprobado. Firewall UFW y WAN no cuentan con verificación independiente; tunnel detenido.
+19. **BLOCKED — URL/reversión:** unit inactivo y `cloudflared` ausente; no hay journal de ejecución, URL HTTPS ni prueba de reversión externa.
+20. **PASS — Calidad/decisión de publicación:** lint, typecheck, unit (35), build, Prisma validate y suites dirigidas reportadas PASS; E2E seguridad 15, onboarding 2, DEV-09 1, DEV-10 5, inventory 6, POS 7, reservations 9 y returns 7. Build Docker pasó. E2E de seguridad volvió a pasar después de cambios de purge/general-write. Suite amplia legacy `test:e2e:auth` y `test:e2e:products` tuvo fallos de fixtures UI desactualizados/temporales; no se atribuyen a DEV-03 ni se afirma que la suite amplia completa pase. Tunnel correctamente no iniciado al persistir bloqueos críticos.
+21. **PASS — Recuperación LAN/preservación:** HTTP actual confirma los códigos requeridos; `docker inspect` confirma app healthy y binding efectivo, DB healthy sin puerto publicado, n8n running y recursos identificados. La recreación reportada se limitó a app.
+22. **BLOCKED — Firewall/WAN:** `sudo -n ufw status verbose` exige password; aislamiento WAN es confirmación del usuario, no evidencia propia. Tunnel sigue detenido.
+23. **PASS — Preflight migración/recuperación:** estado read-only identificó `lucem_staging`; seis migraciones actuales, incluida `0006`, exitosas. Backup reciente y restore aislado verificados antes de aplicar; prechecks compatibles y E2E de migración/seguridad pasaron. Aplicación fue la única migración operational.
+24. **BLOCKED — ACL temporal Docker:** `user:jasan:rw-` no se ha retirado; estado aportado indica presencia. No se tocó ACL.
+25. **PASS — Commit/publicación Git:** branch/HEAD/remoto coinciden; push fast-forward al destino autorizado completado según evidencia previa. No hubo commit ni push en este pass.
+26. **PASS — Registro Forge final:** estados independientes y evidencia/fuente para DB/migración, n8n, LAN, WAN, tunnel, UFW, ACL y Git indicados arriba; límites de evidencia se identifican explícitamente.
+
+## Resueltos (verificados este pass)
+- [x] F-01 · criterio #3 — Contenedor E2E y `.env.e2e` retirados; evidencia de cleanup inmediatamente previa a la retirada confirmó cero buckets/cuotas/fixtures.
+- [x] F-02 · criterios #4 y #23 — `0006_abuse_rate_limits_upload_quotas` aplicada en staging sólo tras inspección read-only, backup/restauración verificados y E2E/migración/seguridad exitosos. SQL actual confirma seis migraciones exitosas y catálogo de esquema esperado.
