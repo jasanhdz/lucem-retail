@@ -45,6 +45,10 @@ Obtenga la URL `https://….trycloudflare.com` impresa en el arranque actual y c
 
 No inicie el túnel hasta haber demostrado que el edge añade/sobrescribe las cabeceras de frontera esperadas y que clientes LAN/directos no pueden suplantar ese contexto. Si una prueba falla o la identidad de proxy no es verificable, interrumpa sólo `cloudflared` con Ctrl-C; no inicie el unit persistente.
 
+### Registro de prueba manual — 2026-11-10
+
+Cloudflared `2026.10.7`, proceso manual PID `87365`, creó la URL temporal `https://scholarship-middle-springer-lite.trycloudflare.com`. En pruebas iniciadas desde este host, HTTPS/TLS respondió válido; `/login` y `/registro` devolvieron 200, `/api/businesses` y una imagen privada sin sesión devolvieron 401, un POST same-origin sin sesión devolvió 401 y un POST cross-origin devolvió 403. La bandera `CLOUDFLARE_QUICK_TUNNEL_ENABLED=true` se validó mediante un POST HTTPS same-origin simulado que llegó a autenticación y devolvió 401. Estas peticiones pasaron por el edge desde el propio host; no equivalen a una prueba desde otro dispositivo/red. La autenticación válida, cookie Secure durante una sesión iniciada por HTTPS y aislamiento multi-negocio no se comprobaron en esta ejecución. El proceso fue manual, no systemd; la URL sólo se considera vigente mientras el proceso actual siga activo y responda. Al reiniciarlo puede cambiar.
+
 ## Unit dedicado
 
 El archivo versionado [`../../deploy/systemd/lucem-retail-quick-tunnel.service`](../../deploy/systemd/lucem-retail-quick-tunnel.service) apunta sólo al origen web de Lucem. Instálelo y habilítelo únicamente después de que el Evaluator haya aprobado todos los bloqueos y la verificación HTTPS independiente haya pasado:
