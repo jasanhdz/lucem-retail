@@ -53,7 +53,7 @@ Cloudflared `2026.10.7`, proceso manual PID `87365`, creó la URL temporal `http
 
 El unit `lucem-retail-quick-tunnel.service` está enabled/active desde `2026-11-10T23:26:36Z`, PID `108212`, ejecutando `cloudflared 2026.10.7` como usuario dinámico y sin acceso al socket Docker. El `ExecStartPre` instalado esperó a `/login` y salió con código 0; `systemd-analyze verify` también pasó. La URL vigente del arranque es `https://unlike-spider-stopping-fare.trycloudflare.com`; la URL anterior `mark-str-international-easter.trycloudflare.com` dejó de ser válida después del reinicio.
 
-En la URL vigente, `curl` confirmó TLS válido, `/login` y `/registro` 200, APIs/imágenes privadas anónimas 401, POST same-origin anónimo 401 y cross-origin 403. WebFetch independiente alcanzó `/login` y obtuvo 401 en la API privada. Login HTTPS y cookie `Secure; HttpOnly; SameSite=Lax`, logout y aislamiento multi-negocio se verificaron con fixtures sintéticos antes del último restart; esos fixtures se limpiaron. No hubo prueba desde un dispositivo móvil independiente ni un reinicio completo del servidor.
+En la URL vigente, `curl` confirmó TLS válido, `/login` y `/registro` 200, APIs/imágenes privadas anónimas 401, POST same-origin anónimo 401 y cross-origin 403. WebFetch independiente alcanzó `/login` y obtuvo 401 en la API privada. En la URL actual también se comprobó un registro público sintético `202` idéntico/neutral sin cookie, login HTTPS con cookie `Secure; HttpOnly; SameSite=Lax`, logout y aislamiento multi-negocio; los fixtures se limpiaron. No hubo prueba desde un dispositivo móvil independiente ni un reinicio completo del servidor.
 
 ## Unit dedicado
 
