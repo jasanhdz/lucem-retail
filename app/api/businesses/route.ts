@@ -3,6 +3,7 @@ import { Prisma, Role, BusinessGiro } from '@prisma/client';
 import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
+import { configuredRateLimit, consumeRateLimitBucket, limitedResponse } from '@/lib/abuse-limits';
 
 const giroCatalog = {
   ropa: { value: BusinessGiro.ROPA, label: 'Ropa y accesorios' }, papeleria: { value: BusinessGiro.PAPELERIA, label: 'Papelería y oficina' },
@@ -36,6 +37,16 @@ export async function POST(req: Request) {
   if (!selected) return jsonError('Selecciona un giro válido.', 400);
   if (!key || key.length > 100) return jsonError('Solicitud inválida.', 400);
   const requestHash = crypto.createHash('sha256').update(JSON.stringify({ name, branchName, giro, currency, timezone })).digest('hex');
+  try {
+    const limits = await Promise.all([
+      consumeRateLimitBucket('business-create-user', auth.user.id, 24 * 60 * 60_000, configuredRateLimit('BUSINESS_CREATE_USER', 5)),
+      consumeRateLimitBucket('business-create-global', 'global', 60 * 60_000, configuredRateLimit('BUSINESS_CREATE_GLOBAL', 100)),
+    ]);
+    const blocked = limits.find((limit) => !limit.allowed);
+    if (blocked) return limitedResponse(429, blocked.retryAfterSeconds);
+  } catch {
+    return jsonError('Servicio temporalmente no disponible', 503);
+  }
   try {
     let result;
     for (let attempt = 0; attempt < 3; attempt += 1) {

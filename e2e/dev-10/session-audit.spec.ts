@@ -72,7 +72,7 @@ test('rolls back a sale when its atomic audit fails, then retries idempotently',
   const retry = await request.post('/api/sales', { data: body });
   expect(retry.status()).toBe(201);
   const replay = await request.post('/api/sales', { data: body });
-  expect(replay.status()).toBe(201);
+  expect(replay.status()).toBe(200);
   expect((await replay.json()).id).toBe((await retry.json()).id);
 });
 

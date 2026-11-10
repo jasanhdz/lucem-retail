@@ -22,21 +22,20 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   const registerResponsePromise = page.waitForResponse(response => response.url().endsWith('/api/auth/register'));
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
   const registerResponse = await registerResponsePromise;
-  expect(registerResponse.status()).toBe(201);
+  expect(registerResponse.status()).toBe(202);
   const registerBody = await registerResponse.json();
-  expect(registerBody.user.passwordHash).toBeUndefined();
-  expect(registerBody.user.email).toBe(email);
+  expect(registerBody).toEqual({ message: 'Registro recibido. Inicia sesión para continuar.' });
   const sessionCookie = (await page.context().cookies()).find(cookie => cookie.name === 'lucem_session');
-  expect(sessionCookie?.httpOnly).toBe(true);
-  expect(sessionCookie?.sameSite).toBe('Lax');
-  await expect(page).toHaveURL(/\/perfil$/);
-  await capture(page, 'completar-perfil');
-  await page.getByLabel('Apellido(s)').fill('DEV-08');
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  expect(sessionCookie).toBeUndefined();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('status')).toContainText('Registro recibido');
+  await page.getByLabel('Correo electrónico').fill(email);
+  await page.locator('#password').fill(password);
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await expect(page).toHaveURL(/\/negocios\/crear$/);
   await capture(page, 'crear-negocio');
   await page.getByLabel('Nombre del negocio').fill('DEV-08 Primera Tienda');
-  await page.getByLabel(/Sucursal principal/).fill('Matriz DEV-08');
+  await page.getByLabel(/sucursal principal/i).fill('Matriz DEV-08');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page).toHaveURL(/\/negocios\/giro$/);
   await capture(page, 'seleccionar-giro');
@@ -61,7 +60,8 @@ test('completa registro, primer negocio y giro con datos persistidos', async ({ 
   await expect(page.getByRole('button', { name: 'DEV-08 Primera Tienda' })).toBeVisible();
   await capture(page, 'dashboard');
   const duplicate = await page.request.post('/api/auth/register', { data: { name: 'DEV-08 Duplicate', email, password, confirmation: password, terms: true } });
-  expect(duplicate.status()).toBe(409);
+  expect(duplicate.status()).toBe(202);
+  expect(await duplicate.json()).toEqual(registerBody);
   const invalid = await page.request.post('/api/auth/register', { data: { name: 'X', email: 'invalid', password: 'short', confirmation: 'different', terms: false } });
   expect(invalid.status()).toBe(400);
 
@@ -86,7 +86,15 @@ test('dos usuarios crean negocios simultáneamente sin cruzar membresías', asyn
       first.post('/api/auth/register', { data: { name: 'DEV-08 Concurrent A', email: firstEmail, password, confirmation: password, terms: true } }),
       second.post('/api/auth/register', { data: { name: 'DEV-08 Concurrent B', email: secondEmail, password, confirmation: password, terms: true } }),
     ]);
-    expect(registrations.map(response => response.status()).sort()).toEqual([201, 201]);
+    expect(registrations.map(response => response.status()).sort()).toEqual([202, 202]);
+    expect(await Promise.all(registrations.map(async (response) => response.json()))).toEqual([
+      { message: 'Registro recibido. Inicia sesión para continuar.' },
+      { message: 'Registro recibido. Inicia sesión para continuar.' },
+    ]);
+    for (const [context, accountEmail] of [[first, firstEmail], [second, secondEmail]] as const) {
+      const login = await context.post('/api/auth/login', { data: { email: accountEmail, password } });
+      expect(login.status()).toBe(200);
+    }
     const creations = await Promise.all([
       first.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev08-concurrent-a' }, data: { name: 'DEV-08 Concurrent A Business', branchName: 'A', giro: 'servicios' } }),
       second.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev08-concurrent-b' }, data: { name: 'DEV-08 Concurrent B Business', branchName: 'B', giro: 'hogar' } }),

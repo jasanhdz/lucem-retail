@@ -7,10 +7,6 @@ const COOKIE = 'lucem_session';
 const SESSION_IDLE_MS = 30 * 60 * 1000;
 const COOKIE_RENEWAL_WINDOW_MS = 5 * 60 * 1000;
 const hash = (v: string) => crypto.createHash('sha256').update(v).digest('hex');
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_MAX_FAILURES = 5;
-const LOGIN_MAX_FAILURE_KEYS = 4096;
-const loginFailures = new Map<string, { count: number; expiresAt: number }>();
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomUUID(), 10);
 const cookieOptions = { httpOnly: true, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', maxAge: SESSION_IDLE_MS / 1000, path: '/' };
 export async function createSession(userId: string, businessId?: string) { const token=crypto.randomBytes(32).toString('hex'); await db.session.create({data:{userId,activeBusinessId:businessId,tokenHash:hash(token),expiresAt:new Date(Date.now()+SESSION_IDLE_MS)}}); return token; }
@@ -58,31 +54,5 @@ export async function authenticate(email: string, password: string) {
   if (!user || !user.active || !passwordMatches) return null;
   return user;
 }
-export function normalizeLoginKey(email: string) { return email.trim().toLowerCase().slice(0, 320); }
-export function isLoginRateLimited(email: string, now = Date.now()) {
-  const key = normalizeLoginKey(email);
-  const attempt = loginFailures.get(key);
-  if (!attempt || attempt.expiresAt <= now) { loginFailures.delete(key); return false; }
-  return attempt.count >= LOGIN_MAX_FAILURES;
-}
-export function recordLoginFailure(email: string, now = Date.now()) {
-  const key = normalizeLoginKey(email);
-  const previous = loginFailures.get(key);
-  if (previous && previous.expiresAt > now) {
-    previous.count += 1;
-    return;
-  }
-  if (previous) loginFailures.delete(key);
-  if (loginFailures.size >= LOGIN_MAX_FAILURE_KEYS) {
-    for (const [entryKey, entry] of loginFailures) if (entry.expiresAt <= now) loginFailures.delete(entryKey);
-    while (loginFailures.size >= LOGIN_MAX_FAILURE_KEYS) {
-      const oldest = loginFailures.keys().next().value;
-      if (oldest === undefined) break;
-      loginFailures.delete(oldest);
-    }
-  }
-  loginFailures.set(key, { count: 1, expiresAt: now + LOGIN_WINDOW_MS });
-}
-export function clearLoginFailures(email: string) { loginFailures.delete(normalizeLoginKey(email)); }
 export function permitted(role:Role|undefined, allowed:Role[]){return !!role&&allowed.includes(role);}
 export function jsonError(message:string,status=400){return Response.json({error:message},{status});}

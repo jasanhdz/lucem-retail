@@ -21,7 +21,10 @@ test('merchant completes authenticated commercial journey with persisted balance
   const db = new PrismaClient();
   try {
     const registered = await api.post('/api/auth/register', { data: { name: 'DEV-09 Merchant', email, password, confirmation: password, terms: true } });
-    expect(registered.status()).toBe(201);
+    expect(registered.status()).toBe(202);
+    expect(await body(registered)).toEqual({ message: 'Registro recibido. Inicia sesión para continuar.' });
+    const login = await api.post('/api/auth/login', { data: { email, password } });
+    expect(login.status()).toBe(200);
     expect((await body(await api.get('/api/businesses'))).businesses).toHaveLength(0);
 
     const createdBusiness = await api.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev09-business-create' }, data: { name: 'DEV-09 Comercio', branchName: 'Matriz DEV-09', giro: 'ropa' } });

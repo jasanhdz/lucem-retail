@@ -63,8 +63,6 @@ test('persists the general-write dimension and purges expired buckets in bounded
   const expiredAt = new Date(now.getTime() - 1);
   const futureAt = new Date(now.getTime() + 60 * 60_000);
   const prefix = 'f'.repeat(60);
-  const firstExpiredHash = `${prefix}0000`;
-  const remainingExpiredHash = `${prefix}0500`;
   const activeHash = `${prefix}0501`;
   try {
     const writes = await Promise.all(Array.from({ length: 3 }, () =>
@@ -82,7 +80,7 @@ test('persists the general-write dimension and purges expired buckets in bounded
     expect(await db.abuseRateLimitBucket.count({ where: { expiresAt: expiredAt } })).toBe(1);
     expect(await db.abuseRateLimitBucket.count({ where: { keyHash: activeHash } })).toBe(1);
   } finally {
-    await db.abuseRateLimitBucket.deleteMany({ where: { keyHash: { in: [firstExpiredHash, remainingExpiredHash, activeHash] } } });
+    await db.abuseRateLimitBucket.deleteMany({ where: { keyHash: { startsWith: prefix } } });
     await db.$disconnect();
   }
 });

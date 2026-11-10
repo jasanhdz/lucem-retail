@@ -2,6 +2,7 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
+import { businessWriteGate, inventoryWriteGate } from '@/lib/abuse-limits';
 
 export async function GET() {
   const auth = await getAuth({ renewCookie: true });
@@ -24,6 +25,10 @@ export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const inventoryGate = await inventoryWriteGate(auth.business.id);
+  if (inventoryGate) return inventoryGate;
   const body = await req.json();
   const amount = Number(body.quantity);
   if (!body.variantId || !Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount * 100) || !body.reason?.trim()) return jsonError('Variante, cantidad positiva de hasta dos decimales y motivo son obligatorios');

@@ -81,6 +81,28 @@ model User {
   businessCreationIdempotencies BusinessCreationIdempotency[]
 }
 
+model AbuseRateLimitBucket {
+  id          String   @id @default(uuid()) @db.Uuid
+  keyHash     String   @db.Char(64)
+  windowStart DateTime @db.Timestamptz(6)
+  count       Int
+  expiresAt   DateTime @db.Timestamptz(6)
+
+  @@unique([keyHash, windowStart])
+  @@index([expiresAt, keyHash])
+}
+
+model UploadQuotaCounter {
+  id            String   @id @default(uuid()) @db.Uuid
+  businessId    String?  @unique
+  scope         String   @db.VarChar(8)
+  usedBytes     BigInt   @default(0)
+  reservedBytes BigInt   @default(0)
+  business      Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([scope])
+}
+
 model Business {
   id            String              @id @default(cuid())
   name          String
@@ -103,6 +125,7 @@ model Business {
   history       PriceCostHistory[]
   idempotencies SaleIdempotency[]
   creationIdempotencies BusinessCreationIdempotency[]
+  uploadQuota UploadQuotaCounter?
 }
 
 model Membership {

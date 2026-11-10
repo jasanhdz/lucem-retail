@@ -14,7 +14,8 @@ const emails = { admin: 'dev-test-01-admin@invalid.test', seller: 'dev-test-01-s
 
 export async function clearE2eData(db: PrismaClient) {
   const businessRows = await db.business.findMany({ where: { OR: [{ id: { in: [ids.centro, ids.norte] } }, { name: { in: ['DEV-TEST-01 Centro', 'DEV-TEST-01 Norte'] } }] }, select: { id: true } });
-  const userRows = await db.user.findMany({ where: { email: { in: Object.values(emails) } }, select: { id: true } });
+  const userWhere = { OR: [{ email: { in: Object.values(emails) } }, { email: { startsWith: 'dev-test-01-public-' } }] };
+  const userRows = await db.user.findMany({ where: userWhere, select: { id: true } });
   const businesses = businessRows.map(row => row.id);
   const users = userRows.map(row => row.id);
   if (businesses.length || users.length) {
@@ -31,7 +32,7 @@ export async function clearE2eData(db: PrismaClient) {
       await tx.reservation.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.auditLog.deleteMany({ where: { businessId: { in: businesses } } });
+      await tx.auditLog.deleteMany({ where: { OR: [{ businessId: { in: businesses } }, { userId: { in: users } }] } });
       await tx.session.deleteMany({ where: { OR: [{ userId: { in: users } }, { activeBusinessId: { in: businesses } }] } });
       await tx.productVariant.deleteMany({ where: { businessId: { in: businesses } } });
       await tx.product.deleteMany({ where: { businessId: { in: businesses } } });
@@ -45,14 +46,18 @@ export async function clearE2eData(db: PrismaClient) {
   // DEV-09 teardown removes its generated user. In the strictly guarded E2E DB,
   // remove only those unlinked registration records left by that teardown.
   await db.auditLog.deleteMany({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } });
+  await db.abuseRateLimitBucket.deleteMany({});
+  await db.uploadQuotaCounter.deleteMany({});
   const remaining = await Promise.all([
     db.business.count({ where: { id: { in: [ids.centro, ids.norte] }, name: { startsWith: 'DEV-TEST-01-' } } }),
-    db.user.count({ where: { email: { in: Object.values(emails) } } }),
+    db.user.count({ where: userWhere }),
     db.category.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
     db.product.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
     db.productVariant.count({ where: { sku: { startsWith: 'DEV-TEST-01-' } } }),
     db.sale.count({ where: { id: { in: [ids.centroSaleOne, ids.centroSaleTwo] } } }),
     db.auditLog.count({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } }),
+    db.abuseRateLimitBucket.count(),
+    db.uploadQuotaCounter.count(),
   ]);
   if (remaining.some(count => count !== 0)) throw new Error(`E2E cleanup left namespace rows: ${remaining.join(',')}`);
 }

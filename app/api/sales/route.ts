@@ -2,10 +2,13 @@ import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { PaymentMethod } from '@prisma/client';
+import { businessWriteGate, commercialReadGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 export async function GET(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const readGate = await commercialReadGate(auth.business.id);
+  if (readGate) return readGate;
   const search = new URL(req.url).searchParams.get('search')?.trim();
   const sales = await db.sale.findMany({ where: { businessId: auth.business.id, ...(search ? { OR: [{ id: search }, { folio: Number.isNaN(Number(search)) ? undefined : Number(search) }] } : {}) }, include: { lines: { include: { variant: { include: { product: true } }, returnLines: true } } }, orderBy: { createdAt: 'desc' }, take: 50 });
   return Response.json(sales.map((sale) => ({ ...sale, subtotal: sale.subtotal.toString(), total: sale.total.toString(), changeAmount: sale.changeAmount.toString(), receivedAmount: sale.receivedAmount?.toString() ?? null, lines: sale.lines.map((line) => ({ ...line, quantity: line.quantity.toString(), unitPrice: line.unitPrice.toString(), unitCost: line.unitCost.toString(), lineTotal: line.lineTotal.toString(), returnedQuantity: line.returnLines.reduce((sum, item) => sum + Number(item.quantity), 0) })) })));
@@ -14,16 +17,22 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const body = await req.json();
   if (!Array.isArray(body.items) || !body.items.length) return jsonError('El carrito esta vacio');
   if (!Object.values(PaymentMethod).includes(body.paymentMethod)) return jsonError('Metodo de pago invalido');
   if (body.idempotencyKey && (typeof body.idempotencyKey !== 'string' || body.idempotencyKey.length > 120)) return jsonError('Idempotencia invalida');
+  let replayed = false;
   try {
     const sale = await db.$transaction(async (tx) => {
       if (body.idempotencyKey) {
         const existing = await tx.saleIdempotency.findUnique({ where: { businessId_key: { businessId: auth.business!.id, key: body.idempotencyKey } }, include: { sale: true } });
         if (existing) {
           if (existing.requestHash !== JSON.stringify(body)) throw new Error('idempotency');
+          replayed = true;
           return existing.sale;
         }
       }
@@ -53,7 +62,7 @@ export async function POST(req: Request) {
        await audit({ businessId: auth.business!.id, userId: auth.user.id, action: 'CREATE', entityType: 'Sale', entityId: created.id }, tx, auditOptionsForRequest(req));
        return created;
      }, { isolationLevel: 'Serializable' });
-     return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: 201 });
+      return Response.json({ ...sale, total: sale.total.toString(), changeAmount: sale.changeAmount.toString() }, { status: replayed ? 200 : 201 });
     } catch (error) {
       const conflict = error instanceof Error && (['stock', 'idempotency'].includes(error.message) || 'code' in error && error.code === 'P2034');
       return jsonError(error instanceof Error && error.message === 'idempotency' ? 'La clave de idempotencia ya fue usada con otro contenido' : conflict ? 'Existencia insuficiente' : 'No fue posible registrar la venta', conflict ? 409 : 400);

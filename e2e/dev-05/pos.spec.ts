@@ -111,7 +111,7 @@ test.describe('DEV-05 POS', () => {
     const first = await page.request.post('/api/sales', { data: body });
     const second = await page.request.post('/api/sales', { data: body });
     expect(first.status()).toBe(201);
-    expect(second.status()).toBe(201);
+    expect(second.status()).toBe(200);
     expect((await second.json()).id).toBe((await first.json()).id);
     const changed = await page.request.post('/api/sales', { data: { ...body, paymentMethod: 'TRANSFER' } });
     expect(changed.status()).toBe(409);

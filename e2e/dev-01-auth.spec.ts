@@ -96,10 +96,11 @@ test('business confirmation posts the selected id exactly and follows the server
   expect(payload).toEqual({ businessId: 'business-b' });
 });
 
-test('registration continues through profile, business details, giro and confirmation', async ({ page }) => {
+test('registration confirmation is generic, requires explicit login, then continues through business details and giro', async ({ page }) => {
   let businessPayload: Record<string, unknown> | undefined;
   let businessCookie = '';
-  await page.route('**/api/auth/register', route => route.fulfill({ status: 201, contentType: 'application/json', headers: { 'Set-Cookie': 'lucem_session=registration-session; Path=/; HttpOnly; SameSite=Lax' }, body: JSON.stringify({ user: { name: 'Sofía Morales', email: 'sofia@example.test' }, redirect: '/negocios/crear' }) }));
+  await page.route('**/api/auth/register', route => route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ message: 'Registro recibido. Inicia sesión para continuar.' }) }));
+  await page.route('**/api/auth/login', route => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Set-Cookie': 'lucem_session=login-session; Path=/; HttpOnly; SameSite=Lax' }, body: JSON.stringify({ user: { name: 'Sofía Morales', email: 'sofia@example.test' }, businesses: [], redirect: '/negocios/crear' }) }));
   await page.route('**/api/businesses', async route => {
     if (route.request().method() === 'POST') {
       businessPayload = route.request().postDataJSON();
@@ -116,10 +117,11 @@ test('registration continues through profile, business details, giro and confirm
   await page.getByLabel('Confirmar contraseña').fill('LucemTest!2026');
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
-  await expect(page).toHaveURL(/\/perfil$/);
-  await expect(page.getByLabel('Nombre visible')).toHaveValue('Sofía');
-  await expect(page.getByLabel('Apellido(s)')).toHaveValue('Morales');
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('status')).toHaveText('Registro recibido. Inicia sesión para continuar.');
+  await page.getByLabel('Correo electrónico').fill('sofia@example.test');
+  await page.locator('#password').fill('LucemTest!2026');
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await expect(page).toHaveURL(/\/negocios\/crear$/);
   await expect(page.locator('#business-giro')).toHaveCount(0);
   const layout = await page.evaluate(() => ({ descriptionTop: document.querySelector('#business-description')?.getBoundingClientRect().top ?? 0, timezoneTop: document.querySelector('#business-timezone')?.getBoundingClientRect().top ?? 0, namePadding: Number.parseFloat(getComputedStyle(document.querySelector('#business-name') as HTMLInputElement).paddingLeft) }));
@@ -141,7 +143,7 @@ test('registration continues through profile, business details, giro and confirm
   await expect(page).toHaveURL(/\/negocios\/confirmacion$/);
   await expect(page.getByRole('heading', { name: 'Tienda de prueba' })).toBeVisible();
   expect(businessPayload).toMatchObject({ name: 'Tienda de prueba', branchName: 'Matriz', giro: 'papeleria' });
-  expect(businessCookie).toContain('lucem_session=registration-session');
+  expect(businessCookie).toContain('lucem_session=login-session');
 });
 
 test('profile skip advances without requiring profile fields', async ({ page }) => {

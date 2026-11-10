@@ -2,11 +2,16 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
+import { businessWriteGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const expired = await db.$transaction(async (tx) => {
     const rows = await tx.reservation.findMany({ where: { businessId: auth.business!.id, status: 'ACTIVE', expiresAt: { lte: new Date() }, OR: [{ deposit: null }, { deposit: { lte: 0 } }] } });
     for (const row of rows) {

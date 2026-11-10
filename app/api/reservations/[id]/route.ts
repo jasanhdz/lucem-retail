@@ -2,11 +2,16 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { PaymentMethod, Role, ReservationStatus } from '@prisma/client';
+import { businessWriteGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 async function change(req: Request, id: string, action: 'release' | 'expire' | 'convert') {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const body = await req.json().catch(() => ({}));
   if (action !== 'expire' && body.confirmation !== true) return jsonError('Se requiere confirmacion');
   const paymentMethod = body.paymentMethod;
@@ -65,6 +70,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const expiresAt = new Date(body.expiresAt);

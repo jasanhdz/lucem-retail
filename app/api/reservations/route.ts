@@ -3,12 +3,15 @@ import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
 import { canonicalReservationBatch, reservationBatchHash, validReservationBatchKey } from '@/lib/reservation-batch';
+import { businessWriteGate, commercialReadGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 const roles = [Role.ADMIN, Role.INVENTORY_MANAGER];
 
 export async function GET() {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const readGate = await commercialReadGate(auth.business.id);
+  if (readGate) return readGate;
   const rows = await db.reservation.findMany({
     where: { businessId: auth.business.id },
     include: { variant: { include: { product: true } }, user: { select: { name: true } } },
@@ -21,6 +24,10 @@ export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, roles)) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const body = await req.json();
   if (Object.hasOwn(body, 'deposit') && body.deposit !== null && body.deposit !== '' && (typeof body.deposit !== 'number' && typeof body.deposit !== 'string' || !/^\d+(\.\d{1,2})?$/.test(String(body.deposit)) || Number(body.deposit) !== 0)) return jsonError('Los anticipos no están habilitados; crea el apartado sin deposit');
   if (Array.isArray(body.items)) {

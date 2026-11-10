@@ -2,11 +2,16 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
+import { businessWriteGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN]) && !auth.membership?.canCancelSales) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const body = await req.json();
   if (body.confirmation !== true || !body.reason?.trim()) return jsonError('Motivo y confirmacion son obligatorios');
   const { id } = await params;

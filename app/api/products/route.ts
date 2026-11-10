@@ -2,6 +2,7 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
+import { businessWriteGate, configuredRateLimit, consumeRateLimitBucket, limitedResponse } from '@/lib/abuse-limits';
 
 export async function GET(req: Request) {
   const auth = await getAuth({ renewCookie: true });
@@ -31,9 +32,21 @@ export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
   const body = await req.json();
   const inputs = Array.isArray(body.variants) && body.variants.length ? body.variants : [body];
   if (!body.name || !body.categoryId || inputs.some((input: any) => !input.sku || !Number.isFinite(Number(input.cost)) || Number(input.cost) < 0 || !Number.isFinite(Number(input.price)) || Number(input.price) < 0 || (input.stock !== undefined && (!Number.isFinite(Number(input.stock)) || Number(input.stock) < 0)))) return jsonError('Nombre, SKU, categoria, costo y precio son obligatorios');
+  try {
+    const limits = await Promise.all([
+      consumeRateLimitBucket('product-create-business', auth.business.id, 60 * 60_000, configuredRateLimit('PRODUCT_CREATE_BUSINESS', 200)),
+      consumeRateLimitBucket('product-create-global', 'global', 60 * 60_000, configuredRateLimit('PRODUCT_CREATE_GLOBAL', 1000)),
+    ]);
+    const blocked = limits.find((limit) => !limit.allowed);
+    if (blocked) return limitedResponse(429, blocked.retryAfterSeconds);
+  } catch {
+    return jsonError('Servicio temporalmente no disponible', 503);
+  }
   try {
     const product = await db.$transaction(async (tx) => {
       const category = await tx.category.findFirst({ where: { id: body.categoryId, businessId: auth.business!.id, active: true } });

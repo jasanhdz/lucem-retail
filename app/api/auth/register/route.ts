@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
-import { createSession, jsonError, sessionCookie } from '@/lib/auth';
+import { jsonError } from '@/lib/auth';
+import { configuredRateLimit, consumeRateLimitBucket, limitedResponse, requestClientIp } from '@/lib/abuse-limits';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -14,16 +15,29 @@ export async function POST(req: Request) {
   if (password.length < 8) return jsonError('La contraseña debe tener al menos 8 caracteres.', 400);
   if (password !== confirmation) return jsonError('Las contraseñas no coinciden.', 400);
   if (body.terms !== true) return jsonError('Acepta los términos para continuar.', 400);
-  if (await db.user.findUnique({ where: { email }, select: { id: true } })) return jsonError('Este correo ya está registrado.', 409);
+  try {
+    const ip = requestClientIp(req);
+    const ipGate = await consumeRateLimitBucket('register-ip', ip, 60 * 60_000, configuredRateLimit('REGISTER_IP', 5));
+    const emailGate = await consumeRateLimitBucket('register-email', email, 24 * 60 * 60_000, configuredRateLimit('REGISTER_EMAIL', 3));
+    const globalGate = await consumeRateLimitBucket('register-global', 'global', 60 * 60_000, configuredRateLimit('REGISTER_GLOBAL', 20));
+    if (!ipGate.allowed || !emailGate.allowed || !globalGate.allowed) {
+      const gate = !ipGate.allowed ? ipGate : !emailGate.allowed ? emailGate : globalGate;
+      return limitedResponse(429, gate.retryAfterSeconds);
+    }
+  } catch {
+    return jsonError('Solicitud no disponible', 503);
+  }
+  const accepted = () => Response.json({ message: 'Registro recibido. Inicia sesión para continuar.' }, { status: 202 });
+  if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
+    await bcrypt.hash(password, 12);
+    return accepted();
+  }
   try {
     const user = await db.user.create({ data: { name, email, passwordHash: await bcrypt.hash(password, 12) } });
-    const token = await createSession(user.id);
     await audit({ userId: user.id, action: 'REGISTER', entityType: 'User', entityId: user.id });
-    const response = Response.json({ user: { id: user.id, name: user.name, email: user.email }, redirect: '/negocios/crear' }, { status: 201 });
-    response.headers.append('Set-Cookie', sessionCookie(token));
-    return response;
+    return accepted();
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Unique constraint')) return jsonError('Este correo ya está registrado.', 409);
+    if (error instanceof Error && error.message.includes('Unique constraint')) return accepted();
     return jsonError('No fue posible crear la cuenta.', 500);
   }
 }

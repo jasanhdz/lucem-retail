@@ -2,6 +2,7 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { audit, auditOptionsForRequest } from '@/lib/audit';
 import { Role } from '@prisma/client';
+import { businessWriteGate } from '@/lib/abuse-limits';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuth({ renewCookie: true });
@@ -16,6 +17,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
   const body = await req.json();
   const { id } = await params;
   try {
@@ -47,6 +50,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, _req);
+  if (writeGate) return writeGate;
   const { id } = await params;
   const result = await db.$transaction(async (tx) => {
     const result = await tx.product.updateMany({ where: { id, businessId: auth.business!.id }, data: { archived: true, updatedAt: new Date() } });

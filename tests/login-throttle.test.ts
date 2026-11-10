@@ -1,27 +1,29 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { clearLoginFailures, isLoginRateLimited, recordLoginFailure } from '../src/lib/auth';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { configuredRateLimit } from '../src/lib/abuse-limits';
 
-describe('login throttling', () => {
-  beforeEach(() => {
-    clearLoginFailures('first@example.test');
-    clearLoginFailures('second@example.test');
-    clearLoginFailures('oldest@example.test');
+describe('configurable persistent rate-limit defaults', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('uses secure defaults and accepts a bounded operator override', () => {
+    expect(configuredRateLimit('LOGIN_IP', 10)).toBe(10);
+    vi.stubEnv('LUCEM_RATE_LIMIT_LOGIN_IP', '12');
+    expect(configuredRateLimit('LOGIN_IP', 10)).toBe(12);
   });
 
-  it('limits one normalized account key without affecting another account', () => {
-    for (let attempt = 0; attempt < 5; attempt += 1) recordLoginFailure(' FIRST@example.test ');
-    expect(isLoginRateLimited('first@example.test')).toBe(true);
-    expect(isLoginRateLimited('second@example.test')).toBe(false);
+  it('fails closed for unsafe operator values', () => {
+    for (const value of ['0', '-1', '1.5', 'not-a-number', '101']) {
+      vi.stubEnv('LUCEM_RATE_LIMIT_LOGIN_IP', value);
+      expect(() => configuredRateLimit('LOGIN_IP', 10)).toThrow('Invalid rate limit configuration');
+    }
   });
 
-  it('expires the in-memory window and documents its single-process scope', () => {
-    recordLoginFailure('first@example.test', 1000);
-    expect(isLoginRateLimited('first@example.test', 1000 + 15 * 60 * 1000)).toBe(false);
-  });
-
-  it('bounds the number of distinct email keys retained in memory', () => {
-    for (let attempt = 0; attempt < 5; attempt += 1) recordLoginFailure('oldest@example.test', 1000);
-    for (let index = 0; index < 4096; index += 1) recordLoginFailure(`account-${index}@example.test`, 1000);
-    expect(isLoginRateLimited('oldest@example.test', 1000)).toBe(false);
+  it('honors test-only overrides only for the exact isolated E2E database', () => {
+    vi.stubEnv('LUCEM_RATE_LIMIT_LOGIN_IP', '20');
+    vi.stubEnv('E2E_LUCEM_RATE_LIMIT_LOGIN_IP', '2');
+    vi.stubEnv('E2E_RATE_LIMIT_TEST', 'true');
+    vi.stubEnv('E2E_DATABASE_URL', 'postgresql://lucem_e2e:test@127.0.0.1:55432/lucem_retail_e2e?schema=public');
+    expect(configuredRateLimit('LOGIN_IP', 10)).toBe(2);
+    vi.stubEnv('E2E_DATABASE_URL', 'postgresql://lucem_e2e:test@127.0.0.1:55432/lucem_staging?schema=public');
+    expect(configuredRateLimit('LOGIN_IP', 10)).toBe(20);
   });
 });

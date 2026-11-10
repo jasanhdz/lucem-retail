@@ -2,6 +2,7 @@ import { getAuth, jsonError, permitted } from '@/lib/auth';
 import { audit } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { Role } from '@prisma/client';
+import { businessWriteGate, commercialReadGate, commercialWriteGate } from '@/lib/abuse-limits';
 
 function serialize(row: any) {
   return { ...row, refundAmount: row.refundAmount.toString(), lines: row.lines?.map((line: any) => ({ ...line, quantity: line.quantity.toString(), amount: line.amount.toString() })) };
@@ -10,6 +11,8 @@ function serialize(row: any) {
 export async function GET(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const readGate = await commercialReadGate(auth.business.id);
+  if (readGate) return readGate;
   const search = new URL(req.url).searchParams.get('search')?.trim();
   const numericSearch = search && Number.isFinite(Number(search)) ? Number(search) : undefined;
   const rows = await db.return.findMany({ where: { businessId: auth.business.id, ...(search ? { OR: [{ saleId: search }, { reason: { contains: search, mode: 'insensitive' } }, ...(numericSearch === undefined ? [] : [{ sale: { folio: numericSearch } }])] } : {}) }, include: { sale: { select: { id: true, folio: true, total: true, createdAt: true } }, lines: true, user: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 50 });
@@ -20,6 +23,10 @@ export async function POST(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
   if (!permitted(auth.membership?.role, [Role.ADMIN, Role.INVENTORY_MANAGER])) return jsonError('No autorizado', 403);
+  const writeGate = await businessWriteGate(auth.business.id, req);
+  if (writeGate) return writeGate;
+  const commercialGate = await commercialWriteGate(auth.business.id);
+  if (commercialGate) return commercialGate;
   const body = await req.json();
   if (body.confirmation !== true || !body.saleId || !body.reason?.trim() || !Array.isArray(body.items) || !body.items.length) return jsonError('Venta, motivo, lineas y confirmacion son obligatorios');
   if (body.idempotencyKey !== undefined && (typeof body.idempotencyKey !== 'string' || body.idempotencyKey.length < 8 || body.idempotencyKey.length > 120)) return jsonError('Idempotencia invalida');

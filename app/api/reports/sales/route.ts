@@ -1,9 +1,12 @@
 import { getAuth, jsonError } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { commercialReadGate } from '@/lib/abuse-limits';
 
 export async function GET(req: Request) {
   const auth = await getAuth({ renewCookie: true });
   if (!auth?.business) return jsonError('Sesion requerida', 401);
+  const readGate = await commercialReadGate(auth.business.id);
+  if (readGate) return readGate;
   const p = new URL(req.url).searchParams;
   const from = p.get('from') ? new Date(`${p.get('from')}T00:00:00.000Z`) : undefined;
   const to = p.get('to') ? new Date(`${p.get('to')}T23:59:59.999Z`) : undefined;
