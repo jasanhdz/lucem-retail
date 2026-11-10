@@ -2,6 +2,10 @@
 
 Este procedimiento publica sólo la app de Lucem Retail con un Cloudflare Quick Tunnel temporal. No configura cuenta Cloudflare, token, Access, correo permitido, dominio, DNS ni router. La URL es pública y cambia cuando se crea otro túnel.
 
+## Recomendación de hardening posterior
+
+El estado UFW reportado para esta fase mantiene SSH/22 y RDP/3389 permitidos desde cualquier origen; estas reglas no se cambian aquí. En una ventana administrativa separada, se recomienda restringirlos a los CIDR/IP de administración aprobados. Para evitar perder acceso, conserva una sesión administrativa activa o consola local, añade y verifica primero la regla restringida, prueba una segunda sesión desde el origen permitido y sólo entonces retira la regla amplia. Define una vía de recuperación/rollback antes de aplicar el cambio y no hagas cambios remotos sin confirmar que el nuevo acceso funciona.
+
 ## Requisitos de inicio
 
 No instalar ni iniciar el servicio hasta confirmar todos estos puntos:
