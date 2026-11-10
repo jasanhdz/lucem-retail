@@ -1,5 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 import { ids } from '../../scripts/e2e/seed';
+import { consumeRateLimitBucket } from '../../src/lib/abuse-limits';
 
 const sensitiveKeys = new Set(['passwordhash', 'tokenhash', 'password', 'token', 'session', 'sessions', 'cookie', 'secret']);
 
@@ -53,4 +55,34 @@ test('returns only safe, isolated audit rows for each selected business', async 
     [...north].sort((a, b) => new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()).map(row => new Date(String(row.createdAt)).getTime()),
   );
   await context.close();
+});
+
+test('persists the general-write dimension and purges expired buckets in bounded batches', async () => {
+  const db = new PrismaClient();
+  const now = new Date();
+  const expiredAt = new Date(now.getTime() - 1);
+  const futureAt = new Date(now.getTime() + 60 * 60_000);
+  const prefix = 'f'.repeat(60);
+  const firstExpiredHash = `${prefix}0000`;
+  const remainingExpiredHash = `${prefix}0500`;
+  const activeHash = `${prefix}0501`;
+  try {
+    const writes = await Promise.all(Array.from({ length: 3 }, () =>
+      consumeRateLimitBucket('general-write', 'dev-sec-general-write', 60 * 60_000, 2),
+    ));
+    expect(writes.filter(result => result.allowed)).toHaveLength(2);
+    expect(writes.filter(result => !result.allowed)).toHaveLength(1);
+
+    await db.$executeRaw`INSERT INTO "AbuseRateLimitBucket" ("keyHash", "windowStart", "count", "expiresAt")
+      SELECT ${prefix} || lpad(value::text, 4, '0'), ${new Date(now.getTime() - 2 * 60 * 60_000)}, 1, ${expiredAt}
+      FROM generate_series(0, 500) AS value`;
+    await db.abuseRateLimitBucket.create({ data: { keyHash: activeHash, windowStart: now, expiresAt: futureAt, count: 1 } });
+
+    await consumeRateLimitBucket('general-write', 'dev-sec-purge-trigger', 60 * 60_000, 2, now);
+    expect(await db.abuseRateLimitBucket.count({ where: { expiresAt: expiredAt } })).toBe(1);
+    expect(await db.abuseRateLimitBucket.count({ where: { keyHash: activeHash } })).toBe(1);
+  } finally {
+    await db.abuseRateLimitBucket.deleteMany({ where: { keyHash: { in: [firstExpiredHash, remainingExpiredHash, activeHash] } } });
+    await db.$disconnect();
+  }
 });
