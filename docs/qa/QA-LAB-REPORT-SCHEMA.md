@@ -11,8 +11,9 @@
 | `UX-VISUAL-REPORT.md` | Overflow, baseline y diferencias UX verificables |
 | `ACCESSIBILITY-REPORT.md` | Violaciones axe, regla, impacto y nodo |
 | `PERFORMANCE-REPORT.md` | Muestras, métrica, unidad, entorno, repeticiones y umbral |
-| `COVERAGE-MATRIX.md` | Rutas y controles con estado individual |
+| `COVERAGE-MATRIX.md` | Rutas, controles y estados requeridos con resultado individual |
 | `ROUTE-INVENTORY.json` | Inventario normalizado, métodos, fuente, roles, tests y estado |
+| `FEATURE-COVERAGE.json` | Capacidades registradas y cobertura de cada estado requerido |
 | `FINDINGS.json` | Hallazgos estructurados con ID/severidad/reproducción/evidencia |
 | `SCREENSHOT-MANIFEST.json` | Ruta, viewport, tamaño, referencia Stitch y comparación |
 | `metadata.json` | Run ID, commit, perfil, tiempos y conteos |
@@ -28,9 +29,11 @@
   "id": "stable-sha256-prefix",
   "path": "/productos/:id",
   "kind": "page|api",
+  "module": "products",
   "methods": ["GET"],
   "source": "app/(workspace)/productos/[id]/page.tsx",
   "dynamicSegments": ["id"],
+  "lastValidatedAt": "ISO-8601 timestamp",
   "fixtureStatus": "registered|FIXTURE_PENDING|not-dynamic",
   "excluded": false,
   "auth": "public|protected|unknown",
@@ -42,6 +45,10 @@
 ```
 
 Dynamic routes with no declared sample fixture retain `fixtureStatus: FIXTURE_PENDING`; a matching path template alone is not treated as resolved coverage.
+
+## FeatureStateRecord
+
+Each `FEATURE-COVERAGE.json` row contains `featureId`, `featureTitle`, `area`, `state`, `testIds`, and a state result. A required state without a `testCases`/`stateTests` mapping is `UNCOVERED`; a mapped test not run is `NOT_EXECUTED`; a target or fixture missing is `BLOCKED`; only executed assertions can be `PASS`.
 
 ## Finding
 

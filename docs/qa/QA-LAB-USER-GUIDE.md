@@ -42,6 +42,8 @@ lucem-audit --functional
 
 La herramienta valida usuario, base, puerto, loopback y después la identidad conectada antes de migraciones/fixtures. Si falta cualquiera de esos requisitos, se bloquea antes de levantar navegador/servidor. No reutilizar credenciales demo, E2E, staging ni producción. No usar `docker compose down -v` sin confirmar manualmente que el proyecto/volumen son exactamente `lucem-qa`.
 
+El perfil `--performance` crea, sólo en `lucem_qa`, un fixture de 10.000 productos/variantes en lotes de 500 para medir búsqueda/paginación junto con Dashboard. Su namespace se limpia al finalizar. Los p95 se reportan por ruta y se comparan con el umbral versionado; no son medición de carga de producción.
+
 ## Evidencia y reportes
 
 Cada corrida crea `qa/reports/<runId>/` con resumen ejecutivo, reportes funcional/UX/axe/performance, `ROUTE-INVENTORY.json`, `FINDINGS.json`, matriz de cobertura, metadata, capturas, eventos de navegador y reporte HTML (`index.html`). El ZIP se genera con `lucem-audit --package` y contiene `PACKAGE-MANIFEST.json`, checksums y una lista de artefactos excluidos. No incluye traces/HAR/storage states/dumps; se deben revisar manualmente las imágenes antes de compartir.

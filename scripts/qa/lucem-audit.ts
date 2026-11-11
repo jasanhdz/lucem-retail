@@ -210,12 +210,12 @@ async function main() {
   const tags = [options.visual && '@qa-observe', options.accessibility && '@qa-axe', options.performance && '@qa-performance'].filter(Boolean) as string[];
   const publicObservationSelected = !options.module || options.module === 'auth';
   if (tags.length && publicObservationSelected) {
-    const env = { ...process.env, QA_READ_ONLY: '1', QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), DATABASE_URL: 'postgresql://lucem_qa:read-only-placeholder@127.0.0.1:55433/lucem_qa?schema=public', CLOUDFLARE_QUICK_TUNNEL_ENABLED: 'false' } as NodeJS.ProcessEnv;
+    const env = { ...process.env, QA_READ_ONLY: '1', QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces'), DATABASE_URL: 'postgresql://lucem_qa:read-only-placeholder@127.0.0.1:55433/lucem_qa?schema=public', CLOUDFLARE_QUICK_TUNNEL_ENABLED: 'false' } as NodeJS.ProcessEnv;
     runCommands.push({ label: 'read-only-browser-observation', args: ['playwright', 'test', '--config=playwright.qa.readonly.config.ts', '--grep', tags.join('|')], env });
   }
   if (options.functional) {
     try {
-      const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report') });
+      const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') });
       // QA preparation rechecks the connected DB identity before migrate, fixture creation and cleanup.
       const prepared = captureCommand('qa-database-prepare', 'npx', ['tsx', 'scripts/qa/prepare.ts'], env, reportDir);
       checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence });
@@ -256,7 +256,7 @@ async function main() {
   const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[] : databaseObservationTags;
   if (authenticatedObservationTags.length && process.env.QA_DATABASE_URL && !qaReady) {
     try {
-      const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report') });
+      const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') });
       const prepared = captureCommand('qa-database-prepare-observation', 'npx', ['tsx', 'scripts/qa/prepare.ts'], env, reportDir);
       checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence });
       await writeFile(path.join(reportDir, `${prepared.id}.log`), prepared.output);
