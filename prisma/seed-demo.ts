@@ -132,6 +132,23 @@ async function createIdentity() {
     }
   }
 }
+async function verifyCredentialHashes() {
+  try {
+    const directory = await stat(dirname(CREDENTIALS_PATH));
+    const file = await stat(CREDENTIALS_PATH);
+    if ((directory.mode & 0o777) !== 0o700 || (file.mode & 0o777) !== 0o600) return false;
+    const parsed = JSON.parse(await readFile(CREDENTIALS_PATH, 'utf8')) as { users?: Array<{ id: string; email: string; password: string }> };
+    if (!Array.isArray(parsed.users) || parsed.users.length !== 3 || new Set(parsed.users.map((user) => user.password)).size !== 3) return false;
+    for (const expected of demoUsers) {
+      const credential = parsed.users.find((user) => user.id === expected.id && user.email === expected.email);
+      const user = await db.user.findUnique({ where: { id: expected.id } });
+      if (!credential || !user || user.email !== expected.email || !user.active || !await bcrypt.compare(credential.password, user.passwordHash)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 async function createCatalog(bi: number) {
   const spec = expectedBusiness(bi);
   const categories = spec.categories.map((name, i) => ({ id: `demo-category-${bi + 1}-${i + 1}`, businessId: spec.id, name, active: true }));
@@ -223,19 +240,27 @@ async function report(verify: boolean) {
   let valid = true;
   const [userCount, membershipRows, businessCount] = await Promise.all([db.user.count({ where: { id: { in: demoUsers.map((u) => u.id) } } }), db.membership.findMany({ where: { userId: { in: demoUsers.map((u) => u.id) }, businessId: { in: businesses.map((b) => b.id) } }, select: { userId: true, businessId: true, role: true, canCancelSales: true } }), db.business.count({ where: { id: { in: businesses.map((b) => b.id) } } })]);
   const membershipsValid = membershipRows.length === 27 && businesses.every((business) => demoUsers.every((user, index) => membershipRows.some((row) => row.userId === user.id && row.businessId === business.id && row.role === [Role.ADMIN, Role.SELLER, Role.INVENTORY_MANAGER][index] && row.canCancelSales === (index === 0))));
-  valid &&= userCount === 3 && membershipsValid && businessCount === 9;
+  const credentialsValid = await verifyCredentialHashes();
+  valid &&= userCount === 3 && membershipsValid && businessCount === 9 && credentialsValid;
   for (const business of businesses) {
-    const [products, variants, categories, movements, sales, reservations, returns, auditLogs, variantRows, initialRows, badStock, badTenant, badServiceStock, badOps, badAudit] = await Promise.all([
+    const [products, variants, categories, movements, sales, reservations, returns, auditLogs, variantRows, initialRows, badStock, badTenant, badServiceStock, badOps, badAudit, badFinancial] = await Promise.all([
       db.product.count({ where: { businessId: business.id } }), db.productVariant.count({ where: { businessId: business.id } }), db.category.count({ where: { businessId: business.id } }), db.inventoryMovement.count({ where: { businessId: business.id } }), db.sale.count({ where: { businessId: business.id } }), db.reservation.count({ where: { businessId: business.id } }), db.return.count({ where: { businessId: business.id } }), db.auditLog.count({ where: { businessId: business.id } }),
-      db.productVariant.findMany({ where: { businessId: business.id }, select: { sku: true, stock: true, barcode: true } }),
+      db.productVariant.findMany({ where: { businessId: business.id }, select: { id: true, sku: true, stock: true, barcode: true } }),
       db.inventoryMovement.findMany({ where: { businessId: business.id, type: 'INITIAL' }, select: { variantId: true, quantity: true } }),
       db.$queryRaw<Array<{ count: bigint }>>`SELECT count(*) AS count FROM "ProductVariant" v WHERE v."businessId" = ${business.id} AND v.stock <> COALESCE((SELECT sum(m.quantity) FROM "InventoryMovement" m WHERE m."variantId" = v.id), 0)`,
       db.$queryRaw<Array<{ count: bigint }>>`SELECT count(*) AS count FROM "Product" p JOIN "Category" c ON c.id = p."categoryId" WHERE p."businessId" = ${business.id} AND (c."businessId" <> p."businessId" OR p.photoPath IS NOT NULL)`,
       db.$queryRaw<Array<{ count: bigint }>>`SELECT count(*) AS count FROM "ProductVariant" WHERE "businessId" = ${business.id} AND stock <> 0`,
-      db.$queryRaw<Array<{ count: bigint }>>`SELECT ((SELECT count(*) FROM "Sale" s WHERE s."businessId" = ${business.id} AND (s.total <> COALESCE((SELECT sum(sl."lineTotal") FROM "SaleLine" sl WHERE sl."saleId" = s.id), 0) OR EXISTS (SELECT 1 FROM "SaleLine" sl WHERE sl."saleId" = s.id AND NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'SALE' AND m."referenceType" = 'Sale' AND m."referenceId" = s.id AND m."variantId" = sl."variantId" AND m.quantity = -sl.quantity)))) + (SELECT count(*) FROM "Reservation" r WHERE r."businessId" = ${business.id} AND r.status = 'ACTIVE' AND NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'RESERVATION' AND m."referenceType" = 'Reservation' AND m."referenceId" = r.id AND m."variantId" = r."variantId" AND m.quantity = -r.quantity)) + (SELECT count(*) FROM "Return" r WHERE r."businessId" = ${business.id} AND (r."refundAmount" <> COALESCE((SELECT sum(rl.amount) FROM "ReturnLine" rl WHERE rl."returnId" = r.id), 0) OR EXISTS (SELECT 1 FROM "ReturnLine" rl JOIN "SaleLine" sl ON sl.id = rl."saleLineId" WHERE rl."returnId" = r.id AND ((SELECT sum(allrl.quantity) FROM "ReturnLine" allrl WHERE allrl."saleLineId" = rl."saleLineId") > sl.quantity OR NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'RETURN' AND m."referenceType" = 'Return' AND m."referenceId" = r.id AND m."variantId" = sl."variantId" AND m.quantity = rl.quantity))))) AS count`,
+      db.$queryRaw<Array<{ count: bigint }>>`SELECT ((SELECT count(*) FROM "Sale" s WHERE s."businessId" = ${business.id} AND (s.status <> 'CONFIRMED' OR s."paymentMethod" <> 'CASH' OR s.subtotal <> s.total OR s."receivedAmount" <> s.total OR s."changeAmount" <> 0 OR s.total <> COALESCE((SELECT sum(sl."lineTotal") FROM "SaleLine" sl WHERE sl."saleId" = s.id), 0) OR EXISTS (SELECT 1 FROM "SaleLine" sl WHERE sl."saleId" = s.id AND (sl."lineTotal" <> sl.quantity * sl."unitPrice" OR NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'SALE' AND m."referenceType" = 'Sale' AND m."referenceId" = s.id AND m."variantId" = sl."variantId" AND m.quantity = -sl.quantity))))) + (SELECT count(*) FROM "Reservation" r WHERE r."businessId" = ${business.id} AND (r.status <> 'ACTIVE' OR NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'RESERVATION' AND m."referenceType" = 'Reservation' AND m."referenceId" = r.id AND m."variantId" = r."variantId" AND m.quantity = -r.quantity))) + (SELECT count(*) FROM "Return" r WHERE r."businessId" = ${business.id} AND (r."refundAmount" <> COALESCE((SELECT sum(rl.amount) FROM "ReturnLine" rl WHERE rl."returnId" = r.id), 0) OR EXISTS (SELECT 1 FROM "ReturnLine" rl JOIN "SaleLine" sl ON sl.id = rl."saleLineId" WHERE rl."returnId" = r.id AND ((SELECT sum(allrl.quantity) FROM "ReturnLine" allrl WHERE allrl."saleLineId" = rl."saleLineId") > sl.quantity OR rl.amount <> rl.quantity * sl."unitPrice" OR NOT EXISTS (SELECT 1 FROM "InventoryMovement" m WHERE m.type = 'RETURN' AND m."referenceType" = 'Return' AND m."referenceId" = r.id AND m."variantId" = sl."variantId" AND m.quantity = rl.quantity))))) AS count`,
       db.$queryRaw<Array<{ count: bigint }>>`SELECT ((SELECT count(*) FROM "InventoryMovement" m WHERE m."businessId" = ${business.id} AND NOT EXISTS (SELECT 1 FROM "AuditLog" a WHERE a."businessId" = m."businessId" AND a."entityType" = 'InventoryMovement' AND a."entityId" = m.id)) + (SELECT count(*) FROM "Sale" s WHERE s."businessId" = ${business.id} AND NOT EXISTS (SELECT 1 FROM "AuditLog" a WHERE a."businessId" = s."businessId" AND a."entityType" = 'Sale' AND a."entityId" = s.id)) + (SELECT count(*) FROM "Reservation" r WHERE r."businessId" = ${business.id} AND NOT EXISTS (SELECT 1 FROM "AuditLog" a WHERE a."businessId" = r."businessId" AND a."entityType" = 'Reservation' AND a."entityId" = r.id)) + (SELECT count(*) FROM "Return" r WHERE r."businessId" = ${business.id} AND NOT EXISTS (SELECT 1 FROM "AuditLog" a WHERE a."businessId" = r."businessId" AND a."entityType" = 'Return' AND a."entityId" = r.id))) AS count`,
+      db.$queryRaw<Array<{ count: bigint }>>`SELECT count(*) AS count FROM "ProductVariant" WHERE "businessId" = ${business.id} AND (cost < 0 OR price <= 0 OR stock < 0 OR "lowStockThreshold" < 0 OR ("promoPrice" IS NOT NULL AND ("promoPrice" <= 0 OR "promoPrice" >= price)))`,
     ]);
     const variantsValid = variants === VARIANTS_PER_BUSINESS;
+    const businessIndex = businesses.indexOf(business);
+    const skuValues = variantRows.map((row) => row.sku);
+    const skusValid = variantRows.every((row) => {
+      const index = Number(row.sku.split('-').at(-1)) - 1;
+      return Number.isInteger(index) && row.sku === `DM${businessIndex + 1}-${String(index + 1).padStart(5, '0')}` && row.id === stableId('variant', businessIndex, index + 1);
+    }) && new Set(skuValues).size === skuValues.length;
     const barcodeValues = variantRows.map((row) => row.barcode).filter((value): value is string => value !== null);
     const barcodesValid = variantRows.every((row) => row.barcode !== null) && barcodeValues.every(validEan13) && new Set(barcodeValues).size === barcodeValues.length;
     const initialByVariant = new Map<string, Prisma.Decimal[]>();
@@ -248,7 +273,7 @@ async function report(verify: boolean) {
     });
     const commerceOk = business.giro === 'SERVICIOS' ? sales === 0 && reservations === 0 && returns === 0 : sales === 1 && reservations === 1 && returns === 1;
     const serviceOk = business.giro !== 'SERVICIOS' || Number(badServiceStock[0].count) === 0;
-    const ok = products === PRODUCT_COUNT && variantsValid && categories > 0 && barcodesValid && initialsValid && Number(badStock[0].count) === 0 && Number(badTenant[0].count) === 0 && Number(badOps[0].count) === 0 && Number(badAudit[0].count) === 0 && serviceOk && commerceOk && auditLogs >= movements;
+    const ok = products === PRODUCT_COUNT && variantsValid && categories > 0 && skusValid && barcodesValid && initialsValid && Number(badStock[0].count) === 0 && Number(badTenant[0].count) === 0 && Number(badOps[0].count) === 0 && Number(badAudit[0].count) === 0 && Number(badFinancial[0].count) === 0 && serviceOk && commerceOk && auditLogs >= movements;
     valid &&= ok;
     result.push({ business: business.name, products, variants, categories, movements, sales, reservations, returns, auditLogs, valid: ok });
   }

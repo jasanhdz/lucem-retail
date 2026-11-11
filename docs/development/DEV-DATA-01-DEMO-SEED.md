@@ -31,7 +31,7 @@ If interactive sudo is unavailable, the default command stops before Docker acce
 
 ## Credentials and data safety
 
-Three independently generated 36-byte crypto-random passwords are bcryptjs-hashed for ADMIN, SELLER, and INVENTORY_MANAGER identities. The only plaintext credential location is `$HOME/.local/share/lucem-retail-demo/credentials.json` (directory 0700, file 0600); command output mentions no email, password, or hash. Reruns reuse and validate that file and verify each password against its existing bcrypt hash. If demo users already exist but the file is absent, the run aborts. Do not copy this file into the repository or backups.
+Three independently generated 36-byte crypto-random passwords are bcryptjs-hashed for ADMIN, SELLER, and INVENTORY_MANAGER identities. The only plaintext credential location is `$HOME/.local/share/lucem-retail-demo/credentials.json` (directory 0700, file 0600); command output mentions no email, password, or hash. Reruns reuse and validate that file and verify each password against its existing bcrypt hash; `--verify` also checks permissions and each bcrypt correspondence read-only. If demo users already exist but the file is absent, the run aborts. Do not copy this file into the repository or backups.
 
 The seed writes only deterministic demo IDs. Existing deterministic IDs are checked against expected values; unrelated SKU/barcode/ID conflicts abort. It never clears tables, resets operational rate-limit buckets, changes upload counters, creates sessions, or writes user photos. `AbuseRateLimitBucket` and `UploadQuotaCounter` are outside the seed's write set.
 
