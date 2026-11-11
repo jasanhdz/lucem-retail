@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lucem_qa
+      POSTGRES_USER: lucem_qa
+      POSTGRES_PASSWORD: ${QA_POSTGRES_PASSWORD:?Set a dedicated QA-only password}
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - lucem_qa_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lucem_qa -d lucem_qa"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+volumes:
+  lucem_qa_data:
