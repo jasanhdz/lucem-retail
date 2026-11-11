@@ -73,7 +73,11 @@ export async function discoverRoutes(root = process.cwd(), definitions: Feature[
     const tests = [...new Set(matched.flatMap((feature) => feature.tests))]; const roles = [...new Set(matched.flatMap((feature) => feature.roles).filter((role) => role !== 'anonymous'))];
     let coverageStatus: CoverageStatus = exclusion ? 'NOT_IMPLEMENTED' : 'UNCOVERED';
     if (!exclusion && matched.length) coverageStatus = matched.some((feature) => feature.status === 'BLOCKED') ? 'BLOCKED' : matched.some((feature) => feature.status === 'NOT_IMPLEMENTED' || !feature.implemented) ? 'NOT_IMPLEMENTED' : tests.length ? 'NOT_EXECUTED' : 'UNCOVERED';
-    const dynamicSegments = segments.filter((segment) => /^\[.*\]$/.test(segment)).map((segment) => segment.replace(/^\[\[?\.\.\./, '').replace(/\]\]?$|\]$/g, ''));
+    const dynamicSegments = segments.flatMap((segment) => {
+      const optional = /^\[\[\.\.\.(.+)\]\]$/.exec(segment); if (optional) return [optional[1]];
+      const catchall = /^\[\.\.\.(.+)\]$/.exec(segment); if (catchall) return [catchall[1]];
+      const dynamic = /^\[(.+)\]$/.exec(segment); return dynamic ? [dynamic[1]] : [];
+    });
     routes.push({ id: sha12(`${kind}:${routePath}`), path: routePath, kind, module: [...new Set(matched.map((feature) => feature.area))].join(',') || (routePath.split('/').filter(Boolean)[kind === 'api' ? 1 : 0] ?? 'home'), methods, source: toPosix(path.relative(root, file)), dynamicSegments, lastValidatedAt, fixtureStatus: dynamicSegments.length ? matched.some((feature) => Boolean(feature.fixture)) ? 'registered' : 'FIXTURE_PENDING' : 'not-dynamic', excluded: Boolean(exclusion), exclusionReason: exclusion?.reason, auth: roles.length ? 'protected' : /^\/(login|registro)$/.test(routePath) ? 'public' : 'unknown', roles, featureIds: matched.map((feature) => feature.id), tests, coverageStatus });
   }
   return routes;

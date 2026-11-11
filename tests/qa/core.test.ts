@@ -15,16 +15,18 @@ describe('QA-01 route and feature discovery', () => {
     expect(routes.some((route) => route.path === '/')).toBe(true);
     expect(routes.some((route) => route.path === '/api/products/:id' && route.methods.includes('PUT'))).toBe(true);
     expect(routes.find((route) => route.path === '/api/products/:id')?.coverageStatus).toBe('NOT_EXECUTED');
+    expect(routes.find((route) => route.path === '/api/products/:id')?.dynamicSegments).toEqual(['id']);
   });
 
   it('detects an unregistered route and later recognizes its feature/test/control contract', async () => {
-    const root = await tempRoot(); const pageDir = path.join(root, 'app', 'fixture-module', '[id]');
-    await mkdir(pageDir, { recursive: true }); await mkdir(path.join(root, 'e2e'), { recursive: true });
+    const root = await tempRoot(); const pageDir = path.join(root, 'app', 'fixture-module', '[id]'); const optionalPageDir = path.join(root, 'app', 'fixture-module', '[[...parts]]');
+    await mkdir(pageDir, { recursive: true }); await mkdir(optionalPageDir, { recursive: true }); await mkdir(path.join(root, 'e2e'), { recursive: true });
     await writeFile(path.join(pageDir, 'page.tsx'), 'export default function Page(){return <main><form><button type="button">Exportar</button><input aria-label="Código" /></form></main>}');
+    await writeFile(path.join(optionalPageDir, 'page.tsx'), 'export default function Page(){return <main>optional</main>}');
     await writeFile(path.join(root, 'e2e', 'fixture.spec.ts'), 'test("fixture", () => {});');
     const routes = await discoverRoutes(root, []);
-    expect(routes[0].path).toBe('/fixture-module/:id');
-    expect(routes[0].coverageStatus).toBe('UNCOVERED');
+    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('UNCOVERED');
+    expect(routes.find((route) => route.path === '/fixture-module/*parts?')?.dynamicSegments).toEqual(['parts']);
     const controls = applyControlCoverage(await discoverControls(root, routes), []);
     expect(controls.some((control) => control.tag === 'button' && control.status === 'UNCOVERED')).toBe(true);
     expect(makeCoverageFindings(routes, controls).some((finding) => finding.category === 'coverage')).toBe(true);
@@ -32,9 +34,9 @@ describe('QA-01 route and feature discovery', () => {
     const registered = applyControlCoverage(await discoverControls(root, routes), [feature]);
     expect(validateFeatures(routes, [feature], root, controls)).toEqual([]);
     expect(registered.find((control) => control.tag === 'button')?.status).toBe('NOT_EXECUTED');
-    expect(routes[0].coverageStatus).toBe('UNCOVERED'); // registry linkage affects a fresh inventory, not the old result
+    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('UNCOVERED'); // registry linkage affects a fresh inventory, not the old result
     const refreshed = await discoverRoutes(root, [feature]);
-    expect(refreshed[0].coverageStatus).toBe('NOT_EXECUTED');
+    expect(refreshed.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_EXECUTED');
   });
 
   it('rejects duplicate feature IDs, absent routes and missing test files', async () => {
