@@ -22,3 +22,7 @@ public/uploads
 *.tar.gz
 .local/share/lucem-retail-demo/
 lucem-staging-backups/
+qa/reports/
+.next-qa/
+.next-qa-readonly/
+.qa-uploads/

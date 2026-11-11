@@ -25,11 +25,18 @@
     "test:e2e:visual": "playwright test --config=playwright.e2e.config.ts e2e/dev-test-01/visual.spec.ts",
     "qa:audit": "tsx scripts/qa/lucem-audit.ts",
     "qa:coverage": "tsx scripts/qa/lucem-audit.ts --coverage",
+    "qa:prepare": "tsx scripts/qa/prepare.ts",
+    "qa:cleanup": "tsx scripts/qa/cleanup.ts",
+    "qa:quick": "tsx scripts/qa/lucem-audit.ts --quick",
+    "qa:full": "tsx scripts/qa/lucem-audit.ts --full",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:seed:demo": "tsx prisma/seed-demo.ts",
     "db:seed:demo:install": "bash scripts/install-lucem-seed-demo"
+  },
+  "bin": {
+    "lucem-audit": "scripts/qa/bin.cjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -49,15 +56,20 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.51.1",
+    "@types/archiver": "^8.0.0",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/yauzl": "^3.4.0",
+    "archiver": "^8.0.0",
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.3.0",
     "prisma": "^6.7.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.8",
+    "yauzl": "^3.4.0"
   }
 }
