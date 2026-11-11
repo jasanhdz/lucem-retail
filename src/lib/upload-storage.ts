@@ -10,6 +10,14 @@ const GLOBAL_DEFAULT = BigInt(5) * GiB;
 const BUSINESS_DEFAULT = BigInt(250) * MiB;
 const MINIMUM_FREE_DEFAULT = BigInt(10) * GiB;
 function allowE2eQuotaOverrides() {
+  if (process.env.QA_RUN === '1') {
+    if (process.env.E2E_UPLOAD_QUOTA_TEST !== 'true' || !process.env.QA_DATABASE_URL) return false;
+    try {
+      const url = new URL(process.env.QA_DATABASE_URL);
+      return ['127.0.0.1', 'localhost', '::1'].includes(url.hostname.replace(/^\[|\]$/g, '')) && url.port === '55433' &&
+        decodeURIComponent(url.pathname.slice(1)) === 'lucem_qa' && decodeURIComponent(url.username) === 'lucem_qa';
+    } catch { return false; }
+  }
   if (process.env.E2E_UPLOAD_QUOTA_TEST !== 'true' || !process.env.E2E_DATABASE_URL) return false;
   try {
     const url = new URL(process.env.E2E_DATABASE_URL);
@@ -23,6 +31,42 @@ export class UploadLimitError extends Error {
     super(message);
     this.name = 'UploadLimitError';
   }
+}
+
+export function productImageDirectory() {
+  return process.env.QA_RUN === '1'
+    ? path.resolve(process.cwd(), '.qa-uploads', 'products')
+    : path.join(process.cwd(), 'public', 'uploads', 'products');
+}
+export async function safeProductImageDirectoryForRead() {
+  const directory = productImageDirectory();
+  if (process.env.QA_RUN !== '1') return directory;
+  const qaRoot = path.resolve(process.cwd(), '.qa-uploads');
+  if (path.dirname(directory) !== qaRoot) throw new UploadLimitError(503, 'Almacenamiento QA no disponible');
+  try {
+    const rootInfo = await lstat(qaRoot);
+    if (rootInfo.isSymbolicLink() || !rootInfo.isDirectory()) throw new UploadLimitError(503, 'Almacenamiento QA no disponible');
+    const directoryInfo = await lstat(directory);
+    if (directoryInfo.isSymbolicLink() || !directoryInfo.isDirectory()) throw new UploadLimitError(503, 'Almacenamiento QA no disponible');
+  } catch (error) {
+    if (error instanceof UploadLimitError) throw error;
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') return directory;
+    throw error;
+  }
+  return directory;
+}
+export async function ensureProductImageDirectory() {
+  const directory = productImageDirectory();
+  if (process.env.QA_RUN === '1') {
+    const qaRoot = path.resolve(process.cwd(), '.qa-uploads');
+    await mkdir(qaRoot, { recursive: true });
+    const rootInfo = await lstat(qaRoot);
+    if (rootInfo.isSymbolicLink() || !rootInfo.isDirectory() || path.dirname(directory) !== qaRoot) throw new UploadLimitError(503, 'Almacenamiento QA no disponible');
+    await mkdir(directory, { recursive: true });
+    const directoryInfo = await lstat(directory);
+    if (directoryInfo.isSymbolicLink() || !directoryInfo.isDirectory()) throw new UploadLimitError(503, 'Almacenamiento QA no disponible');
+  } else await mkdir(directory, { recursive: true });
+  return directory;
 }
 
 export async function readBoundedUploadBody(request: Request, maximumBytes: number): Promise<Buffer> {
@@ -111,8 +155,7 @@ export async function writeQuotaScopedProductImage(businessId: string, filename:
   const freeFloor = configuredBytes('LUCEM_UPLOAD_MIN_FREE_BYTES', MINIMUM_FREE_DEFAULT, true);
   if (businessLimit > globalLimit) throw new UploadLimitError(503, 'Cuotas de almacenamiento no disponibles');
 
-  const directory = path.join(process.cwd(), 'public', 'uploads', 'products');
-  await mkdir(directory, { recursive: true });
+  const directory = await ensureProductImageDirectory();
   const temporaryPath = path.join(directory, `.${filename}.uploading`);
   const finalPath = path.join(directory, filename);
   let published = false;
