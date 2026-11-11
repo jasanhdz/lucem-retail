@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { qaPlaywrightOutputDir } from './scripts/qa/playwright-output';
 
 const readOnlyDatabaseUrl = 'postgresql://lucem_qa:read-only-placeholder@127.0.0.1:55433/lucem_qa?schema=public';
 export default defineConfig({
@@ -8,7 +9,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list'], ['html', { outputFolder: process.env.QA_PLAYWRIGHT_REPORT_DIR || 'test-results/qa-01/readonly-report', open: 'never' }]],
-  outputDir: 'test-results/qa-01/readonly-playwright',
+  outputDir: qaPlaywrightOutputDir('readonly-browser', 'test-results/qa-01/readonly-playwright'),
   snapshotPathTemplate: '{testDir}/../../qa/visual-baselines/{arg}{ext}',
   use: { baseURL: 'http://127.0.0.1:3113', viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', trace: 'off' },
   projects: [{ name: 'qa-readonly-chromium', use: { ...devices['Desktop Chrome'] } }],

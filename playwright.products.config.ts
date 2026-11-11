@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { requireE2eDatabaseUrl } from './scripts/e2e/database';
+import { qaPlaywrightOutputDir } from './scripts/qa/playwright-output';
 
 const databaseUrl = requireE2eDatabaseUrl();
 const authDir = 'playwright/.auth';
@@ -10,7 +11,7 @@ export default defineConfig({
   reporter: 'list',
   globalSetup: './e2e/dev-test-01/setup.ts',
   globalTeardown: './e2e/dev-test-01/teardown.ts',
-  outputDir: 'test-results/dev-03',
+  outputDir: qaPlaywrightOutputDir('dev-03', 'test-results/dev-03'),
   use: { baseURL: 'http://127.0.0.1:3103', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', grepInvert: /@visual/, use: { ...devices['Desktop Chrome'], storageState: `${authDir}/admin-centro.json` } },

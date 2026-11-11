@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { requireE2eDatabaseUrl } from './scripts/e2e/database';
+import { qaPlaywrightOutputDir } from './scripts/qa/playwright-output';
 
 if (!process.env.QA_DATABASE_URL) throw new Error('BLOCKED: QA_DATABASE_URL required; QA browser/server will not start.');
 process.env.QA_RUN = '1';
@@ -13,7 +14,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list'], ['html', { outputFolder: process.env.QA_PLAYWRIGHT_REPORT_DIR || 'test-results/qa-01/playwright-report', open: 'never' }]],
-  outputDir: 'test-results/qa-01/playwright',
+  outputDir: qaPlaywrightOutputDir('qa-browser', 'test-results/qa-01/playwright'),
   globalSetup: './e2e/dev-test-01/setup.ts',
   globalTeardown: './e2e/dev-test-01/teardown.ts',
   use: { baseURL: 'http://127.0.0.1:3113', trace: 'retain-on-failure', screenshot: 'only-on-failure', video: 'off' },

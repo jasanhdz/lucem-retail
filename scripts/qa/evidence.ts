@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { sanitize } from './core';
 
-const excludedName = /(^|\/)(\.auth|storageState|\.env|\.staging)(\/|$)/i;
+const excludedName = /(^|\/)(?:\.auth|storageState|\.env|\.staging|traces?)(\/|$)/i;
 const excludedExt = /\.(?:trace|har|webm|dump|sql|db|sqlite|pem|key|p12|zip)$/i;
 const textExt = /\.(?:json|md|html|txt|log|csv|xml|yaml|yml|svg)$/i;
 async function listFiles(root: string, base = root): Promise<string[]> {

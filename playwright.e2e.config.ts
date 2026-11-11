@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { requireE2eDatabaseUrl } from './scripts/e2e/database';
+import { qaPlaywrightOutputDir } from './scripts/qa/playwright-output';
 
 let databaseUrl: string;
 try {
@@ -16,7 +17,7 @@ export default defineConfig({
   reporter: 'list',
   globalSetup: './e2e/dev-test-01/setup.ts',
   globalTeardown: './e2e/dev-test-01/teardown.ts',
-  outputDir: 'test-results/dev-test-01',
+  outputDir: qaPlaywrightOutputDir('dev-test-01', 'test-results/dev-test-01'),
   use: { baseURL: 'http://127.0.0.1:3101', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', testMatch: /(?:api|browser|dashboard-states)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
