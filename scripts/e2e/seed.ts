@@ -13,6 +13,7 @@ export const ids = {
 const emails = { admin: 'dev-test-01-admin@invalid.test', seller: 'dev-test-01-seller@invalid.test', inventory: 'dev-test-01-inventory@invalid.test' };
 
 export async function clearE2eData(db: PrismaClient) {
+  const qaRun = process.env.QA_RUN === '1';
   const businessRows = await db.business.findMany({ where: { OR: [{ id: { in: [ids.centro, ids.norte] } }, { name: { in: ['DEV-TEST-01 Centro', 'DEV-TEST-01 Norte'] } }] }, select: { id: true } });
   const userWhere = { OR: [{ email: { in: Object.values(emails) } }, { email: { startsWith: 'dev-test-01-public-' } }] };
   const userRows = await db.user.findMany({ where: userWhere, select: { id: true } });
@@ -42,12 +43,14 @@ export async function clearE2eData(db: PrismaClient) {
       await tx.user.deleteMany({ where: { id: { in: users } } });
     });
   }
-  // Registration audit rows have no business and their user FK is nulled when the
-  // DEV-09 teardown removes its generated user. In the strictly guarded E2E DB,
-  // remove only those unlinked registration records left by that teardown.
-  await db.auditLog.deleteMany({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } });
-  await db.abuseRateLimitBucket.deleteMany({});
-  await db.uploadQuotaCounter.deleteMany({});
+  // The legacy E2E database is disposable and may clear its global test state.
+  // QA Lab preserves unowned global buckets/orphan audit history and cleans only
+  // rows associated with its named synthetic users/businesses.
+  if (!qaRun) {
+    await db.auditLog.deleteMany({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } });
+    await db.abuseRateLimitBucket.deleteMany({});
+    await db.uploadQuotaCounter.deleteMany({});
+  }
   const remaining = await Promise.all([
     db.business.count({ where: { id: { in: [ids.centro, ids.norte] }, name: { startsWith: 'DEV-TEST-01-' } } }),
     db.user.count({ where: userWhere }),
@@ -55,9 +58,11 @@ export async function clearE2eData(db: PrismaClient) {
     db.product.count({ where: { name: { startsWith: 'DEV-TEST-01-' } } }),
     db.productVariant.count({ where: { sku: { startsWith: 'DEV-TEST-01-' } } }),
     db.sale.count({ where: { id: { in: [ids.centroSaleOne, ids.centroSaleTwo] } } }),
-    db.auditLog.count({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } }),
-    db.abuseRateLimitBucket.count(),
-    db.uploadQuotaCounter.count(),
+    ...(qaRun ? [db.uploadQuotaCounter.count({ where: { businessId: { in: businesses } } })] : [
+      db.auditLog.count({ where: { action: 'REGISTER', entityType: 'User', businessId: null, userId: null } }),
+      db.abuseRateLimitBucket.count(),
+      db.uploadQuotaCounter.count(),
+    ]),
   ]);
   if (remaining.some(count => count !== 0)) throw new Error(`E2E cleanup left namespace rows: ${remaining.join(',')}`);
 }
@@ -68,6 +73,10 @@ export async function seedE2e() {
   const { PrismaClient, Role, SaleStatus, PaymentMethod } = await import('@prisma/client');
   const db = new PrismaClient();
   try {
+    if (process.env.QA_RUN === '1') {
+      const identity = await db.$queryRaw<Array<{ database: string; user: string }>>`SELECT current_database() AS database, current_user AS user`;
+      if (identity[0]?.database !== 'lucem_qa' || identity[0]?.user !== 'lucem_qa') throw new Error('Refusing QA fixture mutation: connected database identity is not lucem_qa/lucem_qa.');
+    }
     await clearE2eData(db);
     const [adminHash, sellerHash, inventoryHash] = await Promise.all([bcrypt.hash(passwords.admin, 10), bcrypt.hash(passwords.seller, 10), bcrypt.hash(passwords.inventory, 10)]);
     await db.$transaction(async tx => {

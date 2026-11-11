@@ -5,6 +5,17 @@ export const E2E_DATABASE_PORT = '55432';
 export const E2E_DATABASE_USER = 'lucem_e2e';
 
 export function requireE2eDatabaseUrl(env: Record<string, string | undefined> = process.env): string {
+  if (env.QA_RUN === '1') {
+    const qaUrl = env.QA_DATABASE_URL;
+    if (!qaUrl) throw new Error('QA_DATABASE_URL is required during QA_RUN; staging/DATABASE_URL fallback is forbidden.');
+    let qa: URL;
+    try { qa = new URL(qaUrl); } catch { throw new Error('QA_DATABASE_URL is not a valid PostgreSQL URL.'); }
+    const host = qa.hostname.replace(/^\[|\]$/g, '');
+    if (!['postgres:', 'postgresql:'].includes(qa.protocol) || !['localhost', '127.0.0.1', '::1'].includes(host) || qa.port !== '55433' || decodeURIComponent(qa.pathname.slice(1)) !== 'lucem_qa' || decodeURIComponent(qa.username) !== 'lucem_qa') throw new Error('QA_RUN requires loopback lucem_qa database/user on port 55433.');
+    if (env.E2E_DATABASE_URL !== qaUrl) throw new Error('E2E_DATABASE_URL must equal the explicitly validated QA_DATABASE_URL.');
+    if (env.E2E_DATABASE_USER && env.E2E_DATABASE_USER !== 'lucem_qa') throw new Error('E2E_DATABASE_USER must be lucem_qa for QA_RUN.');
+    return qaUrl;
+  }
   const raw = env.E2E_DATABASE_URL;
   if (!raw) throw new Error('E2E_DATABASE_URL is required; DATABASE_URL fallback is forbidden.');
   let parsed: URL;

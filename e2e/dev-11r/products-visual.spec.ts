@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { productImageDirectory } from '../../src/lib/upload-storage';
 import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -106,6 +107,6 @@ test('captures the Stitch product catalog for desktop and mobile', async ({ page
     }
   } finally {
     for (const id of createdIds) await page.request.delete(`/api/products/${id}`);
-    for (const filename of uploadedFiles) await unlink(path.resolve('public/uploads/products', filename));
+    for (const filename of uploadedFiles) await unlink(path.join(productImageDirectory(), filename));
   }
 });
