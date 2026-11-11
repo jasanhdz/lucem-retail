@@ -18,7 +18,7 @@ export default defineConfig({
   globalTeardown: './e2e/dev-test-01/teardown.ts',
   outputDir: 'test-results/dev-sec-01',
   use: { baseURL: 'http://127.0.0.1:3101', trace: 'retain-on-failure' },
-  projects: [{ name: 'chromium', testMatch: /(?:audit|security-controls)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } }],
+  projects: [{ name: 'chromium', testMatch: /(?:audit|security-controls|product-pagination)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run start -- --hostname 127.0.0.1 --port 3101',
     url: 'http://127.0.0.1:3101/login',

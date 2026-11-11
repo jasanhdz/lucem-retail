@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
+cd "$ROOT"
+mode="${1:-}"
+if [[ "$mode" == --dry-run || "$mode" == --verify ]]; then
+  [[ $# -eq 1 ]] || { printf '%s\n' 'Usage: lucem-seed-demo [--dry-run|--verify]' >&2; exit 2; }
+  [[ -f .staging/config && -f .staging/db_password ]] || { printf '%s\n' 'BLOCKED: protected staging configuration is unavailable.' >&2; exit 1; }
+  [[ "$(stat -c '%a' .staging)" == 700 && "$(stat -c '%a' .staging/db_password)" == 600 ]] || { printf '%s\n' 'BLOCKED: staging secret permissions are not restrictive.' >&2; exit 1; }
+  set -a; source .staging/config; set +a
+  export DATABASE_URL="$(node -e 'const u=new URL("postgresql://localhost");u.username="lucem_staging";u.password=process.env.STAGING_DB_PASSWORD;u.hostname="172.19.0.3";u.port="5432";u.pathname="/lucem_staging";u.searchParams.set("schema","public");process.stdout.write(u.toString())')"
+  exec npx tsx prisma/seed-demo.ts "$mode"
+fi
+[[ $# -eq 0 ]] || { printf '%s\n' 'Usage: lucem-seed-demo [--dry-run|--verify]' >&2; exit 2; }
+sudo -v || { printf '%s\n' 'BLOCKED: interactive sudo authentication was not obtained; no Docker command or database write was attempted.' >&2; exit 1; }
+[[ -f .staging/config && -f .staging/db_password ]] || { printf '%s\n' 'BLOCKED: protected staging configuration is unavailable.' >&2; exit 1; }
+[[ "$(stat -c '%a' .staging)" == 700 && "$(stat -c '%a' .staging/db_password)" == 600 ]] || { printf '%s\n' 'BLOCKED: staging secret permissions are not restrictive.' >&2; exit 1; }
+set -a; source .staging/config; set +a
+COMPOSE=(sudo docker compose -p lucem-retail-staging -f compose.staging.yml)
+db_id="$("${COMPOSE[@]}" ps -q db)"
+app_id="$("${COMPOSE[@]}" ps -q app)"
+[[ -n "$db_id" && -n "$app_id" ]] || { printf '%s\n' 'BLOCKED: exact staging db/app containers are not running.' >&2; exit 1; }
+[[ "$(sudo docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}/{{index .Config.Labels "com.docker.compose.service"}}' "$db_id")" == 'lucem-retail-staging/db' ]] || { printf '%s\n' 'BLOCKED: DB container Compose identity mismatch.' >&2; exit 1; }
+[[ "$(sudo docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}/{{index .Config.Labels "com.docker.compose.service"}}' "$app_id")" == 'lucem-retail-staging/app' ]] || { printf '%s\n' 'BLOCKED: uploads container Compose identity mismatch.' >&2; exit 1; }
+network=lucem-retail-staging-internal
+db_ip="$(sudo docker inspect --format "{{with index .NetworkSettings.Networks \"$network\"}}{{.IPAddress}}{{end}}" "$db_id")"
+[[ "$db_ip" == '172.19.0.3' ]] || { printf '%s\n' 'BLOCKED: inspected staging DB IP differs from the literal seed target.' >&2; exit 1; }
+backup_dir="$HOME/lucem-staging-backups"
+install -d -m 700 "$backup_dir"
+[[ "$(stat -c '%a' "$backup_dir")" == 700 ]] || { printf '%s\n' 'BLOCKED: backup directory must be mode 0700.' >&2; exit 1; }
+stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+dump="$backup_dir/lucem_staging-$stamp.dump"
+uploads="$backup_dir/lucem_uploads-$stamp.tar.gz"
+manifest="$backup_dir/lucem_staging-$stamp.manifest.json"
+umask 077
+"${COMPOSE[@]}" exec -T db pg_dump -U lucem_staging -d lucem_staging -Fc > "$dump"
+"${COMPOSE[@]}" exec -T app tar -C /app/public/uploads -czf - products > "$uploads"
+chmod 600 "$dump" "$uploads"
+sudo docker image inspect postgres:16.10-bookworm >/dev/null || { printf '%s\n' 'BLOCKED: local PostgreSQL validation image is unavailable; no image pull will be attempted.' >&2; exit 1; }
+sudo docker run --rm --network none -v "$dump:/backup.dump:ro" postgres:16.10-bookworm pg_restore --list /backup.dump >/dev/null
+sudo docker run --rm --network none --entrypoint bash -v "$dump:/backup.dump:ro" postgres:16.10-bookworm -ec 'install -d -o postgres -g postgres /tmp/restore-check; su postgres -s /bin/bash -c "initdb -D /tmp/restore-check --auth=trust"; su postgres -s /bin/bash -c "pg_ctl -D /tmp/restore-check -o \"-h 127.0.0.1\" -w start"; trap '\''su postgres -s /bin/bash -c "pg_ctl -D /tmp/restore-check -m immediate -w stop" >/dev/null 2>&1 || true'\'' EXIT; su postgres -s /bin/bash -c "createdb -h 127.0.0.1 lucem_restore_check"; su postgres -s /bin/bash -c "pg_restore --exit-on-error --no-owner --no-acl -h 127.0.0.1 -d lucem_restore_check /backup.dump"'
+tar -tzf "$uploads" >/dev/null
+dump_sha="$(sha256sum "$dump" | cut -d ' ' -f1)"
+uploads_sha="$(sha256sum "$uploads" | cut -d ' ' -f1)"
+node -e 'const fs=require("node:fs");const [path,dump,uploads,host,dumpSha,uploadsSha]=process.argv.slice(1);const body={database:"lucem_staging",host,verified:true,createdAt:new Date().toISOString(),databaseBackup:dump,uploadsBackup:uploads,sha256:{database:dumpSha,uploads:uploadsSha}};fs.writeFileSync(path+".tmp",JSON.stringify(body,null,2)+"\n",{mode:0o600,flag:"wx"});fs.renameSync(path+".tmp",path)' "$manifest" "$dump" "$uploads" "$db_ip" "$dump_sha" "$uploads_sha"
+chmod 600 "$manifest"
+[[ "$(sha256sum "$dump" | cut -d ' ' -f1)" == "$dump_sha" && "$(sha256sum "$uploads" | cut -d ' ' -f1)" == "$uploads_sha" ]] || { printf '%s\n' 'BLOCKED: backup checksum changed during verification.' >&2; exit 1; }
+printf 'Verified backup artifacts under: %s\n' "$backup_dir"
+export LUCEM_DEMO_BACKUP_VERIFIED=1 LUCEM_DEMO_BACKUP_MANIFEST="$manifest"
+export DATABASE_URL="$(node -e 'const u=new URL("postgresql://localhost");u.username="lucem_staging";u.password=process.env.STAGING_DB_PASSWORD;u.hostname=process.argv[1];u.port="5432";u.pathname="/lucem_staging";u.searchParams.set("schema","public");process.stdout.write(u.toString())' "$db_ip")"
+exec npx tsx prisma/seed-demo.ts

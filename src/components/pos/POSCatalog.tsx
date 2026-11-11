@@ -1,7 +1,7 @@
 'use client';
 
-import { Barcode, Search } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Barcode, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { Category, ProductGroup, ProductVariant } from './pos-utils';
 import { groupProducts } from './pos-utils';
 import { POSProductCard } from './POSProductCard';
@@ -11,6 +11,11 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
   const [categories, setCategories] = useState<Category[]>([]);
   const [query, setQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [availableTotal, setAvailableTotal] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -21,10 +26,12 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
     try {
       const params = new URLSearchParams();
       if (query.trim()) params.set('q', query.trim());
+      if (categoryId) params.set('categoryId', categoryId);
+      params.set('available', 'true'); params.set('page', String(page)); params.set('limit', '24');
       const response = await fetch(`/api/products?${params}`);
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'No se pudo cargar el catálogo.');
-      setRows(body);
+      setRows(body.items); setTotal(body.total); setHasMore(body.hasMore); setAvailableTotal(body.availableTotal ?? 0); setCategoryCounts(body.categoryCounts ?? {});
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo cargar el catálogo.');
     } finally {
@@ -34,7 +41,7 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
 
   useEffect(() => {
     void load();
-  }, [query]);
+  }, [query, categoryId, page]);
   useEffect(() => {
     void fetch('/api/categories').then((response) => response.json()).then(setCategories).catch(() => undefined);
   }, []);
@@ -46,7 +53,7 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
     const refresh = () => void load();
     const syncSearch = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
-      if (typeof value === 'string') setQuery(value);
+      if (typeof value === 'string') { setQuery(value); setPage(1); }
     };
     window.addEventListener('pos-refresh-catalog', refresh);
     window.addEventListener('pos:search', syncSearch);
@@ -54,19 +61,10 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
       window.removeEventListener('pos-refresh-catalog', refresh);
       window.removeEventListener('pos:search', syncSearch);
     };
-  }, [query]);
+  }, [query, categoryId, page]);
 
   const products = groupProducts(rows);
-  const visibleProducts = categoryId ? products.filter((product) => product.category?.id === categoryId) : products;
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    products.forEach((product) => {
-      const id = product.category?.id;
-      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
-    });
-    return counts;
-  }, [products]);
-
+  const visibleProducts = products;
   return (
     <section className="pos-catalog" aria-labelledby="pos-catalog-title">
       <h1 id="pos-catalog-title" className="sr-only">Nueva venta</h1>
@@ -74,7 +72,7 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
         <label className="pos-search">
           <Search size={20} aria-hidden="true" />
           <span className="sr-only">Buscar productos</span>
-          <input ref={searchRef} aria-label="Buscar productos" value={query} onChange={(event) => { setQuery(event.target.value); window.dispatchEvent(new CustomEvent('operation-search-sync', { detail: event.target.value })); }} placeholder="Buscar por nombre, SKU o código de barras… (F3)" />
+          <input ref={searchRef} aria-label="Buscar productos" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); window.dispatchEvent(new CustomEvent('operation-search-sync', { detail: event.target.value })); }} placeholder="Buscar por nombre, SKU o código de barras… (F3)" />
           <span className="pos-scanner-ready"><i aria-hidden="true" />Escáner listo</span>
           <kbd>F3</kbd>
         </label>
@@ -85,12 +83,12 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
       </div>
 
       <div className="pos-category-chips" role="group" aria-label="Categorías de productos">
-        <button type="button" className={!categoryId ? 'is-active' : ''} aria-pressed={!categoryId} onClick={() => setCategoryId('')}>
-          Todos <span>{products.length}</span>
+        <button type="button" className={!categoryId ? 'is-active' : ''} aria-pressed={!categoryId} onClick={() => { setCategoryId(''); setPage(1); }}>
+          Todos <span>{availableTotal}</span>
         </button>
         {categories.map((category) => (
-          <button key={category.id} type="button" className={categoryId === category.id ? 'is-active' : ''} aria-pressed={categoryId === category.id} onClick={() => setCategoryId(category.id)}>
-            {category.name} <span>{categoryCounts.get(category.id) ?? 0}</span>
+          <button key={category.id} type="button" className={categoryId === category.id ? 'is-active' : ''} aria-pressed={categoryId === category.id} onClick={() => { setCategoryId(category.id); setPage(1); }}>
+            {category.name} <span>{categoryCounts[category.id] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -106,6 +104,7 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
           {visibleProducts.map((product) => <POSProductCard key={product.id} product={product} onSelect={() => onVariant(product.variants[0], product)} />)}
         </div>
       )}
+      {!loading && <nav aria-label="Paginación del catálogo POS"><button type="button" disabled={page <= 1} onClick={() => setPage(value => value - 1)}><ChevronLeft size={16}/>Anterior</button><span>Página {page} · {total} productos</span><button type="button" disabled={!hasMore} onClick={() => setPage(value => value + 1)}>Siguiente<ChevronRight size={16}/></button></nav>}
 
     </section>
   );

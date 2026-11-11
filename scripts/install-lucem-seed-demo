@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
+install -d -m 700 "$HOME/.local/bin"
+wrapper="$HOME/.local/bin/lucem-seed-demo"
+temporary="$wrapper.$$.tmp"
+printf '#!/usr/bin/env bash\nset -Eeuo pipefail\nexec bash %q/scripts/lucem-seed-demo "$@"\n' "$ROOT" > "$temporary"
+chmod 700 "$temporary"
+mv -f "$temporary" "$wrapper"
+printf 'Installed user-local command: %s\n' "$wrapper"

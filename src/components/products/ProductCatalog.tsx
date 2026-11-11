@@ -152,6 +152,9 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
   const [sortBy, setSortBy] = useState("recent");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverHasMore, setServerHasMore] = useState(false);
+  const [serverSummary, setServerSummary] = useState({ skuCount: 0, available: 0, low: 0, out: 0, multiple: 0, single: 0 });
   const [advancedFilters, setAdvancedFilters] = useState(false);
   const [shownMobileProducts, setShownMobileProducts] = useState(6);
   const [loading, setLoading] = useState(true);
@@ -179,9 +182,13 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
     if (categoryId) params.set("categoryId", categoryId);
     if (status !== "all") params.set("status", status);
     if (available) params.set("available", "true");
+    if (typeFilter !== "all") params.set("type", typeFilter);
+    params.set("sort", sortBy);
+    params.set("page", String(page));
+    params.set("limit", String(pageSize));
     try {
-      const nextRows = await readResponse(await fetch(`/api/products?${params}`));
-      if (loadId === productLoadId.current) setRows(nextRows);
+      const result = await readResponse(await fetch(`/api/products?${params}`));
+      if (loadId === productLoadId.current) { setRows(result.items); setServerTotal(result.total); setServerHasMore(result.hasMore); setServerSummary(result.summary ?? { skuCount: 0, available: 0, low: 0, out: 0, multiple: 0, single: 0 }); }
     } catch (reason) {
       if (loadId === productLoadId.current) {
         setError(
@@ -217,7 +224,7 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
   }, [initialCreate]);
   useEffect(() => {
     if (!initialCreate) void loadProducts();
-  }, [query, categoryId, status, available, initialCreate]);
+  }, [query, categoryId, status, available, typeFilter, sortBy, initialCreate, page, pageSize]);
   useEffect(() => {
     const syncSearch = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
@@ -312,17 +319,36 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
     updateFilter();
     setShownMobileProducts(6);
   }
-  function exportCatalog() {
+  async function exportCatalog() {
     const fields = ["Producto", "Categoría", "SKU", "Código de barras", "Talla", "Color", "Costo", "Precio", "Precio promocional", "Stock", "Umbral", "Ubicación"];
     const escapeCsv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-    const data = [fields, ...rows.map((row) => [row.product.name, row.product.category?.name, row.sku, row.barcode, row.size, row.color, row.cost, row.price, row.promoPrice, row.stock, row.lowStockThreshold, row.product.location])];
-    const blob = new Blob([`\uFEFF${data.map((line) => line.map(escapeCsv).join(",")).join("\r\n")}`], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "catalogo-productos.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      const exported: ProductRow[] = [];
+      let exportPage = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const params = new URLSearchParams({ page: String(exportPage), limit: "100", sort: sortBy });
+        if (query.trim()) params.set("q", query.trim());
+        if (categoryId) params.set("categoryId", categoryId);
+        if (status !== "all") params.set("status", status);
+        if (available) params.set("available", "true");
+        if (typeFilter !== "all") params.set("type", typeFilter);
+        const result = await readResponse(await fetch(`/api/products?${params}`));
+        exported.push(...result.items);
+        hasMore = result.hasMore;
+        exportPage += 1;
+      }
+      const data = [fields, ...exported.map((row) => [row.product.name, row.product.category?.name, row.sku, row.barcode, row.size, row.color, row.cost, row.price, row.promoPrice, row.stock, row.lowStockThreshold, row.product.location])];
+      const blob = new Blob([`\uFEFF${data.map((line) => line.map(escapeCsv).join(",")).join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "catalogo-productos.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "No se pudo exportar el catálogo.");
+    }
   }
 
   useEffect(() => {
@@ -339,26 +365,16 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
   useEffect(() => setPage(1), [query, categoryId, status, available, typeFilter, sortBy, pageSize]);
 
   const products = groupProductRows(rows);
-  const totalSkus = rows.length;
-  const availableSkus = rows.filter((row) => amount(row.stock) > 0).length;
-  const lowStockSkus = rows.filter((row) => amount(row.stock) > 0 && amount(row.stock) <= amount(row.lowStockThreshold)).length;
-  const outOfStockSkus = rows.filter((row) => amount(row.stock) === 0).length;
-  const filteredProducts = products
-    .filter((product) => typeFilter === "all" || (typeFilter === "multiple" ? product.variants.length > 1 : product.variants.length === 1))
-    .sort((left, right) => {
-      if (sortBy === "name") return left.name.localeCompare(right.name, "es");
-      if (sortBy === "price-high") return amount(right.variants[0]?.promoPrice ?? right.variants[0]?.price) - amount(left.variants[0]?.promoPrice ?? left.variants[0]?.price);
-      if (sortBy === "price-low") return amount(left.variants[0]?.promoPrice ?? left.variants[0]?.price) - amount(right.variants[0]?.promoPrice ?? right.variants[0]?.price);
-      if (sortBy === "stock-high") return right.stock - left.stock;
-      if (sortBy === "stock-low") return left.stock - right.stock;
-      const leftDate = Date.parse(String(left.variants[0]?.createdAt ?? "")) || 0;
-      const rightDate = Date.parse(String(right.variants[0]?.createdAt ?? "")) || 0;
-      return rightDate - leftDate || left.name.localeCompare(right.name, "es");
-    });
-  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-  const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
-  const pageStart = filteredProducts.length ? (page - 1) * pageSize + 1 : 0;
-  const pageEnd = Math.min(page * pageSize, filteredProducts.length);
+  const totalSkus = serverSummary.skuCount;
+  const availableSkus = serverSummary.available;
+  const lowStockSkus = serverSummary.low;
+  const outOfStockSkus = serverSummary.out;
+  const filteredProducts = products;
+  const pageCount = Math.max(1, Math.ceil(serverTotal / pageSize));
+  const pageProducts = filteredProducts;
+  const pageStart = serverTotal ? (page - 1) * pageSize + 1 : 0;
+  const pageEnd = Math.min(page * pageSize, serverTotal);
+  const mobileShownTotal = (page - 1) * pageSize + Math.min(shownMobileProducts, pageProducts.length);
   return (
     <section
       className={`products-page ${dialog === "form" ? "products-editor-page" : ""}`}
@@ -407,8 +423,8 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
           <button type="button" className={available ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("available")}><i className="quick-dot quick-dot-available"/>Disponibles <span>({availableSkus})</span></button>
           <button type="button" className={status === "low" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("low")}><i className="quick-dot quick-dot-low"/>Stock bajo <span>({lowStockSkus})</span></button>
           <button type="button" className={status === "out" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("out")}><i className="quick-dot quick-dot-out"/>Agotados <span>({outOfStockSkus})</span></button>
-          <button type="button" className={typeFilter === "multiple" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("multiple")}><Layers size={14} aria-hidden="true"/>Con variantes <span>({products.filter((product) => product.variants.length > 1).length})</span></button>
-          <button type="button" className={typeFilter === "single" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("single")}><PackageOpen size={14} aria-hidden="true"/>Productos simples <span>({products.filter((product) => product.variants.length === 1).length})</span></button>
+          <button type="button" className={typeFilter === "multiple" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("multiple")}><Layers size={14} aria-hidden="true"/>Con variantes <span>({serverSummary.multiple})</span></button>
+          <button type="button" className={typeFilter === "single" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("single")}><PackageOpen size={14} aria-hidden="true"/>Productos simples <span>({serverSummary.single})</span></button>
         </div>
       </section>
       <div className="products-feedback" aria-live="polite">{notice}</div>
@@ -452,14 +468,14 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
           ))}
         </div>
       )}
-      {!loading && filteredProducts.length > 0 && (
+      {!loading && serverTotal > 0 && (
         <>
           <footer className="products-catalog-pagination">
-            <span>Mostrando <strong>{pageStart}–{pageEnd}</strong> de <strong>{filteredProducts.length}</strong> productos</span>
+            <span>Mostrando <strong>{pageStart}–{pageEnd}</strong> de <strong>{serverTotal}</strong> productos</span>
             <label>Mostrar por página <select aria-label="Productos por página" value={pageSize} onChange={(event) => handleFilterChange(() => setPageSize(Number(event.target.value)))}><option value="6">6</option><option value="12">12</option><option value="24">24</option><option value="48">48</option></select></label>
-            <nav aria-label="Paginación del catálogo"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft size={16}/>Anterior</button>{Array.from({ length: pageCount }, (_, index) => index + 1).slice(0, 3).map((pageNumber) => <button key={pageNumber} type="button" aria-current={pageNumber === page ? "page" : undefined} onClick={() => setPage(pageNumber)}>{pageNumber}</button>)}{pageCount > 3 && <span>…</span>}<button type="button" disabled={page >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Siguiente<ChevronRight size={16}/></button></nav>
+            <nav aria-label="Paginación del catálogo"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft size={16}/>Anterior</button><span>Página {page} de {pageCount}</span><button type="button" disabled={!serverHasMore} onClick={() => setPage((current) => current + 1)}>Siguiente<ChevronRight size={16}/></button></nav>
           </footer>
-          <footer className="products-mobile-load-more"><div><span style={{ width: `${filteredProducts.length ? Math.min(100, (Math.min((page - 1) * pageSize + shownMobileProducts, filteredProducts.length) / filteredProducts.length) * 100) : 0}%` }}/></div><span>Mostrando {Math.min((page - 1) * pageSize + shownMobileProducts, filteredProducts.length)} de {filteredProducts.length} productos registrados</span>{(page * pageSize < filteredProducts.length || shownMobileProducts < pageProducts.length) && <button type="button" onClick={() => { if (shownMobileProducts < pageProducts.length) setShownMobileProducts((count) => Math.min(count + 6, pageProducts.length)); else { setPage((current) => current + 1); setShownMobileProducts(6); } }}><ChevronDown size={18}/>Cargar más productos</button>}</footer>
+          <footer className="products-mobile-load-more"><div><span style={{ width: `${serverTotal ? Math.min(100, (mobileShownTotal / serverTotal) * 100) : 0}%` }}/></div><span>Mostrando {Math.min(mobileShownTotal, serverTotal)} de {serverTotal} productos registrados</span>{(serverHasMore || shownMobileProducts < pageProducts.length) && <button type="button" onClick={() => { if (shownMobileProducts < pageProducts.length) setShownMobileProducts((count) => Math.min(count + 6, pageProducts.length)); else { setPage((current) => current + 1); setShownMobileProducts(6); } }}><ChevronDown size={18}/>Cargar más productos</button>}</footer>
         </>
       )}
       </div>

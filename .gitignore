@@ -20,3 +20,5 @@ public/uploads
 !*.example
 *.dump
 *.tar.gz
+.local/share/lucem-retail-demo/
+lucem-staging-backups/
