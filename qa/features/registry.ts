@@ -1,4 +1,4 @@
-export type CoverageStatus = 'PASS' | 'FAIL' | 'UNCOVERED' | 'NOT_EXECUTED' | 'NOT_IMPLEMENTED' | 'BLOCKED';
+export type CoverageStatus = 'PASS' | 'FAIL' | 'NOT_MAPPED' | 'UNCOVERED' | 'NOT_EXECUTED' | 'NOT_IMPLEMENTED' | 'BLOCKED';
 export type RouteKind = 'page' | 'api';
 export type Criticality = 'critical' | 'major' | 'minor';
 export type FeatureTarget = { route: string; kind: RouteKind; methods?: string[] };

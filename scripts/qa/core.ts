@@ -11,7 +11,7 @@ export type RouteRecord = {
   excluded: boolean; exclusionReason?: string; auth: 'public' | 'protected' | 'unknown'; roles: string[];
   featureIds: string[]; tests: string[]; coverageStatus: CoverageStatus;
 };
-export type ControlRecord = { id: string; key: string; route: string; source: string; line: number; tag: string; label: string; coveredBy: string[]; status: CoverageStatus };
+export type ControlRecord = { id: string; key: string; route: string; source: string; line: number; sourceLocations: Array<{ source: string; line: number }>; tag: string; label: string; coveredBy: string[]; status: CoverageStatus };
 export type FeatureStateRecord = { featureId: string; featureTitle: string; area: string; state: string; testIds: string[]; status: CoverageStatus };
 export type Finding = {
   id: string; category: string; severity: 'critical' | 'major' | 'minor'; module: string; feature: string; route: string;
@@ -71,14 +71,14 @@ export async function discoverRoutes(root = process.cwd(), definitions: Feature[
     const matched = definitions.filter((feature) => feature.targets.some((target) => target.route === routePath && target.kind === kind && (!target.methods?.length || target.methods.some((method) => methods.includes(method)))));
     const exclusion = exclusions.find((record) => record.path === routePath && record.kind === kind);
     const tests = [...new Set(matched.flatMap((feature) => feature.tests))]; const roles = [...new Set(matched.flatMap((feature) => feature.roles).filter((role) => role !== 'anonymous'))];
-    let coverageStatus: CoverageStatus = exclusion ? 'NOT_IMPLEMENTED' : 'UNCOVERED';
+    let coverageStatus: CoverageStatus = exclusion ? 'NOT_IMPLEMENTED' : 'NOT_MAPPED';
     if (!exclusion && matched.length) coverageStatus = matched.some((feature) => feature.status === 'BLOCKED') ? 'BLOCKED' : matched.some((feature) => feature.status === 'NOT_IMPLEMENTED' || !feature.implemented) ? 'NOT_IMPLEMENTED' : tests.length ? 'NOT_EXECUTED' : 'UNCOVERED';
     const dynamicSegments = segments.flatMap((segment) => {
       const optional = /^\[\[\.\.\.(.+)\]\]$/.exec(segment); if (optional) return [optional[1]];
       const catchall = /^\[\.\.\.(.+)\]$/.exec(segment); if (catchall) return [catchall[1]];
       const dynamic = /^\[(.+)\]$/.exec(segment); return dynamic ? [dynamic[1]] : [];
     });
-    routes.push({ id: sha12(`${kind}:${routePath}`), path: routePath, kind, module: [...new Set(matched.map((feature) => feature.area))].join(',') || (routePath.split('/').filter(Boolean)[kind === 'api' ? 1 : 0] ?? 'home'), methods, source: toPosix(path.relative(root, file)), dynamicSegments, lastValidatedAt, fixtureStatus: dynamicSegments.length ? matched.some((feature) => Boolean(feature.fixture)) ? 'registered' : 'FIXTURE_PENDING' : 'not-dynamic', excluded: Boolean(exclusion), exclusionReason: exclusion?.reason, auth: roles.length ? 'protected' : /^\/(login|registro)$/.test(routePath) ? 'public' : 'unknown', roles, featureIds: matched.map((feature) => feature.id), tests, coverageStatus });
+    routes.push({ id: sha12(`${kind}:${routePath}`), path: routePath, kind, module: [...new Set(matched.map((feature) => feature.area))].join(',') || (routePath.split('/').filter(Boolean)[kind === 'api' ? 1 : 0] ?? 'home'), methods, source: toPosix(path.relative(root, file)), dynamicSegments, lastValidatedAt, fixtureStatus: dynamicSegments.length ? matched.some((feature) => Boolean(feature.fixture)) ? 'registered' : 'FIXTURE_PENDING' : 'not-dynamic', excluded: Boolean(exclusion), exclusionReason: exclusion?.reason, auth: /^\/(login|registro)$/.test(routePath) ? 'public' : roles.length ? 'protected' : 'unknown', roles, featureIds: matched.map((feature) => feature.id), tests, coverageStatus });
   }
   return routes;
 }
@@ -170,7 +170,7 @@ export async function discoverControls(root = process.cwd(), routes?: RouteRecor
             if (!label) label = `unlabeled-${tag}`;
             const sourcePath = toPosix(path.relative(root, file)); const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
             const key = `${route.path}|${tag}|${label.trim().toLowerCase().replace(/\s+/g, ' ')}`;
-            result.push({ id: sha12(`${route.id}:${sourcePath}:${line}:${key}`), key, route: route.path, source: sourcePath, line, tag, label, coveredBy: [], status: 'UNCOVERED' });
+            result.push({ id: sha12(`${route.id}:${key}`), key, route: route.path, source: sourcePath, line, sourceLocations: [{ source: sourcePath, line }], tag, label, coveredBy: [], status: 'UNCOVERED' });
           }
         }
         ts.forEachChild(node, visit);
@@ -178,8 +178,13 @@ export async function discoverControls(root = process.cwd(), routes?: RouteRecor
       for (const body of componentBodies(source, entry.names)) visit(body);
     }
   }
-  const unique = new Map(result.map((control) => [`${control.route}:${control.source}:${control.line}:${control.key}`, control]));
-  return [...unique.values()].sort((a, b) => a.route.localeCompare(b.route) || a.source.localeCompare(b.source) || a.line - b.line);
+  const unique = new Map<string, ControlRecord>();
+  for (const control of result) {
+    const existing = unique.get(control.key);
+    if (existing) existing.sourceLocations.push(...control.sourceLocations);
+    else unique.set(control.key, control);
+  }
+  return [...unique.values()].map((control) => ({ ...control, sourceLocations: [...new Map(control.sourceLocations.map((location) => [`${location.source}:${location.line}`, location])).values()].sort((a, b) => a.source.localeCompare(b.source) || a.line - b.line) })).sort((a, b) => a.route.localeCompare(b.route) || a.source.localeCompare(b.source) || a.line - b.line);
 }
 
 export function validateFeatures(routes: RouteRecord[], definitions: Feature[] = features, root = process.cwd(), controls?: ControlRecord[]): string[] {
@@ -230,9 +235,9 @@ export function applyControlCoverage(controls: ControlRecord[], definitions: Fea
 }
 export function makeCoverageFindings(routes: RouteRecord[], controls: ControlRecord[]): Finding[] {
   const findings: Finding[] = [];
-  for (const route of routes) if (route.coverageStatus === 'UNCOVERED') findings.push({ id: `QA-COV-${route.id}`, category: 'coverage', severity: ['/pos', '/api/sales'].includes(route.path) ? 'critical' : 'major', module: route.module, feature: 'UNREGISTERED_ROUTE', route: route.path, role: route.auth, device: 'all', scenario: 'Discovered route coverage', steps: [`Inspect ${route.source}`], expected: 'Feature registry entry and executable test', actual: 'Route has no registered feature', evidence: [route.source], source: 'static', confidence: 'high', status: 'CONFIRMED', recommendation: 'Register this route and add an observable behavior test.' });
+  for (const route of routes) if (route.coverageStatus === 'NOT_MAPPED' || route.coverageStatus === 'UNCOVERED') findings.push({ id: `QA-COV-${route.id}`, category: 'coverage', severity: ['/pos', '/api/sales'].includes(route.path) ? 'critical' : 'major', module: route.module, feature: 'UNREGISTERED_ROUTE', route: route.path, role: route.auth, device: 'all', scenario: 'Discovered route coverage', steps: [`Inspect ${route.source}`], expected: 'Feature registry entry and executable test', actual: route.coverageStatus === 'NOT_MAPPED' ? 'Route has no registry mapping' : 'Mapped route has no executable coverage', evidence: [route.source], source: 'static', confidence: 'high', status: 'CONFIRMED', recommendation: 'Register this route and add an observable behavior test.' });
   for (const route of routes) if (route.fixtureStatus === 'FIXTURE_PENDING') findings.push({ id: `QA-FIXTURE-${route.id}`, category: 'coverage', severity: 'major', module: route.module, feature: route.featureIds.join(',') || 'DYNAMIC-ROUTE', route: route.path, role: route.auth, device: 'all', scenario: 'Resolve dynamic route with a real QA fixture', steps: [`Create or select a namespaced lucem_qa fixture for ${route.path}`], expected: 'Dynamic segment is exercised using a fixture owned by the run', actual: 'No fixture reference is declared', evidence: [route.source], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', recommendation: 'Add a fixture reference and test that resolves the route without a literal placeholder URL.' });
-  for (const control of controls) if (control.status === 'UNCOVERED') findings.push({ id: `QA-SURF-${control.id}`, category: 'coverage', severity: ['button', 'form', 'action'].includes(control.tag) ? 'major' : 'minor', module: control.route.split('/')[1] || 'home', feature: 'UNREGISTERED_CONTROL', route: control.route, role: 'unknown', device: 'all', scenario: `${control.tag}: ${control.label}`, steps: [`Inspect ${control.source}:${control.line}`], expected: 'Declared behavior test for interactive control', actual: 'Control surface is not associated with a feature', evidence: [control.source], source: 'static', confidence: 'medium', status: 'CONFIRMED', recommendation: 'Register the action/control in qa/features/registry.ts and add a test.' });
+  for (const control of controls) if (control.status === 'UNCOVERED') findings.push({ id: `QA-SURF-${control.id}`, category: 'coverage', severity: ['button', 'form', 'action'].includes(control.tag) ? 'major' : 'minor', module: control.route.split('/')[1] || 'home', feature: 'UNREGISTERED_CONTROL', route: control.route, role: 'unknown', device: 'all', scenario: `${control.tag}: ${control.label}`, steps: control.sourceLocations.map(({ source, line }) => `Inspect ${source}:${line}`), expected: 'Declared behavior test for interactive control', actual: 'Control surface is not associated with a feature', evidence: control.sourceLocations.map(({ source }) => source), source: 'static', confidence: 'medium', status: 'CONFIRMED', recommendation: 'Register the action/control in qa/features/registry.ts and add a test.' });
   return findings;
 }
 export function featureStateCoverage(definitions: Feature[] = features, execution: Map<string, CoverageStatus> = new Map()): FeatureStateRecord[] {
@@ -305,7 +310,7 @@ export async function writeReports(outDir: string, routes: RouteRecord[], contro
   try { const log = await readFile(path.join(outDir, 'read-only-browser-observation.log'), 'utf8'); const match = /(?:^|\n)\s*(\d+) passed\b/.exec(log); if (match) observedTestCount = Number(match[1]); } catch { /* browser observation did not run */ }
   const statusCounts = new Map<string, number>(); for (const route of routes) statusCounts.set(route.coverageStatus, (statusCounts.get(route.coverageStatus) ?? 0) + 1);
   const stateCounts = new Map<string, number>(); for (const state of featureStates) stateCounts.set(state.status, (stateCounts.get(state.status) ?? 0) + 1);
-  const coverage = ['# Coverage matrix', '', `Routes discovered: ${routes.length}`, `Capabilities registered: ${new Set(featureStates.map((state) => state.featureId)).size}`, `Required states registered: ${featureStates.length}`, '', ...[...statusCounts].map(([status, count]) => `- Route ${status}: ${count}`), ...[...stateCounts].map(([status, count]) => `- Feature state ${status}: ${count}`), '', '## Routes', ...routes.map((route) => `- **${route.coverageStatus}** \`${route.kind} ${route.path}\` (${route.methods.join(', ')}) — ${route.source}; tests: ${route.tests.join(', ') || 'none'}; fixture: ${route.fixtureStatus}`), '', '## Feature states', ...featureStates.map((state) => `- **${state.status}** ${state.featureId} · ${state.state} · tests: ${state.testIds.join(', ') || 'none'}`), '', '## Interactive controls', ...controls.map((control) => `- **${control.status}** \`${control.route}\` ${control.tag}: ${control.label} (${control.source}:${control.line})`)].join('\n');
+  const coverage = ['# Coverage matrix', '', `Routes discovered: ${routes.length}`, `Capabilities registered: ${new Set(featureStates.map((state) => state.featureId)).size}`, `Required states registered: ${featureStates.length}`, '', ...[...statusCounts].map(([status, count]) => `- Route ${status}: ${count}`), ...[...stateCounts].map(([status, count]) => `- Feature state ${status}: ${count}`), '', '## Routes', ...routes.map((route) => `- **${route.coverageStatus}** \`${route.kind} ${route.path}\` (${route.methods.join(', ')}) — ${route.source}; tests: ${route.tests.join(', ') || 'none'}; fixture: ${route.fixtureStatus}`), '', '## Feature states', ...featureStates.map((state) => `- **${state.status}** ${state.featureId} · ${state.state} · tests: ${state.testIds.join(', ') || 'none'}`), '', '## Interactive controls', ...controls.map((control) => `- **${control.status}** \`${control.route}\` ${control.tag}: ${control.label} (${control.sourceLocations.map(({ source, line }) => `${source}:${line}`).join(', ')})`)].join('\n');
   await writeFile(path.join(outDir, 'COVERAGE-MATRIX.md'), coverage);
   const summary = [`# Executive summary`, '', `Run: ${run?.runId ?? path.basename(outDir)}`, `Profile: ${run?.profile ?? 'coverage'}`, `Status: ${run?.status ?? 'NOT_EXECUTED'}`, `Routes: ${routes.length}`, `Registered capabilities: ${new Set(featureStates.map((state) => state.featureId)).size}`, `Required states: ${featureStates.length}`, `Uncovered state mappings: ${featureStates.filter((state) => state.status === 'UNCOVERED').length}`, `Findings: ${findings.length}`, `Uncovered routes: ${routes.filter((route) => route.coverageStatus === 'UNCOVERED').length}`, `Uncovered controls: ${controls.filter((control) => control.status === 'UNCOVERED').length}`, `Screenshots captured: ${screenshotRows.length}`, `Read-only Playwright tests passed: ${observedTestCount ?? 'NOT_EXECUTED'}`, `axe violations: ${axeViolationCount}`, `Responsive findings: ${responsiveFailures}`, '', 'Route discovery is not functional PASS.', ...[...checkStatusCounts].map(([status, count]) => `- Check ${status}: ${count}`), ...((run?.blocked ?? []).map((reason) => `- BLOCKED: ${reason}`))];
   const reports: Record<string, string[]> = {

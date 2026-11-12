@@ -15,6 +15,7 @@ describe('QA-01 route and feature discovery', () => {
     expect(routes.some((route) => route.path === '/')).toBe(true);
     expect(routes.some((route) => route.path === '/api/products/:id' && route.methods.includes('PUT'))).toBe(true);
     expect(routes.find((route) => route.path === '/api/products/:id')?.coverageStatus).toBe('NOT_EXECUTED');
+    expect(routes.find((route) => route.path === '/login')).toMatchObject({ auth: 'public', coverageStatus: 'NOT_EXECUTED' });
     expect(routes.find((route) => route.path === '/api/products/:id')?.dynamicSegments).toEqual(['id']);
   });
 
@@ -25,16 +26,17 @@ describe('QA-01 route and feature discovery', () => {
     await writeFile(path.join(optionalPageDir, 'page.tsx'), 'export default function Page(){return <main>optional</main>}');
     await writeFile(path.join(root, 'e2e', 'fixture.spec.ts'), 'test("fixture", () => {});');
     const routes = await discoverRoutes(root, []);
-    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('UNCOVERED');
+    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_MAPPED');
     expect(routes.find((route) => route.path === '/fixture-module/*parts?')?.dynamicSegments).toEqual(['parts']);
     const controls = applyControlCoverage(await discoverControls(root, routes), []);
     expect(controls.some((control) => control.tag === 'button' && control.status === 'UNCOVERED')).toBe(true);
+    expect(controls.find((control) => control.key.endsWith('|button|exportar'))?.sourceLocations).toEqual([{ source: 'app/fixture-module/[id]/page.tsx', line: 1 }]);
     expect(makeCoverageFindings(routes, controls).some((finding) => finding.category === 'coverage')).toBe(true);
     const feature: Feature = { id: 'QA-FIXTURE-EXPORT', title: 'Export fixture', area: 'fixture', description: 'Extension check', targets: [{ route: '/fixture-module/:id', kind: 'page' }], roles: ['ADMIN'], criticality: 'major', requiredStates: ['ready', 'exported'], tests: ['e2e/fixture.spec.ts'], controls: ['/fixture-module/:id|button|exportar'], tags: ['fixture'], profile: ['full'], status: 'NOT_EXECUTED', implemented: true, screenshots: [], invariants: [], stitchReferences: [] };
     const registered = applyControlCoverage(await discoverControls(root, routes), [feature]);
     expect(validateFeatures(routes, [feature], root, controls)).toEqual([]);
     expect(registered.find((control) => control.tag === 'button')?.status).toBe('NOT_EXECUTED');
-    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('UNCOVERED'); // registry linkage affects a fresh inventory, not the old result
+    expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_MAPPED'); // registry linkage affects a fresh inventory, not the old result
     const refreshed = await discoverRoutes(root, [feature]);
     expect(refreshed.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_EXECUTED');
   });
