@@ -57,6 +57,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx lucem-audit --quick --changed
+      - name: Publish sanitized QA summary
+        if: always()
+        run: npx tsx scripts/qa/ci-summary.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -110,6 +113,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx lucem-audit --full
+      - name: Publish sanitized QA summary
+        if: always()
+        run: npx tsx scripts/qa/ci-summary.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
