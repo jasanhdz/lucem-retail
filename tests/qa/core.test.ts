@@ -16,6 +16,8 @@ describe('QA-01 route and feature discovery', () => {
     expect(routes.some((route) => route.path === '/api/products/:id' && route.methods.includes('PUT'))).toBe(true);
     expect(routes.find((route) => route.path === '/api/products/:id')?.coverageStatus).toBe('NOT_EXECUTED');
     expect(routes.find((route) => route.path === '/login')).toMatchObject({ auth: 'public', coverageStatus: 'NOT_EXECUTED' });
+    expect(routes.find((route) => route.path === '/api/auth/login')).toMatchObject({ auth: 'public', featureIds: ['AUTH-LOGIN'] });
+    expect(routes.find((route) => route.path === '/api/auth/register')).toMatchObject({ auth: 'public', featureIds: ['AUTH-REGISTER'] });
     expect(routes.find((route) => route.path === '/api/products/:id')?.dynamicSegments).toEqual(['id']);
   });
 

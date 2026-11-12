@@ -78,7 +78,8 @@ export async function discoverRoutes(root = process.cwd(), definitions: Feature[
       const catchall = /^\[\.\.\.(.+)\]$/.exec(segment); if (catchall) return [catchall[1]];
       const dynamic = /^\[(.+)\]$/.exec(segment); return dynamic ? [dynamic[1]] : [];
     });
-    routes.push({ id: sha12(`${kind}:${routePath}`), path: routePath, kind, module: [...new Set(matched.map((feature) => feature.area))].join(',') || (routePath.split('/').filter(Boolean)[kind === 'api' ? 1 : 0] ?? 'home'), methods, source: toPosix(path.relative(root, file)), dynamicSegments, lastValidatedAt, fixtureStatus: dynamicSegments.length ? matched.some((feature) => Boolean(feature.fixture)) ? 'registered' : 'FIXTURE_PENDING' : 'not-dynamic', excluded: Boolean(exclusion), exclusionReason: exclusion?.reason, auth: /^\/(login|registro)$/.test(routePath) ? 'public' : roles.length ? 'protected' : 'unknown', roles, featureIds: matched.map((feature) => feature.id), tests, coverageStatus });
+    const publicRoute = ['/', '/login', '/registro', '/api/auth/login', '/api/auth/register'].includes(routePath);
+    routes.push({ id: sha12(`${kind}:${routePath}`), path: routePath, kind, module: [...new Set(matched.map((feature) => feature.area))].join(',') || (routePath.split('/').filter(Boolean)[kind === 'api' ? 1 : 0] ?? 'home'), methods, source: toPosix(path.relative(root, file)), dynamicSegments, lastValidatedAt, fixtureStatus: dynamicSegments.length ? matched.some((feature) => Boolean(feature.fixture)) ? 'registered' : 'FIXTURE_PENDING' : 'not-dynamic', excluded: Boolean(exclusion), exclusionReason: exclusion?.reason, auth: publicRoute ? 'public' : roles.length ? 'protected' : 'unknown', roles, featureIds: matched.map((feature) => feature.id), tests, coverageStatus });
   }
   return routes;
 }
