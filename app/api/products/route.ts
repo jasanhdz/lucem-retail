@@ -27,6 +27,7 @@ export async function GET(req: Request) {
   if (type === 'multiple') predicates.push(Prisma.sql`(SELECT count(*) FROM "ProductVariant" tv WHERE tv."productId" = p.id AND tv."businessId" = p."businessId" AND tv.active = ${active}) > 1`);
   const where = Prisma.join(predicates, ' AND ');
   const orderBy = params.get('sort') ?? 'name';
+  // Product price ranges use the highest active variant for descending and lowest for ascending.
   const order = orderBy === 'recent' ? Prisma.sql`p."createdAt" DESC, p.name, p.id`
         : orderBy === 'price-high' ? Prisma.sql`(SELECT max(sv.price) FROM "ProductVariant" sv WHERE sv."productId" = p.id AND sv."businessId" = p."businessId" AND sv.active = ${active}) DESC, p.name, p.id`
       : orderBy === 'price-low' ? Prisma.sql`(SELECT min(sv.price) FROM "ProductVariant" sv WHERE sv."productId" = p.id AND sv."businessId" = p."businessId" AND sv.active = ${active}), p.name, p.id`
@@ -43,7 +44,15 @@ export async function GET(req: Request) {
   const productIds = matches.map(({ id }) => id);
   const variantWhere = { businessId: auth.business.id, active, productId: { in: productIds }, ...(available ? { stock: { gt: 0 } } : status === 'out' ? { stock: 0 } : status === 'low' ? { stock: { gt: 0 } } : {}), ...(q ? { OR: [{ sku: { contains: q, mode: 'insensitive' as const } }, { barcode: { contains: q, mode: 'insensitive' as const } }, { product: { name: { contains: q, mode: 'insensitive' as const } } }, { product: { location: { contains: q, mode: 'insensitive' as const } } }] } : {}) };
   const variants = productIds.length ? await db.productVariant.findMany({ where: variantWhere, include: { product: { include: { category: true } } }, orderBy: [{ product: { name: 'asc' } }, { productId: 'asc' }, { sku: 'asc' }] }) : [];
-  const filtered = status === 'low' ? variants.filter((v) => v.stock.gt(0) && v.stock.lte(v.lowStockThreshold)) : variants;
+  // SQL has already ordered and paged product IDs; preserve that order while hydrating their variants.
+  const variantsByProduct = new Map<string, typeof variants>();
+  for (const variant of variants) {
+    const siblings = variantsByProduct.get(variant.productId) ?? [];
+    siblings.push(variant);
+    variantsByProduct.set(variant.productId, siblings);
+  }
+  const orderedVariants = productIds.flatMap((productId) => variantsByProduct.get(productId) ?? []);
+  const filtered = status === 'low' ? orderedVariants.filter((v) => v.stock.gt(0) && v.stock.lte(v.lowStockThreshold)) : orderedVariants;
   const items = filtered.map((v) => ({ ...v, cost: v.cost.toString(), price: v.price.toString(), promoPrice: v.promoPrice?.toString() ?? null, stock: v.stock.toString(), lowStockThreshold: v.lowStockThreshold.toString() }));
   if (params.has('page') || params.has('limit')) {
     const total = Number(countRows[0]?.total ?? 0);

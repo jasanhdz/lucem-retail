@@ -1,7 +1,9 @@
 import { request as playwrightRequest, test, expect, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 import { unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { ids } from '../../scripts/e2e/seed';
+import { requireE2eDatabaseUrl } from '../../scripts/e2e/database';
 
 const createdIds: string[] = [];
 let serial = 0;
@@ -122,6 +124,110 @@ test.describe('DEV-03 products', () => {
     } finally {
       await centro.close();
       await norte.close();
+    }
+  });
+
+  test('sorts products by Decimal variant prices before paging and preserves the sequence in API and catalog UI', async ({ browser, page }) => {
+    const prefix = `FIX02-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const createdStart = createdIds.length;
+    const north = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
+    const db = new PrismaClient({ datasources: { db: { url: requireE2eDatabaseUrl() } } });
+    let noVariantId: string | undefined;
+    let northProductId: string | undefined;
+    try {
+      const category = await categoryId(page.request);
+      const make = (alias: string, variants: VariantInput[]) => createProduct(page.request, variants, `${prefix}-${alias}`);
+      const [range, high, tieC, tieD, lowE, lowF, archived] = await Promise.all([
+        make('A-Range', [
+          { sku: `${prefix}-A-01`, cost: 1, price: 9.99, stock: 10 },
+          { sku: `${prefix}-A-02`, cost: 1, price: 80, stock: 10 },
+        ]),
+        make('B-High', [{ sku: `${prefix}-B-01`, cost: 1, price: 100, stock: 10 }]),
+        make('C-Tie', [{ sku: `${prefix}-C-01`, cost: 1, price: 50, stock: 10 }]),
+        make('D-Tie', [{ sku: `${prefix}-D-01`, cost: 1, price: 50, stock: 10 }]),
+        make('E-Low', [{ sku: `${prefix}-E-01`, cost: 1, price: 10, stock: 10 }]),
+        make('F-Low', [{ sku: `${prefix}-F-01`, cost: 1, price: 10, stock: 10 }]),
+        make('Z-Archived', [{ sku: `${prefix}-Z-01`, cost: 1, price: 200, stock: 10 }]),
+      ]);
+      const identicalName = `DEV-03-${prefix}-G-Identical`;
+      const identicalResponses = await Promise.all([1, 2].map((index) => page.request.post('/api/products', { data: {
+        name: identicalName, categoryId: category, location: 'FIX-02',
+        variants: [{ sku: `${prefix}-G-0${index}`, cost: 1, price: 50, stock: 10 }],
+      } })));
+      for (const response of identicalResponses) expect(response.status()).toBe(201);
+      const identical = await Promise.all(identicalResponses.map(async (response) => response.json() as Promise<{ id: string }>));
+      createdIds.push(...identical.map((product) => product.id));
+      const identicalOrder = identical.map((product) => product.id).sort();
+      const archive = await page.request.delete(`/api/products/${archived.id}`);
+      expect(archive.status()).toBe(200);
+
+      noVariantId = `dev-03-fix02-no-variants-${Date.now()}`;
+      await db.product.create({ data: { id: noVariantId, businessId: ids.centro, name: `DEV-03-${prefix}-No variants`, categoryId: category, location: 'FIX-02' } });
+
+      const northCategories = await north.request.get('/api/categories');
+      expect(northCategories.ok()).toBeTruthy();
+      const northCategoryId = (await northCategories.json())[0]?.id as string;
+      const northCreated = await north.request.post('/api/products', { data: {
+        name: `DEV-03-${prefix}-North 999`, categoryId: northCategoryId, location: 'FIX-02',
+        variants: [{ sku: `${prefix}-N-01`, cost: 1, price: 999, stock: 10 }],
+      } });
+      expect(northCreated.status()).toBe(201);
+      northProductId = ((await northCreated.json()) as { id: string }).id;
+
+      type CatalogPage = { page: number; limit: number; total: number; hasMore: boolean; items: Array<{ productId: string; sku: string; price: string; product: { name: string } }> };
+      async function fetchPage(business: APIRequestContext, sort: 'price-high' | 'price-low', pageNumber: number, query = prefix, categoryFilter: string | null = category): Promise<CatalogPage> {
+        const params = new URLSearchParams({ q: query, sort, page: String(pageNumber), limit: '2' });
+        if (categoryFilter) params.set('categoryId', categoryFilter);
+        const response = await business.get(`/api/products?${params}`);
+        expect(response.status()).toBe(200);
+        return response.json() as Promise<CatalogPage>;
+      }
+      const orderedProducts = (items: CatalogPage['items']) => {
+        const seen = new Set<string>();
+        return items.flatMap((item) => seen.has(item.productId) ? [] : (seen.add(item.productId), [{ id: item.productId, name: item.product.name }]));
+      };
+      const highOrder = [high.id, range.id, tieC.id, tieD.id, ...identicalOrder, lowE.id, lowF.id];
+      const lowOrder = [range.id, lowE.id, lowF.id, tieC.id, tieD.id, ...identicalOrder, high.id];
+
+      for (const [sort, expected] of [['price-high', highOrder], ['price-low', lowOrder]] as const) {
+        const actual: string[] = [];
+        for (let pageNumber = 1; pageNumber <= 4; pageNumber += 1) {
+          const result = await fetchPage(page.request, sort, pageNumber);
+          expect(result).toMatchObject({ page: pageNumber, limit: 2, total: 8, hasMore: pageNumber < 4 });
+          const pageProducts = orderedProducts(result.items);
+          const pageNames = pageProducts.map((product) => product.name);
+          expect(pageNames).toHaveLength(2);
+          actual.push(...pageProducts.map((product) => product.id));
+          for (const product of pageProducts) {
+            const skuOrder = result.items.filter((item) => item.productId === product.id).map((item) => item.sku);
+            expect(skuOrder).toEqual([...skuOrder].sort());
+          }
+        }
+        expect(actual).toEqual(expected);
+        expect(new Set(actual).size).toBe(8);
+      }
+
+      const filteredPage = await fetchPage(page.request, 'price-high', 1, `${prefix}-A-Range`);
+      expect(filteredPage).toMatchObject({ total: 1, hasMore: false });
+      expect(orderedProducts(filteredPage.items).map((product) => product.id)).toEqual([range.id]);
+      const northPage = await fetchPage(north.request, 'price-high', 1, prefix, null);
+      expect(northPage).toMatchObject({ total: 1, hasMore: false });
+      expect(orderedProducts(northPage.items).map((product) => product.name)).toEqual([`DEV-03-${prefix}-North 999`]);
+
+      await page.goto('/productos');
+      await page.locator('.products-search input').fill(prefix);
+      await page.getByLabel('Ordenar productos').selectOption('price-high');
+      await expect(page.locator('.products-master-card h2')).toHaveText([high.name, range.name, tieC.name, tieD.name, identicalName, identicalName, lowE.name, lowF.name]);
+    } finally {
+      for (const id of createdIds.slice(createdStart).reverse()) {
+        const cleanup = await page.request.delete(`/api/products/${id}`);
+        expect([200, 404]).toContain(cleanup.status());
+      }
+      createdIds.splice(createdStart);
+      if (northProductId) await north.request.delete(`/api/products/${northProductId}`);
+      if (noVariantId) await db.product.deleteMany({ where: { id: noVariantId, businessId: ids.centro } });
+      await north.close();
+      await db.$disconnect();
     }
   });
 
