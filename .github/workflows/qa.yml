@@ -51,6 +51,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npx prisma generate
       - run: npm run typecheck
       - run: npm run lint
@@ -67,7 +68,7 @@ jobs:
           retention-days: 14
 
   full:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'qa-full')
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/feature/lucem-ui-redesign-v1') || contains(github.event.pull_request.labels.*.name, 'qa-full')
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -103,6 +104,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npx prisma generate
       - run: npm run typecheck
       - run: npm run lint
