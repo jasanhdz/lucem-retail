@@ -16,6 +16,14 @@ readonly RUNTIME_ENV="$PRIVATE_DIR/runtime.env"
 
 fail() { printf 'BLOCKED: %s\n' "$1" >&2; exit 1; }
 usage() { printf 'Usage: bash scripts/qa/provision-db.sh {prepare|check|up}\n'; }
+container_inspect_indicates_missing() {
+  local response="${1,,}"
+  [[ "$response" == *'no such container'* || "$response" == *'no such object'* ]]
+}
+volume_inspect_indicates_missing() {
+  local response="${1,,}"
+  [[ "$response" == *'no such volume'* ]]
+}
 
 require_repo() {
   [[ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null)" == "$ROOT" ]] || fail 'Not running inside the Lucem Retail Git worktree.'
@@ -178,12 +186,12 @@ provision() {
   local inspect_message
   if inspect_message="$(sudo docker container inspect "$CONTAINER" 2>&1)"; then
     fail "Container name $CONTAINER already exists; refusing to recreate or mutate it."
-  elif [[ "$inspect_message" != *'No such object:'* && "$inspect_message" != *'no such object'* ]]; then
+  elif ! container_inspect_indicates_missing "$inspect_message"; then
     fail 'Could not verify the reserved QA container name; no provisioning operation was attempted.'
   fi
   if inspect_message="$(sudo docker volume inspect "$VOLUME" 2>&1)"; then
     fail "Named volume $VOLUME already exists; refusing to reuse or modify it."
-  elif [[ "$inspect_message" != *'no such volume'* && "$inspect_message" != *'No such volume'* ]]; then
+  elif ! volume_inspect_indicates_missing "$inspect_message"; then
     fail 'Could not verify the reserved QA volume name; no provisioning operation was attempted.'
   fi
 
@@ -207,4 +215,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
