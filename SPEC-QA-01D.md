@@ -17,7 +17,7 @@ Sólo se provisiona PostgreSQL para QA. Next QA, migraciones, fixtures, auditor�
 No hay cambios de esquema. Compose crea sólo el servicio PostgreSQL `lucem_qa` con usuario dedicado y volumen persistente de nombre fijo QA-01D.
 
 ## Stack y decisiones técnicas
-Compose existente, sólo servicio `postgres`; binding host explícito loopback; volumen Docker explícitamente nombrado `lucem-qa-01d-postgres-data`. PostgreSQL se une a la red `internal` y a una red bridge dedicada a port-publishing con `enable_ip_masquerade=false`: permite publicar el puerto host loopback sin NAT/egress a Internet. Credenciales aleatorias hex, para URL-safe PostgreSQL. Runtime secrets contienen URL QA y contraseñas sintéticas E2E para su uso posterior, siempre locales y no versionadas. El bootstrap es `scripts/qa/provision-db.sh` con operaciones `prepare`, `check`, `up` y `reconcile` restringidas.
+Compose existente, sólo servicio `postgres`; binding host explícito loopback; volumen Docker explícitamente nombrado `lucem-qa-01d-postgres-data`. PostgreSQL se une a una única red bridge dedicada `lucem-qa-01d-private` con `enable_ip_masquerade=false`, lo que permite Docker port-publishing sin habilitar masquerading de salida. No se añade una red `internal`: el diagnóstico de ejecución confirmó que Docker guardaba `HostConfig.PortBindings` pero no materializaba `NetworkSettings.Ports` al conectar el servicio sólo a esa red. La ausencia de masquerading y el binding host `127.0.0.1` limitan la exposición; se valida el listener TCP local tras reconciliar. Credenciales aleatorias hex, para URL-safe PostgreSQL. Runtime secrets contienen URL QA y contraseñas sintéticas E2E para su uso posterior, siempre locales y no versionadas. El bootstrap es `scripts/qa/provision-db.sh` con operaciones `prepare`, `check`, `up` y `reconcile` restringidas.
 
 ## Assumptions
 - El diagnóstico del propietario indica que no existe contenedor QA y que staging, n8n y volúmenes anónimos están activos/protegidos.
@@ -26,7 +26,7 @@ Compose existente, sólo servicio `postgres`; binding host explícito loopback; 
 
 ## Rubric de evaluación
 1. `prepare` es idempotente, genera secretos seguros, no los imprime, no cambia los existentes y crea archivos sólo bajo `.qa-private/` con permisos privados.
-2. Compose define sólo PostgreSQL QA, base/usuario exactos `lucem_qa`, bind `127.0.0.1:55433`, red interna más bridge dedicada sin masquerading y volumen persistente cuyo nombre no coincide con staging ni con nombres anónimos.
+2. Compose define sólo PostgreSQL QA, base/usuario exactos `lucem_qa`, bind `127.0.0.1:55433`, bridge QA dedicada con masquerading desactivado y volumen persistente cuyo nombre no coincide con staging ni con nombres anónimos.
 3. `check` valida el Compose renderizado y puerto local sin usar Docker Engine/sudo; cualquier configuración inesperada o puerto ocupado falla no-cero antes de privilegios.
 4. `up` exige rama y ruta del repositorio exactas, revalida base/usuario/host/puerto/proyecto/volumen, usa únicamente `sudo docker compose up -d postgres` para el proyecto QA dedicado y nunca borra/recrea volúmenes.
 5. `reconcile` sólo opera si el contenedor existente y sus etiquetas/montura/identidad son exactas; Compose recrea el contenedor QA y preserva el volumen, después se comprueba el binding real y el acceso loopback TCP.
