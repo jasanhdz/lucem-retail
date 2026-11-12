@@ -15,7 +15,7 @@ readonly PRIVATE_DIR="$ROOT/.qa-private"
 readonly RUNTIME_ENV="$PRIVATE_DIR/runtime.env"
 
 fail() { printf 'BLOCKED: %s\n' "$1" >&2; exit 1; }
-usage() { printf 'Usage: bash scripts/qa/provision-db.sh {prepare|check|up}\n'; }
+usage() { printf 'Usage: bash scripts/qa/provision-db.sh {prepare|check|up|reconcile}\n'; }
 container_inspect_indicates_missing() {
   local response="${1,,}"
   [[ "$response" == *'no such container'* || "$response" == *'no such object'* ]]
@@ -136,7 +136,8 @@ try:
     ports = service["ports"]
     mounts = service["volumes"]
     volume = config["volumes"]["qa_data"]
-    network = config["networks"]["qa_internal"]
+    private_network = config["networks"]["qa_private"]
+    network_names = set(service.get("networks", {}))
     valid = (
         config.get("name") == os.environ["QA_PROJECT"]
         and set(config["services"]) == {"postgres"}
@@ -154,9 +155,11 @@ try:
         and mounts[0].get("source") == "qa_data"
         and mounts[0].get("target") == "/var/lib/postgresql/data"
         and volume.get("name") == os.environ["QA_VOLUME"]
-        and network.get("name") == "lucem-qa-01d-internal"
-        and network.get("internal") is True
-        and service.get("networks") == {"qa_internal": None}
+        and private_network.get("name") == "lucem-qa-01d-private"
+        and private_network.get("driver") == "bridge"
+        and private_network.get("internal", False) is False
+        and private_network.get("driver_opts", {}).get("com.docker.network.bridge.enable_ip_masquerade") == "false"
+        and network_names == {"qa_private"}
     )
 except (KeyError, TypeError, ValueError):
     valid = False
@@ -168,11 +171,16 @@ print("Compose invariants verified (no environment values displayed).")
 }
 
 check_configuration() {
+  local port_check="${1:-free}"
   require_repo
   validate_secrets
   validate_compose
-  check_port_free || fail 'The dedicated QA port is not free; no Docker operation was attempted.'
-  printf 'SAFE: project=%s service=%s container=%s database=user=lucem_qa host=127.0.0.1:%s volume=%s network=internal. No Docker Engine operation was performed.\n' \
+  if [[ "$port_check" == 'free' ]]; then
+    check_port_free || fail 'The dedicated QA port is not free; no Docker operation was attempted.'
+  elif [[ "$port_check" != 'owned-by-existing-qa' ]]; then
+    fail 'Invalid internal port-check mode.'
+  fi
+  printf 'SAFE: project=%s service=%s container=%s database=user=lucem_qa host=127.0.0.1:%s volume=%s network=dedicated-bridge-no-masquerade. No Docker Engine operation was performed.\n' \
     "$PROJECT" "$SERVICE" "$CONTAINER" "$HOST_PORT" "$VOLUME"
 }
 
@@ -197,11 +205,76 @@ provision() {
 
   sudo docker compose --project-name "$PROJECT" --file "$COMPOSE_FILE" --env-file "$RUNTIME_ENV" \
     up --detach --wait --wait-timeout 90 "$SERVICE"
-  local identity
-  identity="$(sudo docker compose --project-name "$PROJECT" --file "$COMPOSE_FILE" --env-file "$RUNTIME_ENV" \
-    exec -T "$SERVICE" psql -U lucem_qa -d lucem_qa -At -F '|' -c 'SELECT current_database(), current_user' 2>/dev/null)" || fail 'PostgreSQL identity probe failed; service was left intact for inspection.'
-  [[ "$identity" == 'lucem_qa|lucem_qa' ]] || fail 'PostgreSQL identity did not match lucem_qa/lucem_qa; service was left intact.'
-  printf 'READY: isolated QA PostgreSQL is healthy; verified connected identity is lucem_qa/lucem_qa. No migrations or fixtures were applied.\n'
+  verify_published_qa
+}
+
+verify_existing_qa_ownership() {
+  local labels image health mounts volume_project volume_component identity
+  labels="$(sudo docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}|{{ index .Config.Labels "com.docker.compose.service" }}' "$CONTAINER" 2>/dev/null)" || fail 'Exact QA container is not inspectable; refusing reconciliation.'
+  [[ "$labels" == "$PROJECT|$SERVICE" ]] || fail 'Existing container labels do not identify the exact QA Compose service.'
+  image="$(sudo docker inspect --format '{{.Config.Image}}' "$CONTAINER" 2>/dev/null)" || fail 'Could not verify the existing QA container image.'
+  [[ "$image" == 'postgres:16-alpine' ]] || fail 'Existing QA container image differs from the dedicated PostgreSQL service.'
+  health="$(sudo docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$CONTAINER" 2>/dev/null)" || fail 'Could not verify current QA container health.'
+  [[ "$health" == 'healthy' ]] || fail 'Existing QA PostgreSQL is not healthy; refusing container recreation.'
+  mounts="$(sudo docker inspect --format '{{range .Mounts}}{{.Type}}|{{.Name}}|{{.Destination}}{{"\n"}}{{end}}' "$CONTAINER" 2>/dev/null)" || fail 'Could not verify current QA container mounts.'
+  [[ "$mounts" == "volume|$VOLUME|/var/lib/postgresql/data" ]] || fail 'Existing container does not use exactly the dedicated QA data volume; refusing recreation.'
+  volume_project="$(sudo docker volume inspect --format '{{ index .Labels "com.docker.compose.project" }}' "$VOLUME" 2>/dev/null)" || fail 'Could not inspect the dedicated QA volume.'
+  volume_component="$(sudo docker volume inspect --format '{{ index .Labels "com.docker.compose.volume" }}' "$VOLUME" 2>/dev/null)" || fail 'Could not inspect the dedicated QA volume labels.'
+  [[ "$volume_project" == "$PROJECT" && "$volume_component" == 'qa_data' ]] || fail 'Volume labels do not prove QA ownership; refusing recreation.'
+  identity="$(sudo docker exec "$CONTAINER" psql -U lucem_qa -d lucem_qa -At -F '|' -c 'SELECT current_database(), current_user' 2>/dev/null)" || fail 'Could not verify current database identity; refusing recreation.'
+  [[ "$identity" == 'lucem_qa|lucem_qa' ]] || fail 'Existing PostgreSQL identity is not lucem_qa/lucem_qa; refusing recreation.'
+}
+
+check_loopback_connection() {
+  python3 - "$HOST_PORT" <<'PY'
+import socket, sys
+port = int(sys.argv[1])
+sock = socket.socket()
+sock.settimeout(3)
+try:
+    sock.connect(("127.0.0.1", port))
+except OSError:
+    print(f"BLOCKED: QA PostgreSQL is not reachable over 127.0.0.1:{port}.", file=sys.stderr)
+    raise SystemExit(1)
+finally:
+    sock.close()
+PY
+}
+
+verify_published_qa() {
+  local identity published
+  identity="$(sudo docker exec "$CONTAINER" psql -U lucem_qa -d lucem_qa -At -F '|' -c 'SELECT current_database(), current_user' 2>/dev/null)" || fail 'PostgreSQL identity probe failed; QA container and volume were left intact.'
+  [[ "$identity" == 'lucem_qa|lucem_qa' ]] || fail 'PostgreSQL identity did not match lucem_qa/lucem_qa; QA container and volume were left intact.'
+  published="$(sudo docker port "$CONTAINER" 5432/tcp 2>/dev/null)" || fail 'Docker did not publish PostgreSQL TCP port; QA volume was left intact.'
+  [[ "$published" == "127.0.0.1:$HOST_PORT" ]] || fail 'Published PostgreSQL binding is not the exact loopback endpoint; QA volume was left intact.'
+  check_loopback_connection || fail 'Host loopback TCP check failed; QA container and volume were left intact.'
+  printf 'READY: PostgreSQL is healthy on 127.0.0.1:%s; verified database/user lucem_qa/lucem_qa. QA data volume was preserved.\n' "$HOST_PORT"
+}
+
+reconcile_port() {
+  check_configuration owned-by-existing-qa
+  command -v sudo >/dev/null || fail 'sudo is required for the explicit interactive Docker operation.'
+  printf 'Requesting interactive sudo for exact QA container reconciliation; the named data volume will not be removed.\n'
+  sudo -v
+  sudo docker info >/dev/null 2>&1 || fail 'Privileged Docker Engine is unavailable.'
+  verify_existing_qa_ownership
+
+  local published lower
+  if published="$(sudo docker port "$CONTAINER" 5432/tcp 2>&1)"; then
+    if [[ "$published" == "127.0.0.1:$HOST_PORT" ]]; then
+      check_loopback_connection || fail 'Docker reports the expected mapping, but the loopback connection is not reachable.'
+      verify_published_qa
+      return
+    fi
+    fail 'Existing QA port mapping differs from the exact loopback mapping; refusing to alter it.'
+  fi
+  lower="${published,,}"
+  [[ "$lower" == *'no public port'* ]] || fail 'Could not verify the existing QA port mapping; refusing reconciliation.'
+  check_port_free || fail 'The loopback port is occupied by another process; refusing reconciliation.'
+
+  sudo docker compose --project-name "$PROJECT" --file "$COMPOSE_FILE" --env-file "$RUNTIME_ENV" \
+    up --detach --wait --wait-timeout 90 --force-recreate --no-deps "$SERVICE"
+  verify_published_qa
 }
 
 main() {
@@ -210,6 +283,7 @@ main() {
     prepare) prepare_secrets ;;
     check) check_configuration ;;
     up) provision ;;
+    reconcile) reconcile_port ;;
     -h|--help|help|'') usage ;;
     *) usage >&2; fail 'Unknown operation.' ;;
   esac

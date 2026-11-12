@@ -14,7 +14,7 @@ services:
     volumes:
       - qa_data:/var/lib/postgresql/data
     networks:
-      - qa_internal
+      - qa_private
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lucem_qa -d lucem_qa"]
       interval: 3s
@@ -24,6 +24,8 @@ volumes:
   qa_data:
     name: lucem-qa-01d-postgres-data
 networks:
-  qa_internal:
-    name: lucem-qa-01d-internal
-    internal: true
+  qa_private:
+    name: lucem-qa-01d-private
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"

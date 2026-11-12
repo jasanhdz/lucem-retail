@@ -36,7 +36,7 @@ bash scripts/qa/provision-db.sh check
 bash scripts/qa/provision-db.sh up
 ```
 
-El operador debe revisar el plan y ejecutar el subcomando `up` en una terminal interactiva; éste solicita sudo sólo para inspeccionar el nombre exclusivo del volumen/servicio y ejecutar `docker compose up -d postgres` en el proyecto fijo `lucem-qa-01d`. No usar `docker compose down -v`, `prune` ni comandos de eliminación. La base escucha sólo en `127.0.0.1:55433`; su volumen persistente es `lucem-qa-01d-postgres-data`, distinto de staging y de volúmenes anónimos.
+El operador debe revisar el plan y ejecutar el subcomando `up` en una terminal interactiva; éste solicita sudo sólo para inspeccionar el nombre exclusivo del volumen/servicio y ejecutar `docker compose up -d postgres` en el proyecto fijo `lucem-qa-01d`. Si un contenedor QA preexistente no tiene el port mapping, `reconcile` valida proyecto, servicio, mount e identidad, y recrea sólo el contenedor conservando su volumen nombrado. La red bridge `qa_private` tiene masquerading desactivado; el host publica el servicio únicamente en loopback. No usar `docker compose down -v`, `prune` ni comandos de eliminación. La base escucha sólo en `127.0.0.1:55433`; su volumen persistente es `lucem-qa-01d-postgres-data`, distinto de staging y de volúmenes anónimos.
 
 Tras provisionar, carga el entorno sintético sin mostrarlo y ejecuta el perfil full en la misma terminal:
 
