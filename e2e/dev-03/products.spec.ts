@@ -61,6 +61,70 @@ test.describe('DEV-03 products', () => {
     }
   });
 
+  test('FIX-01 preserves parametrized catalog filters, ordering, paging and tenant isolation @fix-01-catalog-query', async ({ browser }) => {
+    const centro = await browser.newContext({ storageState: 'playwright/.auth/admin-centro.json' });
+    const norte = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
+    const catalog = (params: Record<string, string>) => `/api/products?${new URLSearchParams(params)}`;
+    try {
+      const request = centro.request;
+      const initial = await request.get(catalog({ page: '1', limit: '48' }));
+      expect(initial.status()).toBe(200);
+      expect(await initial.json()).toMatchObject({ page: 1, limit: 48, total: 1, hasMore: false });
+
+      const byName = await request.get(catalog({ q: 'DEV-TEST-01 Centro Catalog', page: '1', limit: '48' }));
+      expect(byName.status()).toBe(200);
+      expect((await byName.json()).items.map((item: { product: { name: string } }) => item.product.name)).toEqual(['DEV-TEST-01 Centro Catalog', 'DEV-TEST-01 Centro Catalog', 'DEV-TEST-01 Centro Catalog']);
+      const bySku = await request.get(catalog({ q: 'DEV-TEST-01-NORMAL', page: '1', limit: '48' }));
+      expect(bySku.status()).toBe(200);
+      expect((await bySku.json()).items.map((item: { sku: string }) => item.sku)).toEqual(['DEV-TEST-01-NORMAL']);
+      const emptySearch = await request.get(catalog({ q: 'FIX-01-no-matching-catalog-entry', page: '1', limit: '48' }));
+      expect(emptySearch.status()).toBe(200);
+      expect((await emptySearch.json()).items).toEqual([]);
+
+      const category = await request.get(catalog({ categoryId: ids.centroCategory, page: '1', limit: '48' }));
+      expect(category.status()).toBe(200);
+      expect(await category.json()).toMatchObject({ total: 1, summary: { skuCount: 3, available: 2, low: 1, out: 1, multiple: 1, single: 0 } });
+      const foreignCategory = await request.get(catalog({ categoryId: ids.norteCategory, page: '1', limit: '48' }));
+      expect(foreignCategory.status()).toBe(200);
+      expect((await foreignCategory.json()).items).toEqual([]);
+
+      const inventoryFilters: Array<Record<string, string>> = [{ status: 'low' }, { status: 'out' }, { available: 'true' }];
+      for (const params of inventoryFilters) {
+        const response = await request.get(catalog({ ...params, page: '1', limit: '48' }));
+        expect(response.status()).toBe(200);
+      }
+      const low = await request.get(catalog({ status: 'low' }));
+      expect((await low.json()).map((item: { sku: string }) => item.sku)).toContain('DEV-TEST-01-LOW');
+      const out = await request.get(catalog({ status: 'out' }));
+      expect((await out.json()).map((item: { sku: string }) => item.sku)).toContain('DEV-TEST-01-ZERO');
+      const available = await request.get(catalog({ available: 'true', page: '1', limit: '48' }));
+      expect(await available.json()).toMatchObject({ total: 1, availableTotal: 1, categoryCounts: { [ids.centroCategory]: 1 } });
+
+      for (const sort of ['name', 'recent', 'price-high', 'price-low', 'stock-high', 'stock-low']) {
+        const response = await request.get(catalog({ sort, page: '1', limit: '1' }));
+        expect(response.status(), `sort=${sort}`).toBe(200);
+        expect(await response.json()).toMatchObject({ page: 1, limit: 1, total: 1, hasMore: false });
+      }
+      const nextPage = await request.get(catalog({ page: '2', limit: '1' }));
+      expect(nextPage.status()).toBe(200);
+      expect(await nextPage.json()).toMatchObject({ page: 2, total: 1, hasMore: false, items: [] });
+
+      const safelyParameterized = await request.get(catalog({ q: "' OR 1=1 --", page: '1', limit: '48' }));
+      expect(safelyParameterized.status()).toBe(200);
+      expect((await safelyParameterized.json()).items).toEqual([]);
+
+      const crossBusiness = await request.get(catalog({ q: 'DEV-TEST-01-NORTE', page: '1', limit: '48' }));
+      expect(crossBusiness.status()).toBe(200);
+      expect((await crossBusiness.json()).items).toEqual([]);
+      const sameBusiness = await norte.request.get(catalog({ q: 'DEV-TEST-01-NORTE', page: '1', limit: '48' }));
+      expect(sameBusiness.status()).toBe(200);
+      expect((await sameBusiness.json()).items.map((item: { sku: string }) => item.sku)).toEqual(['DEV-TEST-01-NORTE']);
+    } finally {
+      await centro.close();
+      await norte.close();
+    }
+  });
+
   test('ADMIN carga catálogo, busca seed, aplica estados, ve vacío y detalle sin overflow', async ({ page }) => {
     await waitForCatalog(page);
     await expect(page.locator('.product-card')).toHaveCount(1);

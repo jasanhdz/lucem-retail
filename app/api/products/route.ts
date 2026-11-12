@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   if (available) predicates.push(Prisma.sql`v.stock > 0`);
   if (status === 'out') predicates.push(Prisma.sql`v.stock = 0`);
   if (status === 'low') predicates.push(Prisma.sql`v.stock > 0 AND v.stock <= v."lowStockThreshold"`);
-  if (q) predicates.push(Prisma.sql`(p.name ILIKE ${`%${q}%`} OR p.location ILIKE ${`%${q}%`} OR EXISTS (SELECT 1 FROM "ProductVariant" qs WHERE qs."productId" = p.id AND qs."businessId" = p."businessId" AND qs.active = ${active} AND (qs.sku ILIKE ${`%${q}%`} OR qs.barcode ILIKE ${`%${q}%`}))`);
+  if (q) predicates.push(Prisma.sql`(p.name ILIKE ${`%${q}%`} OR p.location ILIKE ${`%${q}%`} OR EXISTS (SELECT 1 FROM "ProductVariant" qs WHERE qs."productId" = p.id AND qs."businessId" = p."businessId" AND qs.active = ${active} AND (qs.sku ILIKE ${`%${q}%`} OR qs.barcode ILIKE ${`%${q}%`})))`);
   const type = params.get('type');
   if (type === 'single') predicates.push(Prisma.sql`(SELECT count(*) FROM "ProductVariant" tv WHERE tv."productId" = p.id AND tv."businessId" = p."businessId" AND tv.active = ${active}) = 1`);
   if (type === 'multiple') predicates.push(Prisma.sql`(SELECT count(*) FROM "ProductVariant" tv WHERE tv."productId" = p.id AND tv."businessId" = p."businessId" AND tv.active = ${active}) > 1`);
