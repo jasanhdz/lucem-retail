@@ -27,3 +27,4 @@ qa/reports/
 .next-qa-readonly/
 .qa-uploads/
 .qa-artifacts/
+.qa-private/

@@ -28,19 +28,28 @@ lucem-audit --package
 
 ## Provisionar la base QA local
 
-Requiere Docker disponible para el usuario y un secreto de QA propio. El servicio publica exclusivamente `127.0.0.1:55433` y su volumen/Compose project son `lucem_qa`:
+El bootstrap crea credenciales QA locales en `.qa-private/` (modo privado, ignorado por Git), valida que el proyecto sólo contenga PostgreSQL QA y comprueba el puerto sin conectarse al Docker Engine:
 
 ```bash
-export QA_POSTGRES_PASSWORD="$(openssl rand -hex 24)"
-docker compose --project-name lucem-qa --file compose.qa.yml up -d postgres
-export QA_DATABASE_URL="postgresql://lucem_qa:${QA_POSTGRES_PASSWORD}@127.0.0.1:55433/lucem_qa?schema=public"
-export E2E_ADMIN_PASSWORD="<secreto sintético local de 12+ caracteres>"
-export E2E_SELLER_PASSWORD="<secreto sintético local de 12+ caracteres>"
-export E2E_INVENTORY_PASSWORD="<secreto sintético local de 12+ caracteres>"
-lucem-audit --functional
+bash scripts/qa/provision-db.sh prepare
+bash scripts/qa/provision-db.sh check
+bash scripts/qa/provision-db.sh up
 ```
 
-La herramienta valida usuario, base, puerto, loopback y después la identidad conectada antes de migraciones/fixtures. Si falta cualquiera de esos requisitos, se bloquea antes de levantar navegador/servidor. No reutilizar credenciales demo, E2E, staging ni producción. No usar `docker compose down -v` sin confirmar manualmente que el proyecto/volumen son exactamente `lucem-qa`.
+El operador debe revisar el plan y ejecutar el subcomando `up` en una terminal interactiva; éste solicita sudo sólo para inspeccionar el nombre exclusivo del volumen/servicio y ejecutar `docker compose up -d postgres` en el proyecto fijo `lucem-qa-01d`. No usar `docker compose down -v`, `prune` ni comandos de eliminación. La base escucha sólo en `127.0.0.1:55433`; su volumen persistente es `lucem-qa-01d-postgres-data`, distinto de staging y de volúmenes anónimos.
+
+Tras provisionar, carga el entorno sintético sin mostrarlo y ejecuta el perfil full en la misma terminal:
+
+```bash
+set -a
+. ./.qa-private/runtime.env
+set +a
+npx prisma generate
+npx lucem-audit --full
+unset QA_POSTGRES_PASSWORD QA_DATABASE_URL DATABASE_URL E2E_DATABASE_URL E2E_DATABASE_USER E2E_ADMIN_PASSWORD E2E_SELLER_PASSWORD E2E_INVENTORY_PASSWORD
+```
+
+El CLI verifica que usuario y base conectados sean exactamente `lucem_qa` antes de migraciones/fixtures. Si la identidad no coincide, se bloquea sin fallback. No reutilizar credenciales demo, E2E, staging ni producción.
 
 El perfil `--performance` crea, sólo en `lucem_qa`, un fixture de 10.000 productos/variantes en lotes de 500 para medir búsqueda/paginación junto con Dashboard. Su namespace se limpia al finalizar. Los p95 se reportan por ruta y se comparan con el umbral versionado; no son medición de carga de producción.
 

@@ -1,18 +1,29 @@
+name: lucem-qa-01d
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: lucem-qa-01d-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: lucem_qa
       POSTGRES_USER: lucem_qa
       POSTGRES_PASSWORD: ${QA_POSTGRES_PASSWORD:?Set a dedicated QA-only password}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
     ports:
       - "127.0.0.1:55433:5432"
     volumes:
-      - lucem_qa_data:/var/lib/postgresql/data
+      - qa_data:/var/lib/postgresql/data
+    networks:
+      - qa_internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lucem_qa -d lucem_qa"]
       interval: 3s
       timeout: 3s
       retries: 10
 volumes:
-  lucem_qa_data:
+  qa_data:
+    name: lucem-qa-01d-postgres-data
+networks:
+  qa_internal:
+    name: lucem-qa-01d-internal
+    internal: true
