@@ -10,14 +10,14 @@ for (const role of ['admin', 'seller', 'inventory'] as const) {
     await expect(page.locator('.business-context-label strong:visible, .topbar-switch span:visible').filter({ hasText: 'DEV-TEST-01 Centro' }).first()).toBeVisible();
     if (role === 'admin') {
       await expect(page.getByText('$250.00').first()).toBeVisible();
-      await expect(page.getByText('3', { exact: true }).first()).toBeVisible();
+      await expect(page.getByText('3 piezas', { exact: true })).toBeVisible();
       await expect(page.getByText('$100.00').first()).toBeVisible();
       await expect(page.getByText('$150.00').first()).toBeVisible();
       await expect(page.getByText(/#POS-\d+-0901/)).toBeVisible();
       await expect(page.getByText(/#POS-\d+-0902/)).toBeVisible();
       await expect(page.locator('.dashboard-alert-list').getByText('1 producto agotado').first()).toBeVisible();
     }
-    const auditLink = page.getByRole('link', { name: 'Auditoría' });
+    const auditLink = page.getByRole('link', { name: 'Auditoría', exact: true });
     if (role === 'admin') await expect(auditLink).toBeVisible();
     else await expect(auditLink).toHaveCount(0);
     await expect(page.locator('body')).toHaveJSProperty('scrollWidth', await page.locator('body').evaluate(body => body.clientWidth));

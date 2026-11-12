@@ -12,7 +12,7 @@ async function visit(page: import('@playwright/test').Page, route: string) {
   }
 }
 
-test('captures the implemented MVP surfaces at Stitch comparison sizes', async ({ browser, page }) => {
+test('captures the implemented MVP surfaces at Stitch comparison sizes', async ({ browser, page }, testInfo) => {
   const anonymous = await browser.newPage();
   try {
     for (const [route, name, authenticated] of routes) {
@@ -21,7 +21,7 @@ test('captures the implemented MVP surfaces at Stitch comparison sizes', async (
         await target.setViewportSize(viewport);
         await visit(target, route);
         await expect(target.locator('body')).toBeVisible();
-        await target.screenshot({ path: `docs/ui-redesign/dev-11-visual-evidence/${name}-${viewportName}.png`, fullPage: false });
+        await target.screenshot({ path: testInfo.outputPath(`${name}-${viewportName}.png`), fullPage: false });
       }
     }
   } finally {

@@ -14,5 +14,5 @@ export default defineConfig({
   outputDir: qaPlaywrightOutputDir('dev-08', 'test-results/dev-08'),
   use: { baseURL: 'http://127.0.0.1:3102', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: { command: 'npm run start -- --hostname 127.0.0.1 --port 3102', url: 'http://127.0.0.1:3102/registro', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl } },
+  webServer: { command: 'npm run dev -- --hostname 127.0.0.1 --port 3102', url: 'http://127.0.0.1:3102/registro', reuseExistingServer: false, timeout: 120_000, env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl, NEXT_DIST_DIR: '.next-e2e' } },
 });

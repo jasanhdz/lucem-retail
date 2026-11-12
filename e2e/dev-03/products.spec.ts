@@ -129,11 +129,11 @@ test.describe('DEV-03 products', () => {
     await waitForCatalog(page);
     await expect(page.locator('.product-card')).toHaveCount(1);
 
-    const shellSearch = page.getByRole('textbox', { name: 'Buscar en catálogo' });
+    const shellSearch = page.locator('.topbar-operation-search input');
     await shellSearch.fill('DEV-TEST-01-NORMAL');
     await expect(page.locator('.product-card')).toHaveCount(1);
     await shellSearch.fill('');
-    const search = page.getByRole('textbox', { name: 'Buscar productos' });
+    const search = page.locator('.products-search input');
     await search.fill('DEV-TEST-01-NORMAL');
     await expect(page.locator('.product-card')).toHaveCount(1);
     await search.fill('no-existe-DEV-03');
@@ -204,7 +204,7 @@ test.describe('DEV-03 products', () => {
       expect(history).toEqual(expect.arrayContaining([expect.objectContaining({ reason: 'DEV-03 ajuste de precios', field: 'COST' }), expect.objectContaining({ reason: 'DEV-03 ajuste de precios', field: 'PRICE' })]));
       const page = await context.newPage();
       await waitForCatalog(page);
-      await page.getByRole('textbox', { name: 'Buscar productos' }).fill(product.variants[0].sku);
+      await page.locator('.products-search input').fill(product.variants[0].sku);
       await page.locator('.product-card').getByRole('button', { name: 'Ver detalle', exact: true }).click();
       await expect(page.getByRole('dialog', { name: `Detalle de ${product.name}` })).toBeVisible();
       await page.close();
@@ -358,7 +358,7 @@ test.describe('DEV-03 products', () => {
       const upload = await context.request.post('/api/products/image', { multipart: { file: { name: 'dev-03-minimal.png', mimeType: 'image/png', buffer: png } } });
       expect(upload.status()).toBe(201);
       const photoPath = (await upload.json()).photoPath as string;
-      expect(photoPath).toMatch(/^\/api\/products\/image\/[0-9a-f-]{36}\.png$/);
+      expect(photoPath).toMatch(/^\/api\/products\/image\/dev-test-01-centro_[0-9a-f-]{36}\.png$/);
       filename = photoPath.split('/').pop();
       const image = await context.request.get(photoPath);
       expect(image.status()).toBe(200);
@@ -371,8 +371,9 @@ test.describe('DEV-03 products', () => {
       expect(oversized.status()).toBe(400);
     } finally {
       if (filename) {
-        expect(filename).toMatch(/^[0-9a-f-]{36}\.png$/);
-        await unlink(path.join(process.cwd(), 'public', 'uploads', 'products', filename));
+        expect(filename).toMatch(/^dev-test-01-centro_[0-9a-f-]{36}\.png$/);
+        const uploadDirectory = process.env.QA_RUN === '1' ? '.qa-uploads' : 'public/uploads';
+        await unlink(path.join(process.cwd(), uploadDirectory, 'products', filename));
       }
       await context.close();
     }

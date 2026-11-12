@@ -15,6 +15,8 @@
 | `ROUTE-INVENTORY.json` | Inventario normalizado, métodos, fuente, roles, tests y estado |
 | `FEATURE-COVERAGE.json` | Capacidades registradas y cobertura de cada estado requerido |
 | `FINDINGS.json` | Hallazgos estructurados con ID/severidad/reproducción/evidencia |
+| `PLAYWRIGHT-TESTS.json` | ID estable, suite/proyecto, archivo/título, estado individual y log de evidencia |
+| `ISOLATED-FULL-COMPARISON.json` | Diferencias por ID entre suites aisladas y full en la misma revisión |
 | `SCREENSHOT-MANIFEST.json` | Ruta, viewport, tamaño, referencia Stitch y comparación |
 | `metadata.json` | Run ID, commit, perfil, tiempos y conteos |
 | `index.html` | Resumen HTML navegable |
@@ -52,7 +54,7 @@ Each `FEATURE-COVERAGE.json` row contains `featureId`, `featureTitle`, `area`, `
 
 ## Finding
 
-`FINDINGS.json` entries carry: `id`, `category`, `severity`, `module`, `feature`, `route`, `role`, `device`, `scenario`, `steps`, `expected`, `actual`, `evidence`, `source`, `confidence`, `status`, and `recommendation`. Hallazgo técnico reproducible = `CONFIRMED`; señal heurística = `SUSPECTED`; juicio visual pendiente = `NEEDS_MANUAL_REVIEW`; corrección demostrada = `RESOLVED`; falso positivo con justificación = `FALSE_POSITIVE`.
+`FINDINGS.json` entries carry: `id`, `category`, `severity`, `module`, `feature`, `route`, `role`, `device`, `scenario`, `steps`, `expected`, `actual`, `evidence`, `source`, `confidence`, optional `classification`, `status`, and `recommendation`. Classifications distinguish `PRODUCT_DEFECT`, `TEST_DEFECT`, `FIXTURE_CONTAMINATION`, `ENVIRONMENT_FAILURE`, `COVERAGE_GAP`, `SUSPECTED`, and `UNDETERMINED`. Weak heuristic signals stay `SUSPECTED`/`UNDETERMINED`; no difference is called a false positive without evidence. Hallazgo técnico reproducible = `CONFIRMED`; juicio visual pendiente = `NEEDS_MANUAL_REVIEW`; corrección demostrada = `RESOLVED`; falso positivo con justificación = `FALSE_POSITIVE`.
 
 ## Evidencia portable
 

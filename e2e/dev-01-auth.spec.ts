@@ -150,7 +150,7 @@ test('profile skip advances without requiring profile fields', async ({ page }) 
   await page.goto('/perfil');
   await page.getByRole('button', { name: /Omitir por ahora/ }).click();
   await expect(page).toHaveURL(/\/negocios\/crear$/);
-  await expect(page.getByRole('heading', { name: 'Crea tu primer negocio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Crea un negocio' })).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('lucem_onboarding_profile') || '{}').skipped)).toBe(true);
 });
 

@@ -14,6 +14,8 @@ const authDir = 'playwright/.auth';
 export default defineConfig({
   testDir: './e2e/dev-test-01',
   fullyParallel: false,
+  // These specs share the deterministic DEV-TEST-01 businesses, sessions and inventory.
+  workers: 1,
   reporter: 'list',
   globalSetup: './e2e/dev-test-01/setup.ts',
   globalTeardown: './e2e/dev-test-01/teardown.ts',
@@ -27,10 +29,10 @@ export default defineConfig({
     { name: 'visual-mobile', testMatch: /visual\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 }, storageState: `${authDir}/admin-centro.json` } },
   ],
   webServer: {
-    command: 'npm run start -- --hostname 127.0.0.1 --port 3101',
+    command: 'npm run dev -- --hostname 127.0.0.1 --port 3101',
     url: 'http://127.0.0.1:3101/login',
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl },
+    env: { ...process.env, E2E_DATABASE_URL: databaseUrl, DATABASE_URL: databaseUrl, NEXT_DIST_DIR: '.next-e2e' },
   },
 });

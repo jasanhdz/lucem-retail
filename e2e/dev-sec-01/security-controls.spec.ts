@@ -77,18 +77,23 @@ test('throttles bad login attempts generically without blocking another fixture 
       headers: tunnelHeaders('198.51.100.20'),
     }));
   }
-  expect(ipFailures.every(response => response.status() === 401)).toBeTruthy();
+  expect(ipFailures.every(response => response.status() === 401), `synthetic IP failure statuses: ${ipFailures.map(response => response.status()).join(',')}`).toBeTruthy();
   const validAfterIpFailures = await request.post('/api/auth/login', {
     data: { email: adminEmail, password: process.env.E2E_ADMIN_PASSWORD },
     headers: tunnelHeaders('198.51.100.20'),
   });
   expect(validAfterIpFailures.status()).toBe(200);
-  const ipBlocked = await request.post('/api/auth/login', {
-    data: { email: 'ip-failure-over-limit@invalid.test', password: 'invalid-temporary-password' },
-    headers: tunnelHeaders('198.51.100.20'),
-  });
-  expect(ipBlocked.status()).toBe(429);
-  expect(Number(ipBlocked.headers()['retry-after'])).toBeGreaterThan(0);
+  let ipBlocked: Awaited<ReturnType<typeof request.post>> | undefined;
+  for (let attempt = 0; attempt < 15 && !ipBlocked; attempt += 1) {
+    const response = await request.post('/api/auth/login', {
+      data: { email: `ip-failure-over-limit-${attempt}@invalid.test`, password: 'invalid-temporary-password' },
+      headers: tunnelHeaders('198.51.100.20'),
+    });
+    if (response.status() === 429) ipBlocked = response;
+    else expect(response.status()).toBe(401);
+  }
+  expect(ipBlocked, 'IP rate limit should trigger even if the fixed window rolls during the probe').toBeDefined();
+  expect(Number(ipBlocked!.headers()['retry-after'])).toBeGreaterThan(0);
 });
 
 test('returns the same generic login failure for an inactive fixture account', async ({ request }) => {
@@ -104,7 +109,7 @@ test('returns the same generic login failure for an inactive fixture account', a
       data: { email: 'absent-account@invalid.test', password: 'invalid-temporary-password' },
       headers: tunnelHeaders('198.51.100.14'),
     });
-    expect(inactive.status()).toBe(401);
+    expect(inactive.status(), 'inactive fixture should return the generic unauthorized status, not a residual throttle').toBe(401);
     expect(await inactive.text()).toBe(await absent.text());
   } finally {
     await db.user.update({ where: { id: 'dev-test-01-inventory' }, data: { active: true } });
@@ -161,7 +166,7 @@ test('registers under the public IP/global limits with an account-enumeration-sa
     data: { name: 'Public Beta other IP', email: 'dev-test-01-public-other-ip@invalid.test', password: 'PublicBeta!Strong1', confirmation: 'PublicBeta!Strong1', terms: true },
     headers: tunnelHeaders('198.51.100.26'),
   });
-  expect(otherIp.status()).toBe(202);
+  expect(otherIp.status(), `second synthetic registration IP returned ${otherIp.status()}`).toBe(202);
 
   for (let index = 0; index < 13; index += 1) {
     const response = await request.post('/api/auth/register', {

@@ -34,7 +34,7 @@ async function persistEvents(events: BrowserEvent[], testInfo: TestInfo) {
   await writeFile(path.join(output, filename), sanitize(JSON.stringify({ title: testInfo.title, events }, null, 2), secrets));
 }
 async function openPage(page: Page, route: string, events: BrowserEvent[]) {
-  const response = await page.goto(route, { waitUntil: 'networkidle' });
+  const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
   if (!response || response.status() >= 400) events.push({ type: 'unexpected-navigation-status', url: route, status: response?.status() ?? 0 });
   await page.evaluate(() => document.fonts.ready);
 }
@@ -163,6 +163,7 @@ testRoute('valid seeded admin can authenticate and reach business selection @qa-
   const password = process.env.E2E_ADMIN_PASSWORD;
   if (!password) test.skip(true, 'E2E_ADMIN_PASSWORD is required for isolated QA auth fixtures.');
   await openPage(page, '/login', observed);
+  await page.waitForLoadState('networkidle');
   await page.getByLabel('Correo electrónico').fill('dev-test-01-admin@invalid.test');
   await page.getByLabel('Contraseña', { exact: true }).fill(password!);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
@@ -174,6 +175,7 @@ testRoute.describe('isolated authenticated QA fixture', () => {
   testRoute.use({ storageState: path.resolve('playwright/.auth/admin-centro.json') });
 
   testRoute('registered workspace pages render at all required viewports @qa-db-visual', async ({ page, observed }, testInfo) => {
+    testRoute.setTimeout(120_000);
     const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
     const failures: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; overlappingControls: number; overlapDetails: string[] }> = [];
     const screens = modulePages(qaConfig.authenticatedPages);

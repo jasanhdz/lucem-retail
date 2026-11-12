@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const sizes = { desktop: { width: 1533, height: 1600 }, mobile: { width: 390, height: 1600 } } as const;
 
-test('captures corrected dedicated product creation surfaces', async ({ page }) => {
+test('captures corrected dedicated product creation surfaces', async ({ page }, testInfo) => {
   await page.goto('/productos');
   await expect(page.getByRole('heading', { name: 'Catálogo de productos' })).toBeVisible();
   for (const [name, viewport] of Object.entries(sizes)) {
@@ -14,7 +14,7 @@ test('captures corrected dedicated product creation surfaces', async ({ page }) 
     const form = page.getByRole('dialog', { name: 'Nuevo producto' });
     await expect(form.getByRole('heading', { name: 'Crear Producto' })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/products-simple-corrected-${name}.png`, fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`products-simple-corrected-${name}.png`), fullPage: true });
     await form.locator('.variant-mode label').nth(1).click();
     for (let row = 0; row < (name === 'desktop' ? 3 : 1); row += 1) await form.getByRole('button', { name: /^Agregar/ }).click();
     if (name === 'desktop') {
@@ -56,12 +56,12 @@ test('captures corrected dedicated product creation surfaces', async ({ page }) 
       await expect(form.getByRole('button', { name: 'Guardar producto con variantes' })).toBeDisabled();
     }
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/products-variants-corrected-${name}.png`, fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`products-variants-corrected-${name}.png`), fullPage: true });
     await form.getByRole('button', { name: 'Cancelar' }).click();
   }
 });
 
-test('captures the Stitch product catalog for desktop and mobile', async ({ page }) => {
+test('captures the Stitch product catalog for desktop and mobile', async ({ page }, testInfo) => {
   const prefix = `DEV11R-CATALOG-${Date.now()}`;
   const categoriesResponse = await page.request.get('/api/categories');
   expect(categoriesResponse.ok()).toBeTruthy();
@@ -86,7 +86,7 @@ test('captures the Stitch product catalog for desktop and mobile', async ({ page
       expect(response.status()).toBe(201);
       const photoPath = (await response.json()).photoPath as string;
       const filename = photoPath.split('/').pop() ?? '';
-      expect(filename).toMatch(/^[0-9a-f-]{36}\.png$/);
+      expect(filename).toMatch(/^dev-test-01-centro_[0-9a-f-]{36}\.png$/);
       uploadedFiles.push(filename);
       photos[photoName] = photoPath;
     }
@@ -103,7 +103,7 @@ test('captures the Stitch product catalog for desktop and mobile', async ({ page
       await expect(page.locator('.product-card')).toHaveCount(6);
       await page.locator('.products-card-image-frame img').evaluateAll((images) => Promise.all(images.map((image) => (image as HTMLImageElement).decode().catch(() => undefined))));
       console.log(`catalog ${name} images:`, await page.locator('.products-card-image-frame img').evaluateAll((images) => images.map((image) => ({ src: (image as HTMLImageElement).getAttribute('src'), complete: (image as HTMLImageElement).complete, width: (image as HTMLImageElement).naturalWidth }))));
-      await page.screenshot({ path: `docs/ui-redesign/dev-11r-visual-evidence/catalog-corrected-${name}.png`, fullPage: true });
+      await page.screenshot({ path: testInfo.outputPath(`catalog-corrected-${name}.png`), fullPage: true });
     }
   } finally {
     for (const id of createdIds) await page.request.delete(`/api/products/${id}`);

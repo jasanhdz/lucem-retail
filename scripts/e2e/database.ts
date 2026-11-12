@@ -6,6 +6,7 @@ export const E2E_DATABASE_USER = 'lucem_e2e';
 
 export function requireE2eDatabaseUrl(env: Record<string, string | undefined> = process.env): string {
   if (env.QA_RUN === '1') {
+    if (env.QA_LAB_RUN_LOCK_HELD !== '1') throw new Error('QA E2E runs must be launched by the serialized Lucem QA Lab runner.');
     const qaUrl = env.QA_DATABASE_URL;
     if (!qaUrl) throw new Error('QA_DATABASE_URL is required during QA_RUN; staging/DATABASE_URL fallback is forbidden.');
     let qa: URL;

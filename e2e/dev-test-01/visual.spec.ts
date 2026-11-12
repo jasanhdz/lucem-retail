@@ -9,7 +9,7 @@ test('authenticated dashboard screenshot is real E2E evidence', async ({ page },
   if (testInfo.project.name === 'visual-mobile') {
     await expect(page.locator('.topbar-switch:visible')).toContainText('DEV-TEST-01 Centro');
   } else {
-    await expect(page.getByText('DEV-TEST-01 Centro', { exact: true }).first()).toBeVisible();
+    await expect(page.locator('.business-context-label strong:visible, .topbar-switch-label strong:visible').filter({ hasText: 'DEV-TEST-01 Centro' }).first()).toBeVisible();
   }
   await expect(page.getByText('$250.00').first()).toBeVisible();
 

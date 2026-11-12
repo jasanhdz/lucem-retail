@@ -13,6 +13,7 @@ export async function connectedQaUrl(env: Record<string, string | undefined> = p
 }
 
 export async function qaChildEnv(env: Record<string, string | undefined> = process.env): Promise<NodeJS.ProcessEnv> {
+  if (env.QA_LAB_RUN_LOCK_HELD !== '1') throw new Error('QA mutation commands must run under the serialized Lucem QA Lab lock.');
   const url = await connectedQaUrl(env);
   const sessionSecret = env.SESSION_SECRET ?? env.QA_SESSION_SECRET ?? randomBytes(48).toString('base64url');
   if (sessionSecret.length < 32) throw new Error('QA session secret must have at least 32 characters.');

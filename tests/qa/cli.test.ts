@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import os from 'node:os';
 import path from 'node:path';
 
 function cli(args: string[], extraEnv: Record<string, string | undefined> = {}) {
   const env = { ...process.env, ...extraEnv };
-  const runner = path.resolve('node_modules/tsx/dist/cli.mjs');
-  const entry = path.resolve('scripts/qa/lucem-audit.ts');
-  return spawnSync(process.execPath, [runner, entry, ...args], { cwd: process.cwd(), env, encoding: 'utf8', timeout: 120_000 });
+  const entry = path.resolve('scripts/qa/bin.cjs');
+  return spawnSync(process.execPath, [entry, ...args], { cwd: process.cwd(), env, encoding: 'utf8', timeout: 120_000 });
 }
 
 describe('Lucem QA Lab CLI contract', () => {
@@ -27,5 +28,21 @@ describe('Lucem QA Lab CLI contract', () => {
     expect(output).toContain('QA target must be loopback lucem_qa user/database on port 55433');
     expect(output).not.toContain('webServer');
     expect(output).not.toContain('Connected to database');
+  });
+
+  it('rejects a second mutating QA runner while the checkout fixture lease is held', async () => {
+    const checkoutKey = createHash('sha256').update(path.resolve(process.cwd())).digest('hex').slice(0, 20);
+    const lockPath = path.join(os.tmpdir(), `lucem-qa-${checkoutKey}.lock`);
+    const holder = spawn('flock', ['--nonblock', '--conflict-exit-code', '75', lockPath, process.execPath, '-e', 'setTimeout(() => {}, 10000)'], { stdio: 'ignore' });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const run = cli(['--functional']);
+      expect(run.status).toBe(75);
+      expect(`${run.stdout}\n${run.stderr}`).toContain('another QA run owns this checkout fixture namespace');
+    } finally {
+      const exited = new Promise<void>((resolve) => holder.once('exit', () => resolve()));
+      holder.kill('SIGTERM');
+      await exited;
+    }
   });
 });

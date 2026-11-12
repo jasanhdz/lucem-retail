@@ -26,6 +26,8 @@ lucem-audit --package
 
 `--visual`, `--accessibility` y `--performance` pueden observar login/registro sin DB usando sólo el servidor dev local y sin enviar operaciones comerciales. Las pantallas autenticadas y cualquier flujo mutante necesitan el entorno QA dedicado.
 
+`qa:full` adquiere un lock por checkout y prepara el fixture QA antes de cada config; no corras suites directas contra `lucem_qa` concurrentemente con una auditoría. La limpieza sólo borra filas y archivos con IDs del fixture dueño; buckets globales no expirados se preservan. Cada suite usa una clave de sesión efímera, lo que aísla sus hashes de rate-limit sin limpiar la tabla global.
+
 ## Provisionar la base QA local
 
 El bootstrap crea credenciales QA locales en `.qa-private/` (modo privado, ignorado por Git), valida que el proyecto sólo contenga PostgreSQL QA y comprueba el puerto sin conectarse al Docker Engine:
@@ -55,7 +57,7 @@ El perfil `--performance` crea, sólo en `lucem_qa`, un fixture de 10.000 produc
 
 ## Evidencia y reportes
 
-Cada corrida crea `qa/reports/<runId>/` con resumen ejecutivo, reportes funcional/UX/axe/performance, `ROUTE-INVENTORY.json`, `FINDINGS.json`, matriz de cobertura, metadata, capturas, eventos de navegador y reporte HTML (`index.html`). El ZIP se genera con `lucem-audit --package` y contiene `PACKAGE-MANIFEST.json`, checksums y una lista de artefactos excluidos. No incluye traces/HAR/storage states/dumps; se deben revisar manualmente las imágenes antes de compartir.
+Cada corrida crea `qa/reports/<runId>/` con resumen ejecutivo, reportes funcional/UX/axe/performance, `ROUTE-INVENTORY.json`, `PLAYWRIGHT-TESTS.json`, `ISOLATED-FULL-COMPARISON.json` cuando haya baseline, `FINDINGS.json`, matriz de cobertura, metadata, capturas, eventos de navegador y reporte HTML (`index.html`). Checks, rutas, capabilities, estados y casos Playwright se cuentan por separado. Findings distinguen producto, test, fixture, entorno, cobertura, sospecha e incertidumbre. El ZIP se genera con `lucem-audit --package` y contiene `PACKAGE-MANIFEST.json`, checksums y una lista de artefactos excluidos. No incluye traces/HAR/storage states/dumps; se deben revisar manualmente las imágenes antes de compartir.
 
 Estados: PASS es resultado ejecutado; FAIL indica una aserción fallida; UNCOVERED falta de registro/test; NOT_EXECUTED test definido no corrido; NOT_IMPLEMENTED capacidad aún ausente; BLOCKED prerrequisito o aislamiento no disponible. Ninguno de los últimos cinco estados es aprobación.
 

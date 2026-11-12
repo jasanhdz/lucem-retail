@@ -1,5 +1,6 @@
 import { expect, request, test } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
+import { clearOwnedFixtures } from '../../scripts/e2e/seed';
 
 test.describe.configure({ mode: 'serial' });
 const password = 'LucemDev09!Strong';
@@ -7,29 +8,33 @@ const email = `merchant-${Date.now()}@dev09.invalid.test`;
 const viewports = [[1440, 900, 'desktop'], [768, 1024, 'tablet'], [390, 844, 'mobile']] as const;
 
 async function body(response: import('@playwright/test').APIResponse) { return response.json(); }
-async function capture(page: import('@playwright/test').Page, name: string) {
+async function capture(page: import('@playwright/test').Page, name: string, testInfo: import('@playwright/test').TestInfo) {
   for (const [width, height, label] of viewports) {
     await page.setViewportSize({ width, height });
     const overflow = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: window.innerWidth, elements: [...document.querySelectorAll<HTMLElement>('*')].filter(element => element.getBoundingClientRect().right > window.innerWidth + 1).slice(0, 20).map(element => { const style = getComputedStyle(element); const parent = element.parentElement; const rect = element.getBoundingClientRect(); return { tag: element.tagName, className: element.className, right: Math.round(rect.right), left: Math.round(rect.left), width: Math.round(rect.width), minWidth: style.minWidth, flex: style.flex, overflowX: style.overflowX, parentClass: parent?.className ?? '', parentWidth: parent ? Math.round(parent.getBoundingClientRect().width) : null }; }) }));
     expect(overflow.width <= overflow.viewport, `${name} overflows at ${width}x${height}: ${JSON.stringify(overflow)}`).toBeTruthy();
-    await page.screenshot({ path: `docs/testing/dev-09-visual-evidence/${name}-${label}.png`, fullPage: false });
+    await page.screenshot({ path: testInfo.outputPath(`${name}-${label}.png`), fullPage: false });
   }
 }
 
-test('merchant completes authenticated commercial journey with persisted balances', async ({ page }) => {
+test('merchant completes authenticated commercial journey with persisted balances', async ({ page }, testInfo) => {
   const api = await request.newContext({ baseURL: 'http://127.0.0.1:3109' });
   const db = new PrismaClient();
+  let userId: string | undefined;
+  let businessId: string | undefined;
   try {
     const registered = await api.post('/api/auth/register', { data: { name: 'DEV-09 Merchant', email, password, confirmation: password, terms: true } });
     expect(registered.status()).toBe(202);
     expect(await body(registered)).toEqual({ message: 'Registro recibido. Inicia sesión para continuar.' });
     const login = await api.post('/api/auth/login', { data: { email, password } });
     expect(login.status()).toBe(200);
+    userId = (await body(login)).user.id;
     expect((await body(await api.get('/api/businesses'))).businesses).toHaveLength(0);
 
     const createdBusiness = await api.post('/api/businesses', { headers: { 'Idempotency-Key': 'dev09-business-create' }, data: { name: 'DEV-09 Comercio', branchName: 'Matriz DEV-09', giro: 'ropa' } });
     expect(createdBusiness.status()).toBe(201);
     const business = (await body(createdBusiness)).business;
+    businessId = business.id;
     expect((await body(await api.get('/api/businesses'))).activeBusinessId).toBe(business.id);
     const categories = await body(await api.get('/api/categories'));
     expect(categories).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'General' })]));
@@ -116,6 +121,15 @@ test('merchant completes authenticated commercial journey with persisted balance
      expect((await loginResponse).status()).toBe(200);
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole('button', { name: 'DEV-09 Comercio' })).toBeVisible();
-    for (const [path, name] of [['/dashboard', 'dashboard'], ['/productos', 'productos'], ['/inventario', 'inventario'], ['/pos', 'pos'], ['/apartados', 'apartados'], ['/devoluciones', 'devoluciones'], [`/tickets/${sale.id}`, 'ticket']] as const) { await page.goto(path); await capture(page, name); }
-  } finally { await api.dispose(); await db.$disconnect(); }
+    for (const [path, name] of [['/dashboard', 'dashboard'], ['/productos', 'productos'], ['/inventario', 'inventario'], ['/pos', 'pos'], ['/apartados', 'apartados'], ['/devoluciones', 'devoluciones'], [`/tickets/${sale.id}`, 'ticket']] as const) { await page.goto(path); await capture(page, name, testInfo); }
+  } finally {
+    try {
+      if (!userId) userId = (await db.user.findUnique({ where: { email }, select: { id: true } }))?.id;
+      if (userId && !businessId) businessId = (await db.membership.findFirst({ where: { userId }, select: { businessId: true } }))?.businessId;
+      await clearOwnedFixtures(db, { businessIds: businessId ? [businessId] : [], userIds: userId ? [userId] : [] });
+    } finally {
+      await api.dispose();
+      await db.$disconnect();
+    }
+  }
 });

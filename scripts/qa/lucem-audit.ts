@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { features, type CoverageStatus } from '../../qa/features/registry';
 import { qaConfig } from '../../qa/config';
-import { applyControlCoverage, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, makeFeatureStateFindings, sanitize, validateFeatures, validateRouteExclusions, writeReports, type Finding, type RunResult } from './core';
+import { applyControlCoverage, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, makeFeatureStateFindings, sanitize, validateFeatures, validateRouteExclusions, writeReports, type Finding, type FindingClassification, type PlaywrightTestResult, type RunResult, type TestRunComparison } from './core';
 import { qaChildEnv } from './database';
 import { exportSanitizedZip } from './evidence';
+import { classifyCommandFailure, classifyTestFailure, compareIsolatedAndFullTests, parsePlaywrightResults } from './test-results';
 
 const help = `Lucem QA Lab — isolated, evolutive audit runner
 
@@ -42,7 +44,7 @@ function parseArgs(args: string[]): Options {
   return { functional: get('--functional'), visual: get('--visual'), accessibility: get('--accessibility'), performance: get('--performance'), coverage: get('--coverage'), module: get('--module') ? args[args.indexOf('--module') + 1] : undefined, changed: get('--changed'), packageOnly: get('--package'), quick: get('--quick'), full: get('--full') || args.length === 0 };
 }
 const stamp = () => new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '').replace('T', '-').replace('Z', '');
-const findSecrets = () => ['QA_DATABASE_URL', 'DATABASE_URL', 'E2E_DATABASE_URL', 'SESSION_SECRET', 'QA_SESSION_SECRET', 'QA_POSTGRES_PASSWORD', 'STAGING_DB_PASSWORD', 'E2E_ADMIN_PASSWORD', 'E2E_SELLER_PASSWORD', 'E2E_INVENTORY_PASSWORD'].map((key) => process.env[key]).filter((value): value is string => Boolean(value));
+const findSecrets = (env: NodeJS.ProcessEnv = process.env) => ['QA_DATABASE_URL', 'DATABASE_URL', 'E2E_DATABASE_URL', 'SESSION_SECRET', 'QA_SESSION_SECRET', 'QA_POSTGRES_PASSWORD', 'STAGING_DB_PASSWORD', 'E2E_ADMIN_PASSWORD', 'E2E_SELLER_PASSWORD', 'E2E_INVENTORY_PASSWORD'].map((key) => env[key]).filter((value): value is string => Boolean(value));
 function gitFiles(args: string[]) { try { return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean); } catch { return []; } }
 function changedFiles(): Set<string> {
   const base = process.env.GITHUB_BASE_REF;
@@ -62,6 +64,21 @@ function filterByChanged<T extends { source?: string; route?: string; tests?: st
   return items.filter((item) => (item.source && changed.has(item.source)) || (item.tests && item.tests.some((test) => changed.has(test))) || (item.route && changed.has(item.route)));
 }
 function moduleFeatures(area?: string) { return area ? features.filter((feature) => feature.area === area || feature.tags.includes(area)) : features; }
+async function previousIsolatedTests(reportsRoot: string, revision: string): Promise<PlaywrightTestResult[]> {
+  let entries;
+  try { entries = await readdir(reportsRoot, { withFileTypes: true }); } catch { return []; }
+  const latest = new Map<string, { startedAt: string; result: PlaywrightTestResult }>();
+  for (const entry of entries.filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+    let run: Partial<RunResult>;
+    try { run = JSON.parse(await readFile(path.join(reportsRoot, entry.name, 'RUN-RESULT.json'), 'utf8')) as Partial<RunResult>; } catch { continue; }
+    if (run.profile !== 'selected' || run.metadata?.revision !== revision || !Array.isArray(run.playwrightTests)) continue;
+    for (const result of run.playwrightTests) {
+      const previous = latest.get(result.id);
+      if (!previous || (run.startedAt ?? entry.name) >= previous.startedAt) latest.set(result.id, { startedAt: run.startedAt ?? entry.name, result });
+    }
+  }
+  return [...latest.values()].map(({ result }) => result);
+}
 function suiteForTest(test: string): string | undefined {
   if (test.includes('dev-test-01/')) return 'playwright.e2e.config.ts';
   if (test.includes('dev-03/')) return 'playwright.products.config.ts';
@@ -81,17 +98,21 @@ function captureCommand(label: string, command: string, args: string[], env: Nod
   const started = Date.now();
   const result = spawnSync(command, args, { cwd: process.cwd(), env, encoding: 'utf8', timeout: 25 * 60_000, maxBuffer: 32 * 1024 * 1024 });
   const raw = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
-  const safe = sanitize(raw, findSecrets());
+  const safe = sanitize(raw, findSecrets(env));
   const skipped = Number(raw.match(/(?:^|\n)\s*(\d+) skipped\b/m)?.[1] ?? 0);
   const passed = Number(raw.match(/(?:^|\n)\s*(\d+) passed\b/m)?.[1] ?? 0);
   const prerequisiteBlocked = /^BLOCKED:/m.test(raw) || /Executable doesn't exist|browserType\.launch.*executable/i.test(raw);
   const status: CoverageStatus = result.status === 0 ? skipped > 0 && passed === 0 ? 'NOT_EXECUTED' : 'PASS' : result.error?.message.includes('ETIMEDOUT') || prerequisiteBlocked || result.error ? 'BLOCKED' : 'FAIL';
   const reason = result.status === 0 ? status === 'NOT_EXECUTED' ? `All ${skipped} selected Playwright tests were skipped.` : 'Command completed.' : result.error?.message ?? (prerequisiteBlocked ? 'Required QA prerequisite is unavailable.' : `exit ${result.status ?? 'unknown'}`);
-  return { id: label, status, reason, durationMs: Date.now() - started, evidence: [`${label}.log`], output: safe, exitCode: result.status ?? 1, runDir };
+  const testResults = parsePlaywrightResults(raw, label).map((test) => {
+    const safeReason = test.reason ? sanitize(test.reason, findSecrets(env)) : undefined;
+    return { ...test, reason: safeReason, classification: classifyTestFailure(safeReason ?? '', test.status) };
+  });
+  return { id: label, status, reason, durationMs: Date.now() - started, evidence: [`${label}.log`], output: safe, exitCode: result.status ?? 1, runDir, testResults, classification: classifyCommandFailure(raw, status, testResults) };
 }
 function findingForCommand(command: ReturnType<typeof captureCommand>): Finding | undefined {
   if (command.status === 'PASS') return undefined;
-  return { id: `QA-RUN-${command.id.toUpperCase().replace(/[^A-Z0-9]+/g, '-')}`, category: command.status === 'BLOCKED' || command.status === 'NOT_EXECUTED' ? 'coverage' : 'functional', severity: command.status === 'NOT_EXECUTED' ? 'minor' : 'major', module: command.id, feature: command.id, route: 'application', role: 'QA fixture', device: 'chromium', scenario: command.id, steps: [`Run ${command.id}`], expected: 'Command exits zero with reproducible test evidence', actual: command.reason, evidence: command.evidence, source: 'playwright', confidence: 'high', status: command.status === 'BLOCKED' || command.status === 'NOT_EXECUTED' ? 'NEEDS_MANUAL_REVIEW' : 'CONFIRMED', recommendation: 'Inspect the sanitized command log and satisfy the isolated QA prerequisite before claiming coverage.' };
+  return { id: `QA-RUN-${command.id.toUpperCase().replace(/[^A-Z0-9]+/g, '-')}`, category: command.status === 'BLOCKED' || command.status === 'NOT_EXECUTED' ? 'coverage' : 'functional', severity: command.status === 'NOT_EXECUTED' ? 'minor' : 'major', module: command.id, feature: command.id, route: 'application', role: 'QA fixture', device: 'chromium', scenario: command.id, steps: [`Run ${command.id}`], expected: 'Command exits zero with reproducible test evidence', actual: command.reason, evidence: command.evidence, source: 'playwright', confidence: 'high', classification: command.classification, status: command.status === 'BLOCKED' || command.status === 'NOT_EXECUTED' ? 'NEEDS_MANUAL_REVIEW' : 'CONFIRMED', recommendation: 'Inspect the sanitized test-level log and classify each outcome before claiming module coverage.' };
 }
 async function browserFindings(reportDir: string): Promise<Finding[]> {
   const findings: Finding[] = [];
@@ -103,29 +124,29 @@ async function browserFindings(reportDir: string): Promise<Finding[]> {
     try { record = JSON.parse(await readFile(path.join(eventDir, file), 'utf8')); } catch { continue; }
     for (const [index, event] of (record.events ?? []).entries()) {
       if (event.expected || event.type === 'visual-baseline-not-approved') {
-        if (event.type === 'visual-baseline-not-approved') findings.push({ id: `QA-VISUAL-${shaSlug(`${file}-${index}`)}`, category: 'visual', severity: 'minor', module: 'visual', feature: 'VISUAL-BASELINE', route: event.message?.split(';')[0] ?? 'public screen', role: 'anonymous', device: 'multi-viewport', scenario: 'Compare against approved baseline', steps: [event.message ?? 'No baseline'], expected: 'Approved reference image exists and matches within threshold', actual: 'NOT_EXECUTED: baseline is absent; current capture was retained for review', evidence: [`screenshots/${event.message?.split('/')[0] ?? ''}`], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', recommendation: 'Review the paired Stitch/current images and approve a baseline explicitly if appropriate.' });
+        if (event.type === 'visual-baseline-not-approved') findings.push({ id: `QA-VISUAL-${shaSlug(`${file}-${index}`)}`, category: 'visual', severity: 'minor', module: 'visual', feature: 'VISUAL-BASELINE', route: event.message?.split(';')[0] ?? 'public screen', role: 'anonymous', device: 'multi-viewport', scenario: 'Compare against approved baseline', steps: [event.message ?? 'No baseline'], expected: 'Approved reference image exists and matches within threshold', actual: 'NOT_EXECUTED: baseline is absent; current capture was retained for review', evidence: [`screenshots/${event.message?.split('/')[0] ?? ''}`], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', classification: 'COVERAGE_GAP', recommendation: 'Review the paired Stitch/current images and approve a baseline explicitly if appropriate.' });
         continue;
       }
       const supported = ['console-error', 'page-error', 'request-failed', 'http-4xx', 'http-5xx'].includes(event.type);
       if (!supported) continue;
-      findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.url ?? 'unknown', role: 'anonymous', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence: [`browser-events/${file}`], source: 'playwright', confidence: 'high', status: 'CONFIRMED', recommendation: 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
+      findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.url ?? 'unknown', role: 'anonymous', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence: [`browser-events/${file}`], source: 'playwright', confidence: 'high', status: 'CONFIRMED', classification: event.type === 'http-5xx' ? 'PRODUCT_DEFECT' : 'UNDETERMINED', recommendation: 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
     }
   }
   for (const filename of ['axe-findings.json', 'authenticated-axe-findings.json']) try {
     const axe = JSON.parse(await readFile(path.join(reportDir, 'accessibility', filename), 'utf8')) as Array<{ route: string; violations: Array<{ id: string; impact?: string | null; description: string; nodes: Array<{ target: string[]; summary?: string | null }> }> }>;
-    for (const result of axe) for (const violation of result.violations) findings.push({ id: `QA-AXE-${shaSlug(`${result.route}-${violation.id}`)}`, category: 'accessibility', severity: violation.impact === 'critical' || violation.impact === 'serious' ? 'major' : 'minor', module: 'accessibility', feature: violation.id, route: result.route, role: filename.startsWith('authenticated') ? 'ADMIN' : 'anonymous', device: 'desktop', scenario: violation.description, steps: [`Open ${result.route}`, 'Run axe-core'], expected: 'No violations at the configured WCAG tags', actual: `${violation.impact ?? 'unknown'} violation ${violation.id}`, evidence: violation.nodes.flatMap((node) => node.target), source: 'axe', confidence: 'high', status: 'CONFIRMED', recommendation: violation.nodes.map((node) => node.summary ?? '').filter(Boolean).join('\n') || violation.description });
+    for (const result of axe) for (const violation of result.violations) findings.push({ id: `QA-AXE-${shaSlug(`${result.route}-${violation.id}`)}`, category: 'accessibility', severity: violation.impact === 'critical' || violation.impact === 'serious' ? 'major' : 'minor', module: 'accessibility', feature: violation.id, route: result.route, role: filename.startsWith('authenticated') ? 'ADMIN' : 'anonymous', device: 'desktop', scenario: violation.description, steps: [`Open ${result.route}`, 'Run axe-core'], expected: 'No violations at the configured WCAG tags', actual: `${violation.impact ?? 'unknown'} violation ${violation.id}`, evidence: violation.nodes.flatMap((node) => node.target), source: 'axe', confidence: 'high', status: 'CONFIRMED', classification: 'PRODUCT_DEFECT', recommendation: violation.nodes.map((node) => node.summary ?? '').filter(Boolean).join('\n') || violation.description });
   } catch { /* axe mode did not execute */ }
   for (const filename of ['overflow-findings.json', 'authenticated-overflow-findings.json']) try {
     const responsive = JSON.parse(await readFile(path.join(reportDir, 'responsive', filename), 'utf8')) as { failures?: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; overlappingControls: number; overlapDetails?: string[] }> };
-    for (const failure of responsive.failures ?? []) findings.push({ id: `QA-RESP-${shaSlug(`${failure.page}-${failure.viewport}`)}`, category: 'responsive', severity: 'major', module: 'responsive', feature: 'VIEWPORT-BOUNDS', route: failure.page, role: filename.startsWith('authenticated') ? 'ADMIN' : 'anonymous', device: failure.viewport, scenario: 'Horizontal overflow, offscreen controls or severe control overlap', steps: [`Open ${failure.page}`, `Set viewport ${failure.viewport}`], expected: 'No horizontal overflow, offscreen controls or near-total overlap', actual: `${failure.overflowPx}px horizontal overflow; ${failure.offscreenControls} controls outside viewport; ${failure.overlappingControls} overlapping pairs${failure.overlapDetails?.length ? ` (${failure.overlapDetails.join('; ')})` : ''}`, evidence: [`screenshots/${failure.page.replace(/^\//, '')}/${failure.viewport}`], source: 'playwright', confidence: 'high', status: 'CONFIRMED', recommendation: 'Inspect the viewport capture and adjust the affected responsive layout.' });
+    for (const failure of responsive.failures ?? []) findings.push({ id: `QA-RESP-${shaSlug(`${failure.page}-${failure.viewport}`)}`, category: 'responsive', severity: 'major', module: 'responsive', feature: 'VIEWPORT-BOUNDS', route: failure.page, role: filename.startsWith('authenticated') ? 'ADMIN' : 'anonymous', device: failure.viewport, scenario: 'Horizontal overflow, offscreen controls or severe control overlap', steps: [`Open ${failure.page}`, `Set viewport ${failure.viewport}`], expected: 'No horizontal overflow, offscreen controls or near-total overlap', actual: `${failure.overflowPx}px horizontal overflow; ${failure.offscreenControls} controls outside viewport; ${failure.overlappingControls} overlapping pairs${failure.overlapDetails?.length ? ` (${failure.overlapDetails.join('; ')})` : ''}`, evidence: [`screenshots/${failure.page.replace(/^\//, '')}/${failure.viewport}`], source: 'playwright', confidence: 'high', status: 'CONFIRMED', classification: 'PRODUCT_DEFECT', recommendation: 'Inspect the viewport capture and adjust the affected responsive layout.' });
   } catch { /* responsive mode did not execute */ }
   try {
     const performance = JSON.parse(await readFile(path.join(reportDir, 'performance', 'navigation-samples.json'), 'utf8')) as { p95Ms: number; thresholdMs: number; samples: unknown[] };
-    if (performance.p95Ms > performance.thresholdMs) findings.push({ id: 'QA-PERF-PUBLIC-NAV', category: 'performance', severity: 'major', module: 'performance', feature: 'PUBLIC-NAVIGATION', route: '/login,/registro', role: 'anonymous', device: 'desktop', scenario: 'Five navigation samples per public route', steps: ['Navigate repeatedly to each registered public page'], expected: `p95 < ${performance.thresholdMs}ms`, actual: `p95 ${performance.p95Ms}ms across ${performance.samples.length} samples`, evidence: ['performance/navigation-samples.json'], source: 'performance', confidence: 'medium', status: 'CONFIRMED', recommendation: 'Repeat under a controlled warm server and inspect the route waterfall before attributing cause.' });
+    if (performance.p95Ms > performance.thresholdMs) findings.push({ id: 'QA-PERF-PUBLIC-NAV', category: 'performance', severity: 'major', module: 'performance', feature: 'PUBLIC-NAVIGATION', route: '/login,/registro', role: 'anonymous', device: 'desktop', scenario: 'Five navigation samples per public route', steps: ['Navigate repeatedly to each registered public page'], expected: `p95 < ${performance.thresholdMs}ms`, actual: `p95 ${performance.p95Ms}ms across ${performance.samples.length} samples`, evidence: ['performance/navigation-samples.json'], source: 'performance', confidence: 'medium', status: 'CONFIRMED', classification: 'PRODUCT_DEFECT', recommendation: 'Repeat under a controlled warm server and inspect the route waterfall before attributing cause.' });
   } catch { /* performance check did not execute */ }
   try {
     const apis = JSON.parse(await readFile(path.join(reportDir, 'performance', 'authenticated-api-samples.json'), 'utf8')) as { summary?: Array<{ route: string; p95Ms: number; thresholdMs: number; samples: number }> };
-    for (const metric of apis.summary ?? []) if (metric.p95Ms > metric.thresholdMs) findings.push({ id: `QA-PERF-${shaSlug(metric.route)}`, category: 'performance', severity: 'major', module: 'performance', feature: metric.route, route: metric.route, role: 'ADMIN', device: 'chromium', scenario: `Five authenticated API samples for ${metric.route}`, steps: [`GET ${metric.route} five times`], expected: `p95 < ${metric.thresholdMs}ms`, actual: `p95 ${metric.p95Ms}ms`, evidence: ['performance/authenticated-api-samples.json'], source: 'performance', confidence: 'medium', status: 'CONFIRMED', recommendation: 'Repeat controlled samples and inspect the server request/query trace locally.' });
+    for (const metric of apis.summary ?? []) if (metric.p95Ms > metric.thresholdMs) findings.push({ id: `QA-PERF-${shaSlug(metric.route)}`, category: 'performance', severity: 'major', module: 'performance', feature: metric.route, route: metric.route, role: 'ADMIN', device: 'chromium', scenario: `Five authenticated API samples for ${metric.route}`, steps: [`GET ${metric.route} five times`], expected: `p95 < ${metric.thresholdMs}ms`, actual: `p95 ${metric.p95Ms}ms`, evidence: ['performance/authenticated-api-samples.json'], source: 'performance', confidence: 'medium', status: 'CONFIRMED', classification: 'PRODUCT_DEFECT', recommendation: 'Repeat controlled samples and inspect the server request/query trace locally.' });
   } catch { /* authenticated performance not executed */ }
   return findings;
 }
@@ -178,7 +199,7 @@ async function main() {
   if (options.full) { options.coverage = true; options.functional = true; options.visual = true; options.accessibility = true; options.performance = true; }
   const startedAt = new Date().toISOString();
   const id = runId(); const reportDir = path.resolve('qa/reports', id); await mkdir(reportDir, { recursive: true, mode: 0o700 });
-  const checks: RunResult['checks'] = []; const blocked: string[] = []; const findings: Finding[] = [];
+  const checks: RunResult['checks'] = []; const blocked: string[] = []; const findings: Finding[] = []; const playwrightTests: PlaywrightTestResult[] = [];
   const executedFeatureTests = new Map<string, CoverageStatus>();
   const executedStateTests = new Map<string, CoverageStatus>();
   let qaReady = false; let qaRuntimeEnv: NodeJS.ProcessEnv | undefined;
@@ -187,7 +208,7 @@ async function main() {
   const rawControls = await discoverControls(process.cwd(), allRoutes);
   const allControls = applyControlCoverage(rawControls);
   const registryErrors = [...validateFeatures(allRoutes, features, process.cwd(), rawControls), ...await validateRouteExclusions(allRoutes)];
-  for (const message of registryErrors) findings.push({ id: `QA-REG-${findings.length + 1}`, category: 'coverage', severity: 'major', module: 'registry', feature: 'REGISTRY-VALIDATION', route: 'qa/features/registry.ts', role: 'all', device: 'all', scenario: 'Validate registry references', steps: [message], expected: 'Feature entry references existing routes and tests', actual: message, evidence: ['qa/features/registry.ts'], source: 'static', confidence: 'high', status: 'CONFIRMED', recommendation: 'Update the declarative registry and test reference.' });
+  for (const message of registryErrors) findings.push({ id: `QA-REG-${findings.length + 1}`, category: 'coverage', severity: 'major', module: 'registry', feature: 'REGISTRY-VALIDATION', route: 'qa/features/registry.ts', role: 'all', device: 'all', scenario: 'Validate registry references', steps: [message], expected: 'Feature entry references existing routes and tests', actual: message, evidence: ['qa/features/registry.ts'], source: 'static', confidence: 'high', status: 'CONFIRMED', classification: 'TEST_DEFECT', recommendation: 'Update the declarative registry and test reference.' });
   let routes = allRoutes; let controls = allControls;
   if (options.module) {
     const selected = moduleFeatures(options.module); const ids = new Set(selected.map((feature) => feature.id));
@@ -206,7 +227,7 @@ async function main() {
   await writeReports(reportDir, routes, controls, findings, { runId: id, profile: options.full ? 'full' : options.quick ? 'quick' : 'selected', blocked, metadata: { revision: gitFiles(['rev-parse', 'HEAD'])[0] ?? 'unknown' } });
   for (const check of checks) await writeFile(path.join(reportDir, `${check.id}.log`), sanitize(`${check.status}: ${check.reason}\n${check.evidence.join('\n')}`, findSecrets()));
 
-  const runCommands: Array<{ label: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
+    const runCommands: Array<{ label: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
   const tags = [options.visual && '@qa-observe', options.accessibility && '@qa-axe', options.performance && '@qa-performance'].filter(Boolean) as string[];
   const publicObservationSelected = !options.module || options.module === 'auth';
   if (tags.length && publicObservationSelected) {
@@ -218,7 +239,7 @@ async function main() {
       const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') });
       // QA preparation rechecks the connected DB identity before migrate, fixture creation and cleanup.
       const prepared = captureCommand('qa-database-prepare', 'npx', ['tsx', 'scripts/qa/prepare.ts'], env, reportDir);
-      checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence });
+       checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence, classification: prepared.classification });
       await writeFile(path.join(reportDir, 'qa-database-prepare.log'), prepared.output);
       if (prepared.status !== 'PASS') { functionalBlocked = true; blocked.push(prepared.reason); const failure = findingForCommand(prepared); if (failure) findings.push(failure); }
       else {
@@ -231,41 +252,67 @@ async function main() {
         if (!options.module || options.module === 'auth') executions.push({ config: 'playwright.qa.config.ts', suffix: 'functional-smoke', extraArgs: ['--grep', '@qa-functional'], testFiles: ['e2e/qa-01/audit.spec.ts'] });
         if (selectedFeatures.some((feature) => feature.tests.some((test) => test.endsWith('dev-01-auth.spec.ts')))) executions.push({ config: 'playwright.qa.config.ts', suffix: 'auth-form', extraArgs: ['e2e/dev-01-auth.spec.ts'], testFiles: ['e2e/dev-01-auth.spec.ts'] });
         for (const config of suites) executions.push({ config });
+        let suiteIndex = 0;
         for (const execution of executions) {
           const config = execution.config;
-          const commandArgs = ['playwright', 'test', `--config=${config}`, ...(execution.extraArgs ?? [])];
-          const command = captureCommand(`functional-${execution.suffix ?? config.replace(/[^a-z0-9]+/gi, '-')}`, 'npx', commandArgs, env, reportDir);
+          const suffix = execution.suffix ?? config.replace(/[^a-z0-9]+/gi, '-');
+          const commandId = `functional-${suffix}`;
           const coveredFiles = execution.testFiles ?? features.flatMap((feature) => feature.tests.filter((test) => suiteForTest(test) === config));
+          let suiteEnv = env;
+          if (suiteIndex > 0) {
+            const secret = randomBytes(48).toString('base64url');
+            suiteEnv = { ...env, SESSION_SECRET: secret, QA_SESSION_SECRET: secret, QA_LAB_RUN_LOCK_HELD: '1' };
+            const preparation = captureCommand(`qa-fixture-prepare-${suffix}`, 'npx', ['tsx', 'scripts/qa/prepare.ts'], suiteEnv, reportDir);
+            checks.push({ id: preparation.id, status: preparation.status, reason: preparation.reason, durationMs: preparation.durationMs, evidence: preparation.evidence, classification: preparation.classification });
+            await writeFile(path.join(reportDir, `${preparation.id}.log`), preparation.output);
+            if (preparation.status !== 'PASS') {
+              functionalBlocked = true;
+              blocked.push(`${suffix} fixture preparation failed: ${preparation.reason}`);
+              for (const testFile of coveredFiles) {
+                executedFeatureTests.set(testFile, 'BLOCKED');
+                playwrightTests.push({ id: `PW-${createHash('sha256').update(`${testFile}|${suffix}|NOT_EXECUTED`).digest('hex').slice(0, 16)}`, title: `Suite not started: ${suffix}`, suite: suffix, file: testFile, project: 'not-started', status: 'NOT_EXECUTED', classification: 'ENVIRONMENT_FAILURE', reason: preparation.reason, evidence: preparation.evidence });
+              }
+              const failure = findingForCommand(preparation); if (failure) findings.push(failure);
+              suiteIndex += 1;
+              continue;
+            }
+            qaRuntimeEnv = suiteEnv;
+          }
+          const commandArgs = ['playwright', 'test', `--config=${config}`, ...(execution.extraArgs ?? [])];
+          const command = captureCommand(commandId, 'npx', commandArgs, suiteEnv, reportDir);
+          playwrightTests.push(...command.testResults);
           for (const testFile of coveredFiles) executedFeatureTests.set(testFile, command.status);
-          checks.push({ id: command.id, status: command.status, reason: command.reason, durationMs: command.durationMs, evidence: command.evidence });
+          checks.push({ id: command.id, status: command.status, reason: command.reason, durationMs: command.durationMs, evidence: command.evidence, classification: command.classification });
           await writeFile(path.join(reportDir, `${command.id}.log`), command.output);
           const failure = findingForCommand(command); if (failure) findings.push(failure);
           process.stdout.write(`${command.id}: ${command.status} (${command.reason})\n`);
+          suiteIndex += 1;
         }
       }
     } catch (error) {
       functionalBlocked = true;
       const message = error instanceof Error ? error.message : 'QA database prerequisite failed';
       blocked.push(message);
-      checks.push({ id: 'qa-database-preflight', status: 'BLOCKED', reason: message, evidence: [] });
-      findings.push({ id: 'QA-DB-001', category: 'isolation', severity: 'critical', module: 'qa', feature: 'QA-DATABASE-GUARD', route: 'lucem_qa', role: 'runner', device: 'all', scenario: 'Verify QA DB target before mutations', steps: ['Set explicit loopback QA_DATABASE_URL and provision isolated lucem_qa'], expected: 'Connected database/user exactly lucem_qa on port 55433', actual: message, evidence: [], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', recommendation: 'Provision the dedicated local QA service; do not use the E2E, staging, production, or Cloudflare target.' });
+      checks.push({ id: 'qa-database-preflight', status: 'BLOCKED', reason: message, evidence: [], classification: 'ENVIRONMENT_FAILURE' });
+      findings.push({ id: 'QA-DB-001', category: 'isolation', severity: 'critical', module: 'qa', feature: 'QA-DATABASE-GUARD', route: 'lucem_qa', role: 'runner', device: 'all', scenario: 'Verify QA DB target before mutations', steps: ['Set explicit loopback QA_DATABASE_URL and provision isolated lucem_qa'], expected: 'Connected database/user exactly lucem_qa on port 55433', actual: message, evidence: [], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', classification: 'ENVIRONMENT_FAILURE', recommendation: 'Provision the dedicated local QA service; do not use the E2E, staging, production, or Cloudflare target.' });
       process.stderr.write(`BLOCKED: ${message}\n`);
     }
   }
   const databaseObservationTags = publicObservationSelected ? [] : [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[];
   const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[] : databaseObservationTags;
-  if (authenticatedObservationTags.length && process.env.QA_DATABASE_URL && !qaReady) {
-    try {
-      const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') });
-      const prepared = captureCommand('qa-database-prepare-observation', 'npx', ['tsx', 'scripts/qa/prepare.ts'], env, reportDir);
-      checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence });
-      await writeFile(path.join(reportDir, `${prepared.id}.log`), prepared.output);
-      if (prepared.status === 'PASS') { qaReady = true; qaRuntimeEnv = env; }
-      else { blocked.push(prepared.reason); const failure = findingForCommand(prepared); if (failure) findings.push(failure); }
-    } catch (error) { blocked.push(error instanceof Error ? error.message : 'QA identity preflight failed.'); }
-  }
   if (authenticatedObservationTags.length) {
     if (qaReady && qaRuntimeEnv) {
+      const secret = randomBytes(48).toString('base64url');
+      const observationEnv = { ...qaRuntimeEnv, SESSION_SECRET: secret, QA_SESSION_SECRET: secret, QA_LAB_RUN_LOCK_HELD: '1', QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') };
+      const prepared = captureCommand('qa-observation-fixture-prepare', 'npx', ['tsx', 'scripts/qa/prepare.ts'], observationEnv, reportDir);
+      checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence, classification: prepared.classification });
+      await writeFile(path.join(reportDir, `${prepared.id}.log`), prepared.output);
+      if (prepared.status !== 'PASS') {
+        blocked.push(`Authenticated observations fixture preparation failed: ${prepared.reason}`);
+        const failure = findingForCommand(prepared); if (failure) findings.push(failure);
+        qaReady = false;
+      } else {
+        qaRuntimeEnv = observationEnv;
       if (options.performance && (!options.module || options.module === 'products')) {
         const fixture = captureCommand('qa-performance-fixture', 'npx', ['tsx', 'scripts/qa/perf-fixture.ts'], qaRuntimeEnv, reportDir);
         checks.push({ id: fixture.id, status: fixture.status, reason: fixture.reason, durationMs: fixture.durationMs, evidence: fixture.evidence });
@@ -274,6 +321,26 @@ async function main() {
         else { blocked.push(fixture.reason); const failure = findingForCommand(fixture); if (failure) findings.push(failure); }
       }
       runCommands.push({ label: 'authenticated-qa-observation', args: ['playwright', 'test', '--config=playwright.qa.config.ts', '--grep', authenticatedObservationTags.join('|')], env: qaRuntimeEnv });
+      }
+    } else if (process.env.QA_DATABASE_URL) {
+      try {
+        const env = await qaChildEnv(); Object.assign(env, { QA_MODULE: options.module ?? '', QA_REPORT_DIR: reportDir, QA_PLAYWRIGHT_REPORT_DIR: path.join(reportDir, 'playwright-report'), QA_PLAYWRIGHT_OUTPUT_DIR: path.join(reportDir, 'traces') });
+        const prepared = captureCommand('qa-database-prepare-observation', 'npx', ['tsx', 'scripts/qa/prepare.ts'], env, reportDir);
+        checks.push({ id: prepared.id, status: prepared.status, reason: prepared.reason, durationMs: prepared.durationMs, evidence: prepared.evidence, classification: prepared.classification });
+        await writeFile(path.join(reportDir, `${prepared.id}.log`), prepared.output);
+        if (prepared.status === 'PASS') {
+          qaReady = true;
+          qaRuntimeEnv = env;
+          if (options.performance && (!options.module || options.module === 'products')) {
+            const fixture = captureCommand('qa-performance-fixture', 'npx', ['tsx', 'scripts/qa/perf-fixture.ts'], env, reportDir);
+            checks.push({ id: fixture.id, status: fixture.status, reason: fixture.reason, durationMs: fixture.durationMs, evidence: fixture.evidence, classification: fixture.classification });
+            await writeFile(path.join(reportDir, `${fixture.id}.log`), fixture.output);
+            if (fixture.status === 'PASS') env.QA_PERF_FIXTURE_READY = '1';
+            else { blocked.push(fixture.reason); const failure = findingForCommand(fixture); if (failure) findings.push(failure); }
+          }
+          runCommands.push({ label: 'authenticated-qa-observation', args: ['playwright', 'test', '--config=playwright.qa.config.ts', '--grep', authenticatedObservationTags.join('|')], env });
+        } else { blocked.push(prepared.reason); const failure = findingForCommand(prepared); if (failure) findings.push(failure); }
+      } catch (error) { blocked.push(error instanceof Error ? error.message : 'QA identity preflight failed.'); }
     }
     else {
       const message = 'Authenticated responsive/axe/API performance checks BLOCKED: isolated lucem_qa and synthetic credentials are unavailable.';
@@ -282,7 +349,8 @@ async function main() {
   }
   for (const command of runCommands) {
     const result = captureCommand(command.label, 'npx', command.args, command.env, reportDir);
-    checks.push({ id: result.id, status: result.status, reason: result.reason, durationMs: result.durationMs, evidence: result.evidence });
+    checks.push({ id: result.id, status: result.status, reason: result.reason, durationMs: result.durationMs, evidence: result.evidence, classification: result.classification });
+    playwrightTests.push(...result.testResults);
     await writeFile(path.join(reportDir, `${result.id}.log`), result.output);
     const failure = findingForCommand(result); if (failure) findings.push(failure);
     if (result.id === 'read-only-browser-observation' && result.status === 'PASS') {
@@ -293,7 +361,7 @@ async function main() {
   }
   if (qaReady && qaRuntimeEnv) {
     const cleanup = captureCommand('qa-database-cleanup', 'npx', ['tsx', 'scripts/qa/cleanup.ts'], qaRuntimeEnv, reportDir);
-    checks.push({ id: cleanup.id, status: cleanup.status, reason: cleanup.reason, durationMs: cleanup.durationMs, evidence: cleanup.evidence });
+    checks.push({ id: cleanup.id, status: cleanup.status, reason: cleanup.reason, durationMs: cleanup.durationMs, evidence: cleanup.evidence, classification: cleanup.classification });
     await writeFile(path.join(reportDir, `${cleanup.id}.log`), cleanup.output);
     if (cleanup.status !== 'PASS') { blocked.push(`QA cleanup requires review: ${cleanup.reason}`); const failure = findingForCommand(cleanup); if (failure) findings.push(failure); }
   }
@@ -339,7 +407,20 @@ async function main() {
   await copyStitchReferences(reportDir);
   await makeScreenshotManifest(reportDir);
   const status: CoverageStatus = checks.some((check) => check.status === 'FAIL') || findings.some((finding) => finding.status === 'CONFIRMED' && finding.category !== 'coverage') ? 'FAIL' : findings.some((finding) => finding.severity === 'critical' && finding.category !== 'coverage') ? 'BLOCKED' : findings.some((finding) => finding.category === 'coverage') ? 'UNCOVERED' : checks.some((check) => check.status === 'BLOCKED') ? 'BLOCKED' : checks.some((check) => check.status === 'NOT_EXECUTED') ? 'NOT_EXECUTED' : 'PASS';
-  const completed: RunResult = { runId: id, profile: options.full ? 'full' : options.quick ? 'quick' : 'selected', startedAt, endedAt: new Date().toISOString(), status, routes, controls, featureStates: finalStateCoverage, findings, checks, blocked, metadata: { revision: gitFiles(['rev-parse', 'HEAD'])[0] ?? 'unknown', changedFiles: [...changed] } };
+  const revision = gitFiles(['rev-parse', 'HEAD'])[0] ?? 'unknown';
+  const testComparisons: TestRunComparison[] = options.full ? compareIsolatedAndFullTests(playwrightTests, await previousIsolatedTests(path.resolve('qa/reports'), revision)) : [];
+  for (const comparison of testComparisons) {
+    if (!comparison.classification) continue;
+    const testResult = playwrightTests.find((item) => item.id === comparison.id);
+    if (testResult?.status === 'FAIL' && testResult.classification === 'UNDETERMINED') testResult.classification = comparison.classification;
+    const check = checks.find((item) => item.id === comparison.fullSuite);
+    if (check?.status === 'FAIL' && check.classification === 'UNDETERMINED') {
+      check.classification = comparison.classification;
+      const finding = findings.find((item) => item.module === check.id && item.feature === check.id);
+      if (finding) finding.classification = comparison.classification;
+    }
+  }
+  const completed: RunResult = { runId: id, profile: options.full ? 'full' : options.quick ? 'quick' : 'selected', area: options.module, startedAt, endedAt: new Date().toISOString(), status, routes, controls, featureStates: finalStateCoverage, findings, checks, playwrightTests, testComparisons, blocked, metadata: { revision, changedFiles: [...changed] } };
   await writeReports(reportDir, routes, controls, findings, completed);
   await writeFile(path.join(reportDir, 'RUN-RESULT.json'), JSON.stringify(completed, null, 2));
   const screenshotManifest = JSON.parse(await readFile(path.join(reportDir, 'SCREENSHOT-MANIFEST.json'), 'utf8')) as { screenshots: Array<{ path: string; route: string; viewport: string; stitchReference?: string; comparison: string }> };

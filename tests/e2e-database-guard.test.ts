@@ -21,9 +21,10 @@ describe('E2E database guard', () => {
   });
 
   it('accepts the dedicated QA identity only under explicit QA_RUN', () => {
-    expect(requireE2eDatabaseUrl({ QA_RUN: '1', QA_DATABASE_URL: qa, E2E_DATABASE_URL: qa, E2E_DATABASE_USER: 'lucem_qa' })).toBe(qa);
-    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', E2E_DATABASE_URL: valid, DATABASE_URL: valid })).toThrow('QA_DATABASE_URL is required');
-    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_DATABASE_URL: qa, E2E_DATABASE_URL: valid, E2E_DATABASE_USER: 'lucem_qa' })).toThrow('must equal');
-    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_DATABASE_URL: qa.replace('55433', '5432'), E2E_DATABASE_URL: qa.replace('55433', '5432') })).toThrow('port 55433');
+    expect(requireE2eDatabaseUrl({ QA_RUN: '1', QA_LAB_RUN_LOCK_HELD: '1', QA_DATABASE_URL: qa, E2E_DATABASE_URL: qa, E2E_DATABASE_USER: 'lucem_qa' })).toBe(qa);
+    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_DATABASE_URL: qa, E2E_DATABASE_URL: qa, E2E_DATABASE_USER: 'lucem_qa' })).toThrow('serialized Lucem QA Lab runner');
+    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_LAB_RUN_LOCK_HELD: '1', E2E_DATABASE_URL: valid, DATABASE_URL: valid })).toThrow('QA_DATABASE_URL is required');
+    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_LAB_RUN_LOCK_HELD: '1', QA_DATABASE_URL: qa, E2E_DATABASE_URL: valid, E2E_DATABASE_USER: 'lucem_qa' })).toThrow('must equal');
+    expect(() => requireE2eDatabaseUrl({ QA_RUN: '1', QA_LAB_RUN_LOCK_HELD: '1', QA_DATABASE_URL: qa.replace('55433', '5432'), E2E_DATABASE_URL: qa.replace('55433', '5432') })).toThrow('port 55433');
   });
 });

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { requireE2eDatabaseUrl, requirePasswords } from './database';
 
@@ -12,6 +12,63 @@ export const ids = {
 };
 const emails = { admin: 'dev-test-01-admin@invalid.test', seller: 'dev-test-01-seller@invalid.test', inventory: 'dev-test-01-inventory@invalid.test' };
 
+export async function clearOwnedFixtures(db: PrismaClient, ownership: { businessIds?: string[]; userIds?: string[] }) {
+  const businessIds = [...new Set(ownership.businessIds ?? [])];
+  const userIds = [...new Set(ownership.userIds ?? [])];
+  if (!businessIds.length && !userIds.length) return;
+
+  const ownedRows = await db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const sales = businessIds.length ? await tx.sale.findMany({ where: { businessId: { in: businessIds } }, select: { id: true } }) : [];
+    const saleIds = sales.map((sale) => sale.id);
+    const returns = businessIds.length ? await tx.return.findMany({ where: { businessId: { in: businessIds } }, select: { id: true } }) : [];
+    const returnIds = returns.map((row) => row.id);
+
+    if (returnIds.length) await tx.returnLine.deleteMany({ where: { returnId: { in: returnIds } } });
+    if (businessIds.length) await tx.saleIdempotency.deleteMany({ where: { businessId: { in: businessIds } } });
+    if (saleIds.length) await tx.saleLine.deleteMany({ where: { saleId: { in: saleIds } } });
+    if (returnIds.length) await tx.return.deleteMany({ where: { id: { in: returnIds } } });
+    if (saleIds.length) await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
+    if (businessIds.length) {
+      await tx.reservationBatchIdempotency.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.reservation.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.productVariant.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.product.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.category.deleteMany({ where: { businessId: { in: businessIds } } });
+      await tx.uploadQuotaCounter.deleteMany({ where: { businessId: { in: businessIds } } });
+    }
+    if (businessIds.length || userIds.length) {
+      const owners = [
+        ...(businessIds.length ? [{ businessId: { in: businessIds } }] : []),
+        ...(userIds.length ? [{ userId: { in: userIds } }] : []),
+      ];
+      await tx.auditLog.deleteMany({ where: { OR: owners } });
+      await tx.session.deleteMany({ where: { OR: [
+        ...(userIds.length ? [{ userId: { in: userIds } }] : []),
+        ...(businessIds.length ? [{ activeBusinessId: { in: businessIds } }] : []),
+      ] } });
+      await tx.membership.deleteMany({ where: { OR: [
+        ...(userIds.length ? [{ userId: { in: userIds } }] : []),
+        ...(businessIds.length ? [{ businessId: { in: businessIds } }] : []),
+      ] } });
+    }
+    if (userIds.length) await tx.businessCreationIdempotency.deleteMany({ where: { userId: { in: userIds } } });
+    if (businessIds.length) await tx.business.deleteMany({ where: { id: { in: businessIds } } });
+    if (userIds.length) await tx.user.deleteMany({ where: { id: { in: userIds } } });
+    return { saleIds, returnIds };
+  });
+
+  const remaining = await Promise.all([
+    businessIds.length ? db.business.count({ where: { id: { in: businessIds } } }) : 0,
+    userIds.length ? db.user.count({ where: { id: { in: userIds } } }) : 0,
+    ownedRows.saleIds.length ? db.sale.count({ where: { id: { in: ownedRows.saleIds } } }) : 0,
+    ownedRows.returnIds.length ? db.return.count({ where: { id: { in: ownedRows.returnIds } } }) : 0,
+    businessIds.length ? db.uploadQuotaCounter.count({ where: { businessId: { in: businessIds } } }) : 0,
+  ]);
+  if (remaining.some((count) => count !== 0)) throw new Error(`Owned QA fixture cleanup left rows: ${remaining.join(',')}`);
+}
+
 export async function clearE2eData(db: PrismaClient) {
   const qaRun = process.env.QA_RUN === '1';
   const businessRows = await db.business.findMany({ where: { OR: [{ id: { in: [ids.centro, ids.norte] } }, { name: { in: ['DEV-TEST-01 Centro', 'DEV-TEST-01 Norte'] } }] }, select: { id: true } });
@@ -19,30 +76,7 @@ export async function clearE2eData(db: PrismaClient) {
   const userRows = await db.user.findMany({ where: userWhere, select: { id: true } });
   const businesses = businessRows.map(row => row.id);
   const users = userRows.map(row => row.id);
-  if (businesses.length || users.length) {
-    await db.$transaction(async tx => {
-      const sales = await tx.sale.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
-      const saleIds = sales.map(sale => sale.id);
-      const returns = await tx.return.findMany({ where: { businessId: { in: businesses } }, select: { id: true } });
-      await tx.returnLine.deleteMany({ where: { returnId: { in: returns.map(row => row.id) } } });
-      await tx.saleIdempotency.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.saleLine.deleteMany({ where: { saleId: { in: saleIds } } });
-      await tx.return.deleteMany({ where: { id: { in: returns.map(row => row.id) } } });
-      await tx.sale.deleteMany({ where: { id: { in: saleIds } } });
-      await tx.reservationBatchIdempotency.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.reservation.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.priceCostHistory.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.inventoryMovement.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.auditLog.deleteMany({ where: { OR: [{ businessId: { in: businesses } }, { userId: { in: users } }] } });
-      await tx.session.deleteMany({ where: { OR: [{ userId: { in: users } }, { activeBusinessId: { in: businesses } }] } });
-      await tx.productVariant.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.product.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.category.deleteMany({ where: { businessId: { in: businesses } } });
-      await tx.membership.deleteMany({ where: { OR: [{ userId: { in: users } }, { businessId: { in: businesses } }] } });
-      await tx.business.deleteMany({ where: { id: { in: businesses } } });
-      await tx.user.deleteMany({ where: { id: { in: users } } });
-    });
-  }
+  await clearOwnedFixtures(db, { businessIds: businesses, userIds: users });
   // The legacy E2E database is disposable and may clear its global test state.
   // QA Lab preserves unowned global buckets/orphan audit history and cleans only
   // rows associated with its named synthetic users/businesses.

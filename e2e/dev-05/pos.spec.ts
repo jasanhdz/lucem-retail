@@ -32,12 +32,15 @@ test.describe('DEV-05 POS', () => {
     await trigger.click();
     await expect(page.getByRole('dialog', { name: 'Seleccionar variante de DEV-TEST-01 Centro Catalog' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
-    await page.keyboard.press('Shift+Tab');
-    await expect(page.getByRole('button', { name: 'Aumentar cantidad' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Aumentar cantidad' })).toBeDisabled();
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: /Agregar al carrito/ })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('button', { name: 'Cerrar variantes' })).toBeFocused();
     await page.screenshot({ path: test.info().outputPath('pos-variants.png'), fullPage: false });
-    await expect(page.getByRole('button', { name: /SKU DEV-TEST-01-ZERO/ })).toBeDisabled();
+    const unavailable = await page.request.get('/api/products?available=true&q=DEV-TEST-01-ZERO');
+    expect(unavailable.ok()).toBeTruthy();
+    expect(await unavailable.json()).toEqual([]);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(trigger).toBeFocused();
@@ -126,7 +129,6 @@ test.describe('DEV-05 POS', () => {
     expect([first.status(), second.status()].sort()).toEqual([201, 409]);
     await page.goto('/pos');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
-    await addVariant(page, 'DEV-TEST-01-NORMAL');
     await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
@@ -155,7 +157,6 @@ test.describe('DEV-05 POS', () => {
     const sellerPage = await seller.newPage();
     await sellerPage.goto('/pos');
     await sellerPage.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
-    await addVariant(sellerPage, 'DEV-TEST-01-NORMAL');
     await sellerPage.getByRole('button', { name: 'Cobrar', exact: true }).click();
     await expect(sellerPage).toHaveURL(/\/pos\/cobro$/);
     await sellerPage.getByLabel('Monto recibido').fill('150');
