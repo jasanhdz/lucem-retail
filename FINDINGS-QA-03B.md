@@ -2,7 +2,7 @@
 
 ## Resumen
 
-9/13 criterios pasan con evidencia ejecutable. El full run `2026-11-13T16-25-33-493Z-3294700` terminó `FAIL` (107/107 Playwright PASS, sin suite bloqueada ni pruebas fallidas), no PASS global: observó 25 errores de hidratación y 2 solicitudes `net::ERR_ABORTED`, ambos aún sin causa confirmada; además quedan 69/78 estados `UNCOVERED`, 308/317 controles `NOT_REGISTERED` y referencias visuales sin baseline aprobado. Los hallazgos de cobertura/visuales no se han convertido en defectos de aplicación.
+10/13 criterios pasan con evidencia ejecutable. El full run `2026-11-13T16-25-33-493Z-3294700` terminó `FAIL` (107/107 Playwright PASS, sin suite bloqueada ni pruebas fallidas), no PASS global: observó 25 errores de hidratación y 2 solicitudes `net::ERR_ABORTED`, ambos aún sin causa confirmada; además quedan 69/78 estados `UNCOVERED`, 308/317 controles `NOT_REGISTERED` y referencias visuales sin baseline aprobado. Los hallazgos de cobertura/visuales no se han convertido en defectos de aplicación.
 
 ### Rúbrica QA-03B
 
@@ -18,14 +18,13 @@
 10. **PASS — Reporte/ZIP:** informe estructurado, capturas, probe, eventos, fixtures, cleanup y checks bajo `qa/reports/2026-11-13T16-25-33-493Z-3294700/`. ZIP `qa/reports/lucem-audit-20261113-163532.zip`, SHA-256 `5b976866085d4e270325120002ea1e5815c8df8d627c2a1b960767826edddc2d`, 13,439,342 bytes; `unzip -t` sin errores; 202 entradas; cero valores runtime y ningún storage state.
 11. **PASS — Checks:** `npm test` 78/78, `npm run typecheck`, `npm run lint`, `git diff --check` PASS. Las suites autenticadas no registraron FAIL/BLOCKED; el check visual de baselines queda `NOT_EXECUTED` al no existir baselines aprobados.
 12. **BLOCKED — Cierre sin hallazgos abiertos:** no se puede aprobar QA-03B mientras continúen los avisos React sin atribución, los dos abortos sin explicación, los gaps de cobertura y la comparación visual sin baselines aprobados. Resultado global full es FAIL, aunque los flujos funcionales pasan.
-13. **PENDING — Publicación:** quedan por verificar commit(s) QA-only, destino de rama y fast-forward push. No se incluirán cambios locales DEV-DATA-01, `SPEC.md`, seed demo, `next-env.d.ts` ni el diff preexistente de `e2e/dev-sec-01/product-pagination.spec.ts`.
+13. **PASS — Publicación fast-forward:** commits QA-only `73d11c6`, `bbcab87`, `b09d8a7`, `b14b816` quedaron publicados en `feature/lucem-ui-redesign-v1` mediante fast-forward (`d9be6c3..b14b816`). El primer push HTTPS no tenía credenciales disponibles; SSH autenticado realizó el push sin cambiar la configuración remota. Sin merge a main ni force push. Cambios DEV-DATA-01, `SPEC.md`, seed demo, `next-env.d.ts` y el diff preexistente de `e2e/dev-sec-01/product-pagination.spec.ts` permanecen locales y sin incluir.
 
 ## Abiertos
 
 - [ ] F-QA03B-08 · major · criterio #8 — Recuperar/conciliar payload completo de cada una de las 19 ocurrencias históricas y sus atributos SSR/cliente exactos; probe autenticada actual no las reproduce.
 - [ ] F-QA03B-09 · major · criterio #9 — Investigar origen de los 25 warnings del observer visual y correlación/initiator de los dos abortos fetch; clasificación pendiente, no corregido.
 - [ ] F-QA03B-12 · major · criterio #12 — 69 estados y 308 controles siguen sin evidencia funcional; 59 referencias visuales no tienen baseline aprobado.
-- [ ] F-QA03B-13 · major · criterio #13 — Registrar y publicar exclusivamente commits QA-03B mediante fast-forward a la rama feature indicada.
 
 ## Resueltos (verificados este pass)
 
@@ -38,3 +37,4 @@
 - [x] F-QA03B-07 — Comparación baseline/full por claves y denominadores completada.
 - [x] F-QA03B-10 — Reporte/ZIP generado, checksum calculado e integridad comprobada.
 - [x] F-QA03B-11 — Pruebas unitarias, typecheck y lint pasan.
+- [x] F-QA03B-13 — Cuatro commits QA-only publicados mediante fast-forward en la rama solicitada.
