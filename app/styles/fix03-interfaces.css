@@ -1,0 +1,144 @@
+/* FIX-03: preserve compact layouts with responsive controls that remain usable. */
+.products-quick-filters:focus-visible,
+.inventory-kardex-chips:focus-visible {
+  outline: 2px solid #16815f;
+  outline-offset: 3px;
+}
+
+@media (min-width: 761px) and (max-width: 1023px) {
+  .products-editor-surface .products-modal-actions {
+    position: relative;
+    inset: auto;
+    margin: 24px 0 0;
+    padding: 12px 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .products-editor-page {
+    padding-inline: 20px;
+  }
+
+  .products-editor-surface .products-value-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding-inline: 20px;
+  }
+
+  .products-editor-surface .products-value-grid > label,
+  .products-editor-surface .products-money-input,
+  .products-editor-surface .products-money-input input {
+    min-width: 0;
+  }
+
+  .reservations-operations-page .reservations-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .reservations-operations-page .reservations-heading > div:first-child {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .reservations-operations-page .reservations-title-row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .reservations-operations-page .reservations-heading-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .reservations-operations-page .reservations-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reservations-toolbar-upgraded .reservations-toolbar-top {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .reservations-toolbar-upgraded .reservations-search {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .reservations-toolbar-upgraded .reservations-period-select {
+    min-width: 0;
+    align-self: flex-start;
+  }
+
+  .reservations-operations-page .reservations-filter-chips {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .products-editor-page {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 24px);
+  }
+
+  .products-editor-surface .products-modal-actions {
+    position: relative;
+    inset: auto;
+    margin: 18px 0 0;
+    padding: 12px 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .inventory-general .inventory-operational-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding-inline: 12px;
+  }
+
+  .products-editor-surface .products-stock-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .products-editor-surface .products-stock-input input {
+    min-width: 0;
+    padding: 0 10px !important;
+    text-align: center;
+  }
+
+  .products-editor-surface .products-stock-stepper {
+    position: static;
+    right: auto;
+    display: flex;
+    flex: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1023px) {
+  .products-editor-surface .products-editor-hero {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .products-editor-surface .products-value-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Inventory shortcut glyphs need AA contrast at their small rendered size. */
+.inventory-kardex-search kbd {
+  color: #53635e;
+}
+
+.inventory-general .inventory-filter-top-row .inventory-search kbd {
+  color: #53635e;
+}

@@ -14,7 +14,7 @@ function modulePages<T extends { area: string }>(pages: T[]) {
 function redactedUrl(raw: string) { try { const parsed = new URL(raw); return `${parsed.origin}${parsed.pathname}`; } catch { return '[invalid-url]'; } }
 function attachBrowserObservers(page: Page) {
   const events: BrowserEvent[] = [];
-  page.on('console', (message) => { if (message.type() === 'error') events.push({ type: 'console-error', message: message.text().slice(0, 500) }); });
+  page.on('console', (message) => { if (message.type() === 'error') events.push({ type: 'console-error', message: message.text().slice(0, 5000) }); });
   page.on('pageerror', (error) => events.push({ type: 'page-error', message: error.message.slice(0, 500) }));
   page.on('requestfailed', (request) => events.push({ type: 'request-failed', url: redactedUrl(request.url()), message: request.failure()?.errorText?.slice(0, 300) }));
   page.on('response', (response) => {
@@ -37,6 +37,45 @@ async function openPage(page: Page, route: string, events: BrowserEvent[]) {
   const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
   if (!response || response.status() >= 400) events.push({ type: 'unexpected-navigation-status', url: route, status: response?.status() ?? 0 });
   await page.evaluate(() => document.fonts.ready);
+}
+async function responsiveMetrics(page: Page) {
+  return page.evaluate(() => {
+    const hasAccessibleLocalScroller = (element: HTMLElement) => {
+      let parent = element.parentElement;
+      while (parent && parent !== document.body) {
+        const style = getComputedStyle(parent);
+        const rect = parent.getBoundingClientRect();
+        const isScrollable = (style.overflowX === 'auto' || style.overflowX === 'scroll') && parent.scrollWidth > parent.clientWidth + 1;
+        const isNamed = Boolean(parent.getAttribute('aria-label') || parent.getAttribute('aria-labelledby'));
+        const hasKeyboardControl = parent.tabIndex >= 0 || Boolean(parent.querySelector('button:not(:disabled),a[href],input,select,textarea'));
+        const isNamedAndKeyboardReachable = isNamed && hasKeyboardControl;
+        if (isScrollable && isNamedAndKeyboardReachable && rect.left >= -1 && rect.right <= window.innerWidth + 1) return true;
+        parent = parent.parentElement;
+      }
+      return false;
+    };
+    const doc = document.documentElement;
+    const offscreen = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea')].filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && (rect.left < -1 || rect.right > window.innerWidth + 1) && !hasAccessibleLocalScroller(element);
+    });
+    const describe = (element: HTMLElement) => `${element.tagName.toLowerCase()}${element.className ? `.${String(element.className).trim().replace(/\s+/g, '.')}` : ''}[${element.getAttribute('aria-label') || element.getAttribute('placeholder') || element.innerText?.trim().slice(0, 40) || ''}]`;
+    const offscreenDetails = offscreen.map((element) => `${describe(element)} right=${Math.round(element.getBoundingClientRect().right)}`);
+    const overflowElements = [...document.querySelectorAll<HTMLElement>('body *')].filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.right > window.innerWidth + 1;
+    }).slice(0, 12).map((element) => `${describe(element)} right=${Math.round(element.getBoundingClientRect().right)} width=${Math.round(element.getBoundingClientRect().width)}`);
+    const controls = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href]')].filter((element) => !element.closest('.input-wrap') && !(element.tagName === 'A' && getComputedStyle(element).display === 'inline')).map((element) => ({ element, rect: element.getBoundingClientRect(), name: element.getAttribute('aria-label') || element.getAttribute('name') || element.id || element.innerText?.trim().slice(0, 48) || element.tagName.toLowerCase() })).filter((item) => item.rect.width > 0 && item.rect.height > 0);
+    const overlapDetails: string[] = [];
+    for (let i = 0; i < controls.length; i += 1) for (let j = i + 1; j < controls.length; j += 1) {
+      const a = controls[i].rect; const b = controls[j].rect;
+      const overlapWidth = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const overlapHeight = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      const area = overlapWidth * overlapHeight; const smallerArea = Math.min(a.width * a.height, b.width * b.height);
+      if (smallerArea > 0 && area / smallerArea > 0.95) overlapDetails.push(`${controls[i].element.tagName.toLowerCase()}[${controls[i].name}] overlaps ${controls[j].element.tagName.toLowerCase()}[${controls[j].name}]`);
+    }
+    return { overflowPx: Math.max(0, doc.scrollWidth - window.innerWidth), offscreenControls: offscreen.length, offscreenDetails, overflowElements, overlappingControls: overlapDetails.length, overlapDetails, width: window.innerWidth, height: window.innerHeight };
+  });
 }
 const testRoute = test.extend<{ observed: BrowserEvent[] }>({
   observed: async ({ page }, use, testInfo) => {
@@ -68,30 +107,14 @@ testRoute('login exposes native invalid-email and visible-password states @qa-ob
 
 testRoute('public screens render at desktop, tablet and mobile sizes @qa-observe @qa-visual', async ({ page, observed }, testInfo) => {
   const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
-  const failures: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; overlappingControls: number; overlapDetails: string[] }> = [];
+  const failures: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; offscreenDetails: string[]; overflowElements: string[]; overlappingControls: number; overlapDetails: string[] }> = [];
   const screens = modulePages(qaConfig.publicPages);
   if (!screens.length) test.skip(true, `No public screens are registered for module ${process.env.QA_MODULE}.`);
   for (const screen of screens) {
     for (const viewport of qaConfig.viewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openPage(page, screen.path, observed);
-      const metrics = await page.evaluate(() => {
-        const doc = document.documentElement;
-        const offscreen = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea')].filter((element) => {
-          const rect = element.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0 && (rect.left < -1 || rect.right > window.innerWidth + 1);
-        });
-        const controls = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href]')].filter((element) => !element.closest('.input-wrap') && !(element.tagName === 'A' && getComputedStyle(element).display === 'inline')).map((element) => ({ element, rect: element.getBoundingClientRect(), name: element.getAttribute('aria-label') || element.getAttribute('name') || element.id || element.innerText?.trim().slice(0, 48) || element.tagName.toLowerCase() })).filter((item) => item.rect.width > 0 && item.rect.height > 0);
-        const overlapDetails: string[] = [];
-        for (let i = 0; i < controls.length; i += 1) for (let j = i + 1; j < controls.length; j += 1) {
-          const a = controls[i].rect; const b = controls[j].rect;
-          const overlapWidth = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
-          const overlapHeight = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-          const area = overlapWidth * overlapHeight; const smallerArea = Math.min(a.width * a.height, b.width * b.height);
-          if (smallerArea > 0 && area / smallerArea > 0.95) overlapDetails.push(`${controls[i].element.tagName.toLowerCase()}[${controls[i].name}] overlaps ${controls[j].element.tagName.toLowerCase()}[${controls[j].name}]`);
-        }
-        return { overflowPx: Math.max(0, doc.scrollWidth - window.innerWidth), offscreenControls: offscreen.length, overlappingControls: overlapDetails.length, overlapDetails, width: window.innerWidth, height: window.innerHeight };
-      });
+      const metrics = await responsiveMetrics(page);
       const folder = path.join(root, 'screenshots', screen.id); await mkdir(folder, { recursive: true });
       const file = path.join(folder, `${viewport.id}-${viewport.width}x${viewport.height}.png`);
       const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled' });
@@ -101,7 +124,7 @@ testRoute('public screens render at desktop, tablet and mobile sizes @qa-observe
         expect(image, `visual baseline ${screen.id}/${viewport.id}; no baseline auto-update`).toMatchSnapshot(`${screen.id}/${viewport.id}.png`, { threshold: 0.18, maxDiffPixelRatio: 0.02 });
         if (!expected.length) observed.push({ type: 'visual-baseline-empty', message: baseline });
       } else observed.push({ type: 'visual-baseline-not-approved', message: `${screen.id}/${viewport.id}; ${screen.stitch ? `Stitch reference ${screen.stitch}` : 'no approved Stitch design reference'}` });
-      if (metrics.overflowPx > 0 || metrics.offscreenControls > 0 || metrics.overlappingControls > 0) failures.push({ page: screen.path, viewport: viewport.id, overflowPx: metrics.overflowPx, offscreenControls: metrics.offscreenControls, overlappingControls: metrics.overlappingControls, overlapDetails: metrics.overlapDetails });
+      if (metrics.overflowPx > 0 || metrics.offscreenControls > 0 || metrics.overlappingControls > 0) failures.push({ page: screen.path, viewport: viewport.id, ...metrics });
       testInfo.annotations.push({ type: 'viewport', description: `${screen.path} ${viewport.width}x${viewport.height}` });
     }
   }
@@ -177,34 +200,40 @@ testRoute.describe('isolated authenticated QA fixture', () => {
   testRoute('registered workspace pages render at all required viewports @qa-db-visual', async ({ page, observed }, testInfo) => {
     testRoute.setTimeout(120_000);
     const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
-    const failures: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; overlappingControls: number; overlapDetails: string[] }> = [];
+    const failures: Array<{ page: string; viewport: string; overflowPx: number; offscreenControls: number; offscreenDetails: string[]; overflowElements: string[]; overlappingControls: number; overlapDetails: string[] }> = [];
     const screens = modulePages(qaConfig.authenticatedPages);
+    const narrowScreens = new Set(['products', 'product-create', 'inventory', 'kardex', 'reservations']);
+    const narrowViewport = { id: 'mobile-narrow', width: 320, height: 568 };
+    const observedViewports = new Map<string, { id: string; width: number; height: number }>();
     if (!screens.length) test.skip(true, `No authenticated screens are registered for module ${process.env.QA_MODULE}.`);
-    for (const screen of screens) for (const viewport of qaConfig.viewports) {
+    for (const screen of screens) for (const viewport of [...qaConfig.viewports, ...(narrowScreens.has(screen.id) ? [narrowViewport] : [])]) {
+      observedViewports.set(viewport.id, viewport);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openPage(page, screen.path, observed);
-      const measurement = await page.evaluate(() => {
-        const doc = document.documentElement;
-        const offscreen = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea')].filter((element) => { const rect = element.getBoundingClientRect(); return rect.width > 0 && rect.height > 0 && (rect.left < -1 || rect.right > window.innerWidth + 1); });
-        const controls = [...document.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href]')].filter((element) => !element.closest('.input-wrap') && !(element.tagName === 'A' && getComputedStyle(element).display === 'inline')).map((element) => ({ element, rect: element.getBoundingClientRect(), name: element.getAttribute('aria-label') || element.getAttribute('name') || element.id || element.innerText?.trim().slice(0, 48) || element.tagName.toLowerCase() })).filter((item) => item.rect.width > 0 && item.rect.height > 0);
-        const overlapDetails: string[] = [];
-        for (let i = 0; i < controls.length; i += 1) for (let j = i + 1; j < controls.length; j += 1) {
-          const a = controls[i].rect; const b = controls[j].rect;
-          const area = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-          if (Math.min(a.width * a.height, b.width * b.height) > 0 && area / Math.min(a.width * a.height, b.width * b.height) > 0.95) overlapDetails.push(`${controls[i].element.tagName.toLowerCase()}[${controls[i].name}] overlaps ${controls[j].element.tagName.toLowerCase()}[${controls[j].name}]`);
-        }
-        return { overflowPx: Math.max(0, doc.scrollWidth - window.innerWidth), offscreenControls: offscreen.length, overlappingControls: overlapDetails.length, overlapDetails };
-      });
+      const measurement = await responsiveMetrics(page);
+      if (screen.id === 'products' && viewport.width <= 768) {
+        await expect(page.getByRole('group', { name: 'Filtros rápidos' })).toHaveAttribute('tabindex', '0');
+      }
+      if (screen.id === 'kardex' && viewport.width <= 768) {
+        await expect(page.getByRole('group', { name: 'Tipo de movimiento' })).toHaveAttribute('tabindex', '0');
+      }
       const folder = path.join(root, 'screenshots', screen.id); await mkdir(folder, { recursive: true });
       const file = path.join(folder, `${viewport.id}-${viewport.width}x${viewport.height}.png`);
       const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled' });
       const baseline = path.resolve('qa/visual-baselines', screen.id, `${viewport.id}.png`);
       if (existsSync(baseline)) expect(image, `visual baseline ${screen.id}/${viewport.id}`).toMatchSnapshot(`${screen.id}/${viewport.id}.png`, { threshold: 0.18, maxDiffPixelRatio: 0.02 });
       else observed.push({ type: 'visual-baseline-not-approved', message: `${screen.id}/${viewport.id}; no approved baseline` });
+      const scrollGroup = screen.id === 'products' ? page.getByRole('group', { name: 'Filtros rápidos' }) : screen.id === 'kardex' ? page.getByRole('group', { name: 'Tipo de movimiento' }) : screen.id === 'reservations' ? page.getByRole('group', { name: 'Filtrar apartados' }) : undefined;
+      if (scrollGroup && viewport.width <= 768) {
+        await expect(scrollGroup).toHaveAttribute('tabindex', '0');
+        const lastControl = scrollGroup.getByRole('button').last();
+        await lastControl.focus();
+        await expect(lastControl).toBeFocused();
+      }
       if (measurement.overflowPx > 0 || measurement.offscreenControls > 0 || measurement.overlappingControls > 0) failures.push({ page: screen.path, viewport: viewport.id, ...measurement });
     }
     await mkdir(path.join(root, 'responsive'), { recursive: true });
-    await writeFile(path.join(root, 'responsive', 'authenticated-overflow-findings.json'), JSON.stringify({ viewports: qaConfig.viewports, failures }, null, 2));
+    await writeFile(path.join(root, 'responsive', 'authenticated-overflow-findings.json'), JSON.stringify({ viewports: [...observedViewports.values()], failures }, null, 2));
     await persistEvents(observed, testInfo);
     expect(failures, 'authenticated workspace responsive overflow').toEqual([]);
   });

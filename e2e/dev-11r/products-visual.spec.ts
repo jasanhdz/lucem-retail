@@ -15,7 +15,10 @@ test('captures corrected dedicated product creation surfaces', async ({ page }, 
     await expect(form.getByRole('heading', { name: 'Crear Producto' })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath(`products-simple-corrected-${name}.png`), fullPage: true });
-    await form.locator('.variant-mode label').nth(1).click();
+    const multipleMode = form.getByRole('radio', { name: /Varias opciones/ });
+    await expect(multipleMode).toBeAttached();
+    await multipleMode.check({ force: true });
+    await expect(multipleMode).toBeChecked();
     for (let row = 0; row < (name === 'desktop' ? 3 : 1); row += 1) await form.getByRole('button', { name: /^Agregar/ }).click();
     if (name === 'desktop') {
       await form.getByLabel('Nombre del producto').fill('Playera Básica Algodón');
@@ -58,6 +61,8 @@ test('captures corrected dedicated product creation surfaces', async ({ page }, 
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath(`products-variants-corrected-${name}.png`), fullPage: true });
     await form.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page).toHaveURL(/\/productos$/);
+    await expect(page.getByRole('button', { name: 'Nuevo producto' })).toBeVisible();
   }
 });
 
@@ -99,7 +104,7 @@ test('captures the Stitch product catalog for desktop and mobile', async ({ page
     for (const [name, viewport] of Object.entries({ desktop: { width: 1450, height: 1600 }, mobile: { width: 394, height: 1600 } })) {
       await page.setViewportSize(viewport);
       await page.goto('/productos');
-      await page.getByRole('textbox', { name: 'Buscar productos' }).fill(prefix);
+      await page.locator('.products-search input').fill(prefix);
       await expect(page.locator('.product-card')).toHaveCount(6);
       await page.locator('.products-card-image-frame img').evaluateAll((images) => Promise.all(images.map((image) => (image as HTMLImageElement).decode().catch(() => undefined))));
       console.log(`catalog ${name} images:`, await page.locator('.products-card-image-frame img').evaluateAll((images) => images.map((image) => ({ src: (image as HTMLImageElement).getAttribute('src'), complete: (image as HTMLImageElement).complete, width: (image as HTMLImageElement).naturalWidth }))));

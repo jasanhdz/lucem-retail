@@ -524,6 +524,63 @@ test.describe('DEV-03 products', () => {
     await expect(page.getByRole('dialog', { name: 'Nuevo producto' })).toBeVisible();
   });
 
+  test('restaura el foco del editor al cerrar, cancelar, escapar y guardar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await waitForCatalog(page);
+    const trigger = page.getByRole('button', { name: 'Nuevo producto' });
+    const productName = `DEV-03-FIX03-focus-${Date.now()}`;
+    const sku = `FIX03-FOCUS-${Date.now()}`;
+    let productId: string | undefined;
+
+    async function openEditor() {
+      await trigger.click();
+      await expect(page).toHaveURL(/\/productos\/nuevo$/);
+      return page.getByRole('dialog', { name: 'Nuevo producto' });
+    }
+    async function expectCatalogFocus() {
+      await expect(page).toHaveURL(/\/productos$/);
+      await expect(trigger).toBeFocused();
+    }
+
+    try {
+      const closeEditor = await openEditor();
+      await closeEditor.getByRole('button', { name: 'Cerrar nuevo producto' }).click();
+      await expectCatalogFocus();
+
+      const cancelEditor = await openEditor();
+      await cancelEditor.getByRole('button', { name: 'Cancelar', exact: true }).click();
+      await expectCatalogFocus();
+
+      const escapeEditor = await openEditor();
+      await page.keyboard.press('Escape');
+      await expect(escapeEditor).toHaveCount(0);
+      await expectCatalogFocus();
+
+      const saveEditor = await openEditor();
+      await saveEditor.getByLabel('Nombre del producto').fill(productName);
+      await saveEditor.getByLabel('Categoría').selectOption({ index: 1 });
+      await saveEditor.getByLabel('SKU').fill(sku);
+      await saveEditor.getByLabel('Costo').fill('10.00');
+      await saveEditor.getByLabel('Precio de venta').fill('20.00');
+      await saveEditor.getByLabel('Existencia inicial').fill('2');
+      const savedResponse = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/products');
+      await saveEditor.getByRole('button', { name: 'Guardar producto' }).click();
+      const response = await savedResponse;
+      expect(response.status()).toBe(201);
+      productId = ((await response.json()) as { id: string }).id;
+      await expectCatalogFocus();
+    } finally {
+      if (!productId) {
+        const products = await page.request.get(`/api/products?q=${encodeURIComponent(sku)}`).then((response) => response.json()) as Array<{ id: string }>;
+        productId = products[0]?.id;
+      }
+      if (productId) {
+        const cleanup = await page.request.delete(`/api/products/${productId}`);
+        expect([200, 404]).toContain(cleanup.status());
+      }
+    }
+  });
+
   test('captura catálogo DEV-03 @visual', async ({ page }, testInfo) => {
     await waitForCatalog(page);
     await noOverflow(page);

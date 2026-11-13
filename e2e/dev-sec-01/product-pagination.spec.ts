@@ -70,7 +70,7 @@ test('product API filters and orders isolated >page-size fixtures without unboun
     expect(await cards.allTextContents()).not.toEqual(firstPage);
 
     await ui.goto(`${baseURL}/pos`);
-    await ui.getByLabel('Buscar productos').fill(prefix);
+    await ui.getByRole('textbox', { name: 'Buscar productos', exact: true }).fill(prefix);
     const posCards = ui.locator('.pos-product-card');
     await expect(posCards).toHaveCount(24);
     const firstPosPage = await posCards.allTextContents();
@@ -79,10 +79,23 @@ test('product API filters and orders isolated >page-size fixtures without unboun
     expect(await posCards.allTextContents()).not.toEqual(firstPosPage);
 
     await ui.goto(`${baseURL}/apartados`);
+    await ui.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/products' && url.searchParams.get('available') === 'true' && !url.searchParams.has('q');
+    });
     await ui.getByRole('button', { name: 'Nuevo apartado' }).click();
     const reservationDialog = ui.getByRole('dialog', { name: 'Nuevo apartado' });
+    await ui.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/products' && url.searchParams.get('available') === 'true' && !url.searchParams.has('q');
+    });
     const reservationSearch = reservationDialog.getByLabel('Buscar producto para apartado');
+    const resultsResponse = ui.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/products' && url.searchParams.get('available') === 'true' && url.searchParams.get('q') === prefix;
+    });
     await reservationSearch.fill(prefix);
+    await resultsResponse;
     const reservationResults = reservationDialog.locator('.reservation-catalog-results');
     await expect(reservationResults).toContainText('Product 001');
     await reservationSearch.press('PageDown');

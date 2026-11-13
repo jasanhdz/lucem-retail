@@ -69,7 +69,7 @@ export function POSCart({ cart, setCart, onCheckout }: { cart: POSLine[]; setCar
         <div className="pos-total-payable"><span>Total a pagar</span><strong>{currency.format(total)}<small>MXN</small></strong></div>
       </div>
 
-      <button className="pos-charge-trigger" type="button" aria-label="Cobrar" onClick={onCheckout} disabled={!cart.length}>
+      <button className="pos-charge-trigger" type="button" onClick={onCheckout} disabled={!cart.length}>
         <span><Calculator size={19} aria-hidden="true" />Cobrar</span><strong>{currency.format(total)}<kbd>F4</kbd></strong>
       </button>
 

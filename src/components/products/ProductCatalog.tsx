@@ -32,7 +32,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
   useEffect,
@@ -141,6 +141,7 @@ function normalizeDetail(detail: ProductDetail): ProductDetail {
 
 export function ProductCatalog({ role, businessName = "", initialCreate = false }: { role: Role; businessName?: string; initialCreate?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const canMutate = role !== "SELLER";
   const [rows, setRows] = useState<ProductRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -215,13 +216,23 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
       );
   }, []);
   useEffect(() => {
-    if (initialCreate || window.sessionStorage.getItem("products-return-focus-new") !== "1") return;
-    window.sessionStorage.removeItem("products-return-focus-new");
-    const frame = window.requestAnimationFrame(() => {
-      document.querySelector<HTMLButtonElement>('[aria-label="Nuevo producto"]')?.focus();
-    });
+    const focusKey = "products-return-focus-new";
+    if (initialCreate || pathname !== "/productos" || window.sessionStorage.getItem(focusKey) !== "1") return;
+    let attempts = 0;
+    let frame = 0;
+    const restoreFocus = () => {
+      const target = document.querySelector<HTMLButtonElement>('.products-catalog-actions [aria-label="Nuevo producto"]');
+      if (target?.isConnected && !target.disabled) {
+        target.focus({ preventScroll: true });
+        if (document.activeElement === target) {
+          window.sessionStorage.removeItem(focusKey);
+        }
+      }
+      if (++attempts < 4) frame = window.requestAnimationFrame(restoreFocus);
+    };
+    frame = window.requestAnimationFrame(restoreFocus);
     return () => window.cancelAnimationFrame(frame);
-  }, [initialCreate]);
+  }, [initialCreate, pathname]);
   useEffect(() => {
     if (!initialCreate) void loadProducts();
   }, [query, categoryId, status, available, typeFilter, sortBy, initialCreate, page, pageSize]);
@@ -418,7 +429,7 @@ export function ProductCatalog({ role, businessName = "", initialCreate = false 
           </div>
           <button className="products-advanced-filter-toggle" type="button" aria-expanded={advancedFilters} onClick={() => setAdvancedFilters((open) => !open)}><SlidersHorizontal size={20} aria-hidden="true"/><span className="sr-only">Filtros avanzados</span><span className="products-filter-dot" aria-hidden="true"/></button>
         </div>
-        <div className="products-quick-filters" role="group" aria-label="Filtros rápidos">
+        <div className="products-quick-filters" role="group" aria-label="Filtros rápidos" tabIndex={0}>
           <button type="button" className={!available && status === "all" && typeFilter === "all" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("all")}>Todos <span>({totalSkus})</span></button>
           <button type="button" className={available ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("available")}><i className="quick-dot quick-dot-available"/>Disponibles <span>({availableSkus})</span></button>
           <button type="button" className={status === "low" ? "filter-chip filter-chip-active" : "filter-chip"} onClick={() => applyQuickFilter("low")}><i className="quick-dot quick-dot-low"/>Stock bajo <span>({lowStockSkus})</span></button>
@@ -540,7 +551,6 @@ function ProductCard({
         className="product-card-main"
         type="button"
         onClick={onOpen}
-        aria-label={`Ver detalle de ${product.name}`}
       >
         <div className="products-card-image-frame">
           <ProductImage path={product.photoPath} name={product.name} />

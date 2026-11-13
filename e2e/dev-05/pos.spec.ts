@@ -59,7 +59,7 @@ test.describe('DEV-05 POS', () => {
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(30);
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(30);
     }
-    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await page.getByRole('button', { name: /^Cobrar/ }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('1');
     await expect(page.locator('.pos-cash-change')).toContainText('EFECTIVO INSUFICIENTE');
@@ -83,7 +83,7 @@ test.describe('DEV-05 POS', () => {
     await page.goto('/pos');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
     await addVariant(page, 'DEV-TEST-01-NORMAL');
-    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await page.getByRole('button', { name: /^Cobrar/ }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
     await page.getByLabel('Imprimir ticket térmico').uncheck();
@@ -129,7 +129,7 @@ test.describe('DEV-05 POS', () => {
     expect([first.status(), second.status()].sort()).toEqual([201, 409]);
     await page.goto('/pos');
     await page.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
-    await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await page.getByRole('button', { name: /^Cobrar/ }).click();
     await expect(page).toHaveURL(/\/pos\/cobro$/);
     await page.getByLabel('Monto recibido').fill('150');
     await page.getByLabel('Imprimir ticket térmico').uncheck();
@@ -157,7 +157,7 @@ test.describe('DEV-05 POS', () => {
     const sellerPage = await seller.newPage();
     await sellerPage.goto('/pos');
     await sellerPage.getByRole('button', { name: /Agregar DEV-TEST-01 Centro Catalog/ }).click();
-    await sellerPage.getByRole('button', { name: 'Cobrar', exact: true }).click();
+    await sellerPage.getByRole('button', { name: /^Cobrar/ }).click();
     await expect(sellerPage).toHaveURL(/\/pos\/cobro$/);
     await sellerPage.getByLabel('Monto recibido').fill('150');
     await sellerPage.getByLabel('Imprimir ticket térmico').uncheck();

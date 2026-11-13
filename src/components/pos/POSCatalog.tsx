@@ -66,13 +66,13 @@ export function POSCatalog({ onVariant }: { onVariant: (variant: ProductVariant,
   const products = groupProducts(rows);
   const visibleProducts = products;
   return (
-    <section className="pos-catalog" aria-labelledby="pos-catalog-title">
+    <section className="pos-catalog" aria-label="Catálogo del punto de venta">
       <h1 id="pos-catalog-title" className="sr-only">Nueva venta</h1>
       <div className="pos-toolbar">
         <label className="pos-search">
           <Search size={20} aria-hidden="true" />
-          <span className="sr-only">Buscar productos</span>
-          <input ref={searchRef} aria-label="Buscar productos" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); window.dispatchEvent(new CustomEvent('operation-search-sync', { detail: event.target.value })); }} placeholder="Buscar por nombre, SKU o código de barras… (F3)" />
+          <span className="sr-only">Buscar productos en punto de venta</span>
+          <input ref={searchRef} aria-label="Buscar productos en punto de venta" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); window.dispatchEvent(new CustomEvent('operation-search-sync', { detail: event.target.value })); }} placeholder="Buscar por nombre, SKU o código de barras… (F3)" />
           <span className="pos-scanner-ready"><i aria-hidden="true" />Escáner listo</span>
           <kbd>F3</kbd>
         </label>

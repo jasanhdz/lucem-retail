@@ -430,6 +430,10 @@
   .products-master-page > *,.products-master-filters,.products-master-filter-row,.products-master-filter-controls,.products-quick-filters { min-width: 0; max-width: 100%; }
   .products-page:has(.products-master-page) { padding: 0 16px 36px; }
   .workspace-content > .products-page:has(.products-master-page) { width: 100%; max-width: none; margin: 0; box-sizing: border-box; }
+  .products-editor-page { padding: 20px 20px 100px; }
+  .products-editor-surface .products-value-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 4px 20px 20px; }
+  .products-editor-surface .products-value-grid label,.products-editor-surface .products-money-input { min-width: 0; }
+  .products-editor-surface .products-money-input input { min-width: 0; }
   .products-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .products-master-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .products-catalog-heading { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -546,7 +550,13 @@
   .products-mobile-load-more>div { width: 100%; max-width: 300px; height: 5px; overflow: hidden; border-radius: 99px; background: #d6ede7; }
   .products-mobile-load-more>div>span { display: block; height: 100%; border-radius: 99px; background: #16815f; }
   .products-mobile-load-more button { display: flex; width: 100%; max-width: 300px; min-height: 46px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 11px; background: #fff; color: #102b2a; font-size: 12px; font-weight: 650; box-shadow: 0 2px 8px #102b2a0b; }
-  .products-master-card .product-placeholder span { display:none; }
-  .products-metric-desktop-copy { display:none; }
-  .products-metric-mobile-copy { display:inline; }
+.products-master-card .product-placeholder span { display:none; }
+.products-metric-desktop-copy { display:none; }
+.products-metric-mobile-copy { display:inline; }
 }
+
+@media (max-width: 360px) {
+  .products-editor-surface .products-value-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.products-quick-filters:focus-visible { outline: 2px solid #16815f; outline-offset: 3px; }

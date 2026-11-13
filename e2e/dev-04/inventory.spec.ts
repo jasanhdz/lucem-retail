@@ -72,7 +72,7 @@ test.describe('DEV-04 inventory', () => {
 
   test('ADMIN UI prevents duplicate mutation requests and refreshes after success', async ({ page }) => {
     await page.goto('/inventario');
-    const trigger = page.getByRole('button', { name: /Registrar movimiento/ });
+    const trigger = page.getByRole('button', { name: /Registrar entrada/ });
     await trigger.click();
     await expect(page.getByRole('dialog', { name: 'Registrar entrada de stock' })).toBeVisible();
     await page.keyboard.press('Escape');
@@ -137,7 +137,7 @@ test.describe('DEV-04 inventory', () => {
       await expect(page.getByRole('heading', { name: 'Kárdex de Movimientos' })).toBeVisible();
       await page.screenshot({ path: test.info().outputPath(`inventory-movements-${name}.png`), fullPage: false });
        await page.goto('/inventario');
-       await page.getByRole('button', { name: /Registrar movimiento/ }).click();
+        await page.getByRole('button', { name: /Registrar entrada/ }).click();
        await expect(page.getByRole('dialog')).toBeVisible();
        await page.screenshot({ path: test.info().outputPath(`inventory-mutation-${name}.png`), fullPage: false });
        await page.getByRole('button', { name: 'Cerrar diálogo' }).click();
