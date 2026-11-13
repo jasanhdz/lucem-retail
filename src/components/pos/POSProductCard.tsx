@@ -16,7 +16,8 @@ export function POSProductCard({ product, onSelect }: { product: ProductGroup; o
 
   return (
     <article className={`pos-product-card ${unavailable ? 'is-unavailable' : ''}`}>
-      <button type="button" className="pos-product-trigger" onClick={onSelect} disabled={unavailable} aria-label={`Ver producto ${product.name}`}>
+      <button type="button" className="pos-product-trigger" onClick={onSelect} disabled={unavailable}>
+        <span className="sr-only">Ver producto</span>
         <span className="pos-product-image-frame">
           {product.photoPath ? <img src={product.photoPath} alt="" className="pos-product-image" /> : <span className="pos-product-image pos-product-placeholder" aria-hidden="true">{product.name.slice(0, 1).toUpperCase()}</span>}
           <span className={`pos-stock-badge ${unavailable ? 'is-empty' : ''}`}>{unavailable ? 'Agotado (0 disp.)' : `${available} disp.`}</span>

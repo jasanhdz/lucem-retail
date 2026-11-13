@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -22,6 +23,19 @@ test.describe('DEV-05 POS', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Nueva venta' })).toBeAttached();
     await expect(page.locator('.pos-variant-badge').first()).toBeVisible();
+    const productTrigger = page.locator('.pos-product-trigger').filter({ hasText: 'DEV-TEST-01 Centro Catalog' }).first();
+    await expect(productTrigger).toHaveAccessibleName(/DEV-TEST-01 Centro Catalog/);
+    await expect(productTrigger).toHaveAccessibleName(/DEV-TEST-01-LOW/);
+    const triggerAxe = await new AxeBuilder({ page }).include('.pos-product-trigger').withRules(['label-content-name-mismatch']).analyze();
+    expect(triggerAxe.violations).toEqual([]);
+    await productTrigger.focus();
+    await expect(productTrigger).toBeFocused();
+    expect(await productTrigger.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe('none');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Seleccionar variante de DEV-TEST-01 Centro Catalog' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(productTrigger).toBeFocused();
     const categories = await (await page.request.get('/api/categories')).json();
     const testCategory = categories.find((category: { id: string }) => category.id === 'dev-test-01-centro-category');
     expect(testCategory).toBeTruthy();
@@ -69,10 +83,27 @@ test.describe('DEV-05 POS', () => {
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
     await page.locator('.pos-payment-heading .app-breadcrumbs').getByRole('link', { name: 'Punto de venta' }).click();
-    for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 } })) {
+    await expect(page).toHaveURL(/\/pos$/);
+    await expect(page.locator('.pos-page')).toBeVisible();
+    for (const [name, viewport] of Object.entries({ desktop: { width: 1440, height: 900 }, tablet: { width: 768, height: 1024 }, mobile: { width: 390, height: 844 }, mobileSmall: { width: 320, height: 568 } })) {
       await page.setViewportSize(viewport);
-      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-      expect(documentWidth, `${name} document width ${documentWidth} exceeds viewport ${viewport.width}`).toBeLessThanOrEqual(viewport.width);
+      const layout = await page.evaluate(() => {
+        const overflowing = [...document.querySelectorAll<HTMLElement>('*')].flatMap((element) => {
+          const rect = element.getBoundingClientRect();
+          if (rect.right <= window.innerWidth + 1 && rect.left >= -1) return [];
+          const style = getComputedStyle(element);
+          const ancestors: Array<Record<string, string | number>> = [];
+          let parent = element.parentElement;
+          for (let depth = 0; parent && depth < 3; depth += 1, parent = parent.parentElement) {
+            const parentStyle = getComputedStyle(parent);
+            const parentRect = parent.getBoundingClientRect();
+            ancestors.push({ tag: parent.tagName, className: String(parent.className), left: Math.round(parentRect.left), right: Math.round(parentRect.right), width: Math.round(parentRect.width), minWidth: parentStyle.minWidth, overflowX: parentStyle.overflowX });
+          }
+          return [{ tag: element.tagName, className: String(element.className), text: element.innerText?.trim().replace(/\s+/g, ' ').slice(0, 48) ?? '', left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width), minWidth: style.minWidth, flex: style.flex, gridTemplateColumns: style.gridTemplateColumns, overflowX: style.overflowX, ancestors }];
+        }).sort((left, right) => right.right - left.right).slice(0, 16);
+        return { path: location.pathname, viewport: window.innerWidth, documentWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth, overflowing };
+      });
+      expect(layout.documentWidth, `${name} POS layout: ${JSON.stringify(layout)}`).toBeLessThanOrEqual(viewport.width);
       await page.screenshot({ path: test.info().outputPath(`pos-${name}.png`), fullPage: false });
     }
   });
