@@ -3,14 +3,24 @@ const crypto = require('node:crypto');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { loadAuthorizedQaEnv } = require('./runtime-env.cjs');
 const tsx = path.resolve(__dirname, '../../node_modules/tsx/dist/cli.mjs');
 const args = process.argv.slice(2);
 const entry = args[0] === '--prepare' ? 'prepare.ts' : args[0] === '--cleanup' ? 'cleanup.ts' : 'lucem-audit.ts';
 const forwarded = entry === 'lucem-audit.ts' ? args : args.slice(1);
 const script = path.resolve(__dirname, entry);
 const run = [process.execPath, tsx, script, ...forwarded];
-const env = { ...process.env, QA_LAB_RUN_LOCK_HELD: '1' };
+const checkoutRoot = path.resolve(__dirname, '../..');
+let env;
 const mutatingQaMode = entry !== 'lucem-audit.ts' || args.length === 0 || args.some((arg) => ['--functional', '--full', '--quick', '--visual', '--accessibility', '--performance'].includes(arg));
+
+try {
+  env = mutatingQaMode ? loadAuthorizedQaEnv(checkoutRoot) : { ...process.env };
+} catch (error) {
+  process.stderr.write(`BLOCKED: ${error instanceof Error ? error.message : 'Authorized QA runtime configuration is invalid.'}\n`);
+  process.exit(1);
+}
+env.QA_LAB_RUN_LOCK_HELD = '1';
 
 let result;
 if (mutatingQaMode) {
