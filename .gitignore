@@ -1,6 +1,7 @@
 node_modules
 .next
 .next-e2e
+.next-e2e-security
 .next-build
 *.env
 .env
@@ -28,3 +29,4 @@ qa/reports/
 .qa-uploads/
 .qa-artifacts/
 .qa-private/
+.e2e-provisioned

@@ -41,6 +41,7 @@ export default defineConfig({
       E2E_LUCEM_UPLOAD_GLOBAL_MAX_BYTES: '128',
       E2E_LUCEM_UPLOAD_BUSINESS_MAX_BYTES: '128',
       E2E_LUCEM_UPLOAD_MIN_FREE_BYTES: '0',
+      NEXT_DIST_DIR: '.next-e2e-security',
     },
   },
 });

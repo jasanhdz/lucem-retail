@@ -1,0 +1,38 @@
+name: lucem-retail-e2e
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lucem-retail-e2e-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: lucem_e2e_admin
+      POSTGRES_PASSWORD: ${E2E_DB_ADMIN_PASSWORD:?Run npm run e2e:env:init first}
+      E2E_DB_PASSWORD: ${E2E_DB_PASSWORD:?Run npm run e2e:env:init first}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - e2e_data:/var/lib/postgresql/data
+      - ./scripts/e2e/init-db.sh:/docker-entrypoint-initdb.d/010-create-e2e-db.sh:ro
+    networks:
+      - e2e_private
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lucem_e2e -d lucem_retail_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    stop_grace_period: 30s
+
+volumes:
+  e2e_data:
+    name: lucem-retail-e2e-postgres-v1
+
+networks:
+  e2e_private:
+    name: lucem-retail-e2e-private-v2
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"

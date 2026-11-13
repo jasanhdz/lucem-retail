@@ -1,8 +1,14 @@
 import { URL } from 'node:url';
+import type { PrismaClient } from '@prisma/client';
 
 export const E2E_DATABASE_NAME = 'lucem_retail_e2e';
 export const E2E_DATABASE_PORT = '55432';
 export const E2E_DATABASE_USER = 'lucem_e2e';
+
+export function safeE2eError(error: unknown): string {
+  const message = error instanceof Error ? error.message : 'unexpected E2E database error';
+  return message.replace(/(?:postgres|postgresql):\/\/[^\s"'`]+/gi, '[redacted database URL]');
+}
 
 export function requireE2eDatabaseUrl(env: Record<string, string | undefined> = process.env): string {
   if (env.QA_RUN === '1') {
@@ -29,6 +35,19 @@ export function requireE2eDatabaseUrl(env: Record<string, string | undefined> = 
   if (decodeURIComponent(parsed.username) !== E2E_DATABASE_USER) throw new Error(`E2E_DATABASE_URL must use dedicated user ${E2E_DATABASE_USER}.`);
   if (env.E2E_DATABASE_USER && env.E2E_DATABASE_USER !== E2E_DATABASE_USER) throw new Error(`E2E_DATABASE_USER must be exactly ${E2E_DATABASE_USER}.`);
   return raw;
+}
+
+export async function assertE2eDatabaseIdentity(db: Pick<PrismaClient, '$queryRaw'>, env: Record<string, string | undefined> = process.env): Promise<{ database: string; user: string; serverVersion: string; serverPort: number; isSuperuser: boolean }> {
+  requireE2eDatabaseUrl(env);
+  const expected = env.QA_RUN === '1'
+    ? { database: 'lucem_qa', user: 'lucem_qa' }
+    : { database: E2E_DATABASE_NAME, user: E2E_DATABASE_USER };
+  const identity = await db.$queryRaw<Array<{ database: string; user: string; serverVersion: string; serverPort: number; isSuperuser: boolean }>>`SELECT current_database() AS database, current_user AS user, current_setting('server_version_num') AS "serverVersion", inet_server_port() AS "serverPort", (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS "isSuperuser"`;
+  const serverMajor = Math.floor(Number(identity[0]?.serverVersion) / 10_000);
+  if (identity[0]?.database !== expected.database || identity[0]?.user !== expected.user || serverMajor !== 16 || identity[0]?.serverPort !== 5432 || (env.QA_RUN !== '1' && identity[0]?.isSuperuser)) {
+    throw new Error(`Refusing database mutation: expected ${expected.database}/${expected.user}, a least-privilege role, PostgreSQL 16 and server port 5432.`);
+  }
+  return identity[0];
 }
 
 export function e2eChildEnv(env: Record<string, string | undefined> = process.env): NodeJS.ProcessEnv {

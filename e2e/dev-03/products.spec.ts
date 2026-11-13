@@ -1,11 +1,13 @@
 import { request as playwrightRequest, test, expect, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { ids } from '../../scripts/e2e/seed';
-import { requireE2eDatabaseUrl } from '../../scripts/e2e/database';
+import { assertE2eDatabaseIdentity, requireE2eDatabaseUrl } from '../../scripts/e2e/database';
 
 const createdIds: string[] = [];
+const cleanupDb = new PrismaClient({ datasources: { db: { url: requireE2eDatabaseUrl() } } });
 let serial = 0;
 
 type VariantInput = { sku: string; cost: number; price: number; stock: number; lowStockThreshold?: number; size?: string; color?: string; promoPrice?: number };
@@ -32,11 +34,33 @@ async function createProduct(request: APIRequestContext, variants: VariantInput[
   return { ...product, name: body.name, variants, categoryId: body.categoryId };
 }
 
-async function deleteCreated(request: APIRequestContext) {
-  for (const id of [...createdIds].reverse()) {
-    const response = await request.delete(`/api/products/${id}`);
-    expect([200, 404]).toContain(response.status());
-  }
+async function deleteFixtureProducts(productIds: string[]) {
+  if (!productIds.length) return;
+  await assertE2eDatabaseIdentity(cleanupDb);
+  let variantIds: string[] = [];
+  await cleanupDb.$transaction(async (tx) => {
+    const variants = await tx.productVariant.findMany({ where: { businessId: ids.centro, productId: { in: productIds } }, select: { id: true } });
+    variantIds = variants.map((variant) => variant.id);
+    await tx.auditLog.deleteMany({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: productIds } } });
+    if (variantIds.length) {
+      await tx.inventoryMovement.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+      await tx.priceCostHistory.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+      await tx.productVariant.deleteMany({ where: { businessId: ids.centro, id: { in: variantIds } } });
+    }
+    await tx.product.deleteMany({ where: { businessId: ids.centro, id: { in: productIds } } });
+  });
+  const remaining = await Promise.all([
+    cleanupDb.product.count({ where: { businessId: ids.centro, id: { in: productIds } } }),
+    cleanupDb.productVariant.count({ where: { businessId: ids.centro, productId: { in: productIds } } }),
+    cleanupDb.inventoryMovement.count({ where: { businessId: ids.centro, variantId: { in: variantIds } } }),
+    cleanupDb.priceCostHistory.count({ where: { businessId: ids.centro, variantId: { in: variantIds } } }),
+    cleanupDb.auditLog.count({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: productIds } } }),
+  ]);
+  expect(remaining.every((count) => count === 0)).toBe(true);
+}
+
+async function deleteCreated() {
+  await deleteFixtureProducts(createdIds);
   createdIds.length = 0;
 }
 
@@ -54,12 +78,11 @@ async function noOverflow(page: Page) {
 test.describe.configure({ mode: 'serial' });
 
 test.describe('DEV-03 products', () => {
-  test.afterAll(async ({ browser }) => {
-    const context = await browser.newContext({ storageState: 'playwright/.auth/admin-centro.json' });
+  test.afterAll(async () => {
     try {
-      await deleteCreated(await adminRequest(context));
+      await deleteCreated();
     } finally {
-      await context.close();
+      await cleanupDb.$disconnect();
     }
   });
 
@@ -128,51 +151,51 @@ test.describe('DEV-03 products', () => {
   });
 
   test('sorts products by Decimal variant prices before paging and preserves the sequence in API and catalog UI', async ({ browser, page }) => {
-    const prefix = `FIX02-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const createdStart = createdIds.length;
+    const prefix = `FIX02-${randomUUID()}`;
     const north = await browser.newContext({ storageState: 'playwright/.auth/admin-norte.json' });
     const db = new PrismaClient({ datasources: { db: { url: requireE2eDatabaseUrl() } } });
-    let noVariantId: string | undefined;
+    const centerProductIds: string[] = [];
     let northProductId: string | undefined;
+    let noVariantId: string | undefined;
+    let databaseVerified = false;
     try {
+      await assertE2eDatabaseIdentity(db);
+      databaseVerified = true;
       const category = await categoryId(page.request);
-      const make = (alias: string, variants: VariantInput[]) => createProduct(page.request, variants, `${prefix}-${alias}`);
-      const [range, high, tieC, tieD, lowE, lowF, archived] = await Promise.all([
-        make('A-Range', [
-          { sku: `${prefix}-A-01`, cost: 1, price: 9.99, stock: 10 },
-          { sku: `${prefix}-A-02`, cost: 1, price: 80, stock: 10 },
-        ]),
-        make('B-High', [{ sku: `${prefix}-B-01`, cost: 1, price: 100, stock: 10 }]),
-        make('C-Tie', [{ sku: `${prefix}-C-01`, cost: 1, price: 50, stock: 10 }]),
-        make('D-Tie', [{ sku: `${prefix}-D-01`, cost: 1, price: 50, stock: 10 }]),
-        make('E-Low', [{ sku: `${prefix}-E-01`, cost: 1, price: 10, stock: 10 }]),
-        make('F-Low', [{ sku: `${prefix}-F-01`, cost: 1, price: 10, stock: 10 }]),
-        make('Z-Archived', [{ sku: `${prefix}-Z-01`, cost: 1, price: 200, stock: 10 }]),
-      ]);
-      const identicalName = `DEV-03-${prefix}-G-Identical`;
-      const identicalResponses = await Promise.all([1, 2].map((index) => page.request.post('/api/products', { data: {
-        name: identicalName, categoryId: category, location: 'FIX-02',
-        variants: [{ sku: `${prefix}-G-0${index}`, cost: 1, price: 50, stock: 10 }],
-      } })));
-      for (const response of identicalResponses) expect(response.status()).toBe(201);
-      const identical = await Promise.all(identicalResponses.map(async (response) => response.json() as Promise<{ id: string }>));
-      createdIds.push(...identical.map((product) => product.id));
-      const identicalOrder = identical.map((product) => product.id).sort();
-      const archive = await page.request.delete(`/api/products/${archived.id}`);
-      expect(archive.status()).toBe(200);
-
-      noVariantId = `dev-03-fix02-no-variants-${Date.now()}`;
-      await db.product.create({ data: { id: noVariantId, businessId: ids.centro, name: `DEV-03-${prefix}-No variants`, categoryId: category, location: 'FIX-02' } });
-
-      const northCategories = await north.request.get('/api/categories');
-      expect(northCategories.ok()).toBeTruthy();
-      const northCategoryId = (await northCategories.json())[0]?.id as string;
-      const northCreated = await north.request.post('/api/products', { data: {
-        name: `DEV-03-${prefix}-North 999`, categoryId: northCategoryId, location: 'FIX-02',
-        variants: [{ sku: `${prefix}-N-01`, cost: 1, price: 999, stock: 10 }],
-      } });
-      expect(northCreated.status()).toBe(201);
-      northProductId = ((await northCreated.json()) as { id: string }).id;
+      const createFixture = async (idSuffix: string, name: string, prices: number[], request: APIRequestContext, categoryId = category, businessId = ids.centro) => {
+        const response = await request.post('/api/products', { data: {
+          name,
+          categoryId,
+          location: 'FIX-03',
+          variants: prices.map((price, index) => ({ sku: `${prefix}-${idSuffix}-${String(index + 1).padStart(2, '0')}`, cost: 1, price, stock: 10 })),
+        } });
+        const product = await response.json() as { id: string };
+        if (response.status() === 201) {
+          if (businessId === ids.norte) northProductId = product.id;
+          else centerProductIds.push(product.id);
+        }
+        expect(response.status()).toBe(201);
+        return { id: product.id, name };
+      };
+      const range = await createFixture('a-range', `DEV-03-${prefix}-A-Range`, [9.99, 80], page.request);
+      const high = await createFixture('b-high', `DEV-03-${prefix}-B-High`, [100], page.request);
+      const tieC = await createFixture('c-tie', `DEV-03-${prefix}-C-Tie`, [50], page.request);
+      const tieD = await createFixture('d-tie', `DEV-03-${prefix}-D-Tie`, [50], page.request);
+      const identicalName = `DEV-03-${prefix}-E-Identical`;
+      const identicalA = await createFixture('e-identical-a', identicalName, [50], page.request);
+      const identicalB = await createFixture('e-identical-b', identicalName, [50], page.request);
+      const lowE = await createFixture('f-low', `DEV-03-${prefix}-F-Low`, [10], page.request);
+      const lowF = await createFixture('g-low', `DEV-03-${prefix}-G-Low`, [10], page.request);
+      const archived = await createFixture('z-archived', `DEV-03-${prefix}-Z-Archived`, [200], page.request);
+      const archiveResponse = await page.request.delete(`/api/products/${archived.id}`);
+      expect(archiveResponse.status()).toBe(200);
+      const northFixture = await createFixture('north-high', `DEV-03-${prefix}-North 999`, [999], north.request, ids.norteCategory, ids.norte);
+      noVariantId = `dev-03-fix03-no-variants-${randomUUID()}`;
+      expect(await db.product.findUnique({ where: { id: noVariantId }, select: { id: true } })).toBeNull();
+      const centerCategory = await db.category.findFirst({ where: { id: category, businessId: ids.centro, active: true }, select: { id: true } });
+      expect(centerCategory).toEqual({ id: category });
+      await db.product.create({ data: { id: noVariantId, businessId: ids.centro, name: `DEV-03-${prefix}-No variants`, categoryId: category, location: 'FIX-03' } });
+      centerProductIds.push(noVariantId);
 
       type CatalogPage = { page: number; limit: number; total: number; hasMore: boolean; items: Array<{ productId: string; sku: string; price: string; product: { name: string } }> };
       async function fetchPage(business: APIRequestContext, sort: 'price-high' | 'price-low', pageNumber: number, query = prefix, categoryFilter: string | null = category): Promise<CatalogPage> {
@@ -186,8 +209,8 @@ test.describe('DEV-03 products', () => {
         const seen = new Set<string>();
         return items.flatMap((item) => seen.has(item.productId) ? [] : (seen.add(item.productId), [{ id: item.productId, name: item.product.name }]));
       };
-      const highOrder = [high.id, range.id, tieC.id, tieD.id, ...identicalOrder, lowE.id, lowF.id];
-      const lowOrder = [range.id, lowE.id, lowF.id, tieC.id, tieD.id, ...identicalOrder, high.id];
+      const highOrder = [high.id, range.id, tieC.id, tieD.id, ...[identicalA, identicalB].map((product) => product.id).sort(), lowE.id, lowF.id];
+      const lowOrder = [range.id, lowE.id, lowF.id, tieC.id, tieD.id, ...[identicalA, identicalB].map((product) => product.id).sort(), high.id];
 
       for (const [sort, expected] of [['price-high', highOrder], ['price-low', lowOrder]] as const) {
         const actual: string[] = [];
@@ -212,22 +235,51 @@ test.describe('DEV-03 products', () => {
       expect(orderedProducts(filteredPage.items).map((product) => product.id)).toEqual([range.id]);
       const northPage = await fetchPage(north.request, 'price-high', 1, prefix, null);
       expect(northPage).toMatchObject({ total: 1, hasMore: false });
-      expect(orderedProducts(northPage.items).map((product) => product.name)).toEqual([`DEV-03-${prefix}-North 999`]);
+      expect(orderedProducts(northPage.items).map((product) => product.name)).toEqual([northFixture.name]);
 
       await page.goto('/productos');
       await page.locator('.products-search input').fill(prefix);
       await page.getByLabel('Ordenar productos').selectOption('price-high');
       await expect(page.locator('.products-master-card h2')).toHaveText([high.name, range.name, tieC.name, tieD.name, identicalName, identicalName, lowE.name, lowF.name]);
     } finally {
-      for (const id of createdIds.slice(createdStart).reverse()) {
-        const cleanup = await page.request.delete(`/api/products/${id}`);
-        expect([200, 404]).toContain(cleanup.status());
+      try {
+        if (databaseVerified) {
+          await db.$transaction(async (tx) => {
+            if (centerProductIds.length) {
+              const variants = await tx.productVariant.findMany({ where: { businessId: ids.centro, productId: { in: centerProductIds } }, select: { id: true } });
+              const variantIds = variants.map((variant) => variant.id);
+              await tx.auditLog.deleteMany({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: centerProductIds } } });
+              if (variantIds.length) {
+                await tx.inventoryMovement.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+                await tx.priceCostHistory.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+                await tx.productVariant.deleteMany({ where: { businessId: ids.centro, id: { in: variantIds } } });
+              }
+              await tx.product.deleteMany({ where: { businessId: ids.centro, id: { in: centerProductIds } } });
+            }
+            if (northProductId) {
+              const variants = await tx.productVariant.findMany({ where: { businessId: ids.norte, productId: northProductId }, select: { id: true } });
+              const variantIds = variants.map((variant) => variant.id);
+              await tx.auditLog.deleteMany({ where: { businessId: ids.norte, entityType: 'Product', entityId: northProductId } });
+              if (variantIds.length) {
+                await tx.inventoryMovement.deleteMany({ where: { businessId: ids.norte, variantId: { in: variantIds } } });
+                await tx.priceCostHistory.deleteMany({ where: { businessId: ids.norte, variantId: { in: variantIds } } });
+                await tx.productVariant.deleteMany({ where: { businessId: ids.norte, id: { in: variantIds } } });
+              }
+              await tx.product.deleteMany({ where: { businessId: ids.norte, id: northProductId } });
+            }
+          });
+          const remaining = await Promise.all([
+            db.product.count({ where: { businessId: ids.centro, id: { in: centerProductIds } } }),
+            db.productVariant.count({ where: { businessId: ids.centro, productId: { in: centerProductIds } } }),
+            db.auditLog.count({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: centerProductIds } } }),
+            ...(northProductId ? [db.product.count({ where: { businessId: ids.norte, id: northProductId } }), db.productVariant.count({ where: { businessId: ids.norte, productId: northProductId } }), db.auditLog.count({ where: { businessId: ids.norte, entityType: 'Product', entityId: northProductId } })] : []),
+          ]);
+          expect(remaining.every((count) => count === 0)).toBe(true);
+        }
+      } finally {
+        await north.close();
+        await db.$disconnect();
       }
-      createdIds.splice(createdStart);
-      if (northProductId) await north.request.delete(`/api/products/${northProductId}`);
-      if (noVariantId) await db.product.deleteMany({ where: { id: noVariantId, businessId: ids.centro } });
-      await north.close();
-      await db.$disconnect();
     }
   });
 
@@ -574,10 +626,7 @@ test.describe('DEV-03 products', () => {
         const products = await page.request.get(`/api/products?q=${encodeURIComponent(sku)}`).then((response) => response.json()) as Array<{ id: string }>;
         productId = products[0]?.id;
       }
-      if (productId) {
-        const cleanup = await page.request.delete(`/api/products/${productId}`);
-        expect([200, 404]).toContain(cleanup.status());
-      }
+      if (productId) await deleteFixtureProducts([productId]);
     }
   });
 

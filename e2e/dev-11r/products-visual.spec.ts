@@ -1,9 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 import { productImageDirectory } from '../../src/lib/upload-storage';
+import { ids } from '../../scripts/e2e/seed';
+import { assertE2eDatabaseIdentity, requireE2eDatabaseUrl } from '../../scripts/e2e/database';
 import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 
 const sizes = { desktop: { width: 1533, height: 1600 }, mobile: { width: 390, height: 1600 } } as const;
+const db = new PrismaClient({ datasources: { db: { url: requireE2eDatabaseUrl() } } });
+
+test.afterAll(async () => db.$disconnect());
 
 test('captures corrected dedicated product creation surfaces', async ({ page }, testInfo) => {
   await page.goto('/productos');
@@ -16,8 +22,7 @@ test('captures corrected dedicated product creation surfaces', async ({ page }, 
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath(`products-simple-corrected-${name}.png`), fullPage: true });
     const multipleMode = form.getByRole('radio', { name: /Varias opciones/ });
-    await expect(multipleMode).toBeAttached();
-    await multipleMode.check({ force: true });
+    await form.getByText('Varias opciones', { exact: true }).click();
     await expect(multipleMode).toBeChecked();
     for (let row = 0; row < (name === 'desktop' ? 3 : 1); row += 1) await form.getByRole('button', { name: /^Agregar/ }).click();
     if (name === 'desktop') {
@@ -111,7 +116,29 @@ test('captures the Stitch product catalog for desktop and mobile', async ({ page
       await page.screenshot({ path: testInfo.outputPath(`catalog-corrected-${name}.png`), fullPage: true });
     }
   } finally {
-    for (const id of createdIds) await page.request.delete(`/api/products/${id}`);
-    for (const filename of uploadedFiles) await unlink(path.join(productImageDirectory(), filename));
+    try {
+      if (createdIds.length) {
+        await assertE2eDatabaseIdentity(db);
+        await db.$transaction(async (tx) => {
+          const variants = await tx.productVariant.findMany({ where: { businessId: ids.centro, productId: { in: createdIds } }, select: { id: true } });
+          const variantIds = variants.map((variant) => variant.id);
+          await tx.auditLog.deleteMany({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: createdIds } } });
+          if (variantIds.length) {
+            await tx.inventoryMovement.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+            await tx.priceCostHistory.deleteMany({ where: { businessId: ids.centro, variantId: { in: variantIds } } });
+            await tx.productVariant.deleteMany({ where: { businessId: ids.centro, id: { in: variantIds } } });
+          }
+          await tx.product.deleteMany({ where: { businessId: ids.centro, id: { in: createdIds } } });
+        });
+        const remaining = await Promise.all([
+          db.product.count({ where: { businessId: ids.centro, id: { in: createdIds } } }),
+          db.productVariant.count({ where: { businessId: ids.centro, productId: { in: createdIds } } }),
+          db.auditLog.count({ where: { businessId: ids.centro, entityType: 'Product', entityId: { in: createdIds } } }),
+        ]);
+        expect(remaining.every((count) => count === 0)).toBe(true);
+      }
+    } finally {
+      for (const filename of uploadedFiles) await unlink(path.join(productImageDirectory(), filename));
+    }
   }
 });

@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { requireE2eDatabaseUrl, requirePasswords } from './database';
+import { assertE2eDatabaseIdentity, requireE2eDatabaseUrl, requirePasswords } from './database';
 
 export const ids = {
   centro: 'dev-test-01-centro', norte: 'dev-test-01-norte',
@@ -107,10 +107,7 @@ export async function seedE2e() {
   const { PrismaClient, Role, SaleStatus, PaymentMethod } = await import('@prisma/client');
   const db = new PrismaClient();
   try {
-    if (process.env.QA_RUN === '1') {
-      const identity = await db.$queryRaw<Array<{ database: string; user: string }>>`SELECT current_database() AS database, current_user AS user`;
-      if (identity[0]?.database !== 'lucem_qa' || identity[0]?.user !== 'lucem_qa') throw new Error('Refusing QA fixture mutation: connected database identity is not lucem_qa/lucem_qa.');
-    }
+    await assertE2eDatabaseIdentity(db);
     await clearE2eData(db);
     const [adminHash, sellerHash, inventoryHash] = await Promise.all([bcrypt.hash(passwords.admin, 10), bcrypt.hash(passwords.seller, 10), bcrypt.hash(passwords.inventory, 10)]);
     await db.$transaction(async tx => {
@@ -140,7 +137,7 @@ export async function seedE2e() {
         { businessId: ids.centro, variantId: ids.centroNormal, userId: ids.inventory, type: 'INITIAL', quantity: 10, reason: 'DEV-TEST-01 seed' },
         { businessId: ids.norte, variantId: ids.norteProduct + '-variant', userId: ids.admin, type: 'INITIAL', quantity: 4, reason: 'DEV-TEST-01 seed' },
       ] });
-      const today = new Date(); today.setHours(10, 0, 0, 0);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       await tx.sale.create({ data: { id: ids.centroSaleOne, businessId: ids.centro, userId: ids.seller, folio: 901, status: SaleStatus.CONFIRMED, paymentMethod: PaymentMethod.CARD, subtotal: 200, total: 200, changeAmount: 0, createdAt: today, lines: { create: { variantId: ids.centroNormal, quantity: 2, unitPrice: 100, unitCost: 40, lineTotal: 200 } } } });
       const later = new Date(today.getTime() + 60_000);
       await tx.sale.create({ data: { id: ids.centroSaleTwo, businessId: ids.centro, userId: ids.seller, folio: 902, status: SaleStatus.CONFIRMED, paymentMethod: PaymentMethod.CASH, subtotal: 50, total: 50, receivedAmount: 50, changeAmount: 0, createdAt: later, lines: { create: { variantId: ids.centroLow, quantity: 1, unitPrice: 50, unitCost: 20, lineTotal: 50 } } } });

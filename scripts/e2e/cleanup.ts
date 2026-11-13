@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { requireE2eDatabaseUrl } from './database';
+import { assertE2eDatabaseIdentity, requireE2eDatabaseUrl, safeE2eError } from './database';
 import { clearE2eData } from './seed';
 
 async function main() {
@@ -8,6 +8,7 @@ async function main() {
   const { PrismaClient } = await import('@prisma/client');
   const db = new PrismaClient();
   try {
+    await assertE2eDatabaseIdentity(db);
     await clearE2eData(db);
   } finally {
     await db.$disconnect();
@@ -15,6 +16,6 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error(`BLOCKED: E2E PostgreSQL unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`BLOCKED: E2E PostgreSQL unavailable: ${safeE2eError(error)}`);
   process.exitCode = 1;
 });
