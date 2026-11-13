@@ -18,7 +18,7 @@
 10. **BLOCKED — No-regresiones/global:** `qa:full` sigue FAIL por tres fallos no relacionados con hydration/login: botones de acciones de `/inventario` fuera del viewport en mobile dentro de tabla ancha; dos contrastes axe serious 4.42:1 (`.dashboard-alert-count`, `.dashboard-reservation-count`); p95 de `/api/products` con fixture 10k ~19.4 s frente al umbral 1500 ms (los cuatro samples siguientes fueron ~0.44–0.56 s). Se preservan para sus módulos propietarios.
 11. **PASS — Checks:** `npm test` 79/79; typecheck y lint PASS. E2E funcionales protegidos PASS; QA full se ejecutó y los tres resultados no aprobados permanecen explícitos.
 12. **PASS — ZIP:** `qa/reports/lucem-audit-20261113-221630.zip`, SHA-256 `f39f386048ceb345d65fc8ad14eabc0a630df7f58c0bb18328c7a2f660bd8fc3`, 18,897,176 bytes; `unzip -t` PASS, 281 entradas, cero valores de secreto runtime, sin storageState ni traces.
-13. **PASS — Git:** Planner `2c4192d`, Generator `4916a35` y Evaluator `ed9d084` publicados por fast-forward en `feature/lucem-ui-redesign-v1`; la actualización de este reporte también se publicará como fast-forward. Sin merge a main ni force push; cambios locales ajenos excluidos.
+13. **PASS — Git:** la secuencia QA-04 (Planner, Generator, Evaluator y actualizaciones del reporte) quedó publicada por fast-forward en `feature/lucem-ui-redesign-v1`. Sin merge a main ni force push; cambios locales ajenos excluidos.
 
 ## Abiertos
 
