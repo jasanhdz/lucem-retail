@@ -2,7 +2,7 @@
 
 ## Resumen
 
-11/13 criterios pasan. La causa de los avisos de hidratación y de los dos patrones `ERR_ABORTED` quedó identificada, y el submit de login prehidratación se corrigió. El full audit `2026-11-13T22-19-59-613Z-3811832` terminó `FAIL` (108 Playwright PASS, 3 FAIL) por responsive de inventario, contraste axe y rendimiento de `/api/products`; son hallazgos fuera de QA-04 y no se modificaron esos módulos.
+12/13 criterios pasan. La causa de los avisos de hidratación y de los dos patrones `ERR_ABORTED` quedó identificada, el submit de login prehidratación se corrigió y QA-04 fue publicado por fast-forward. El full audit `2026-11-13T22-19-59-613Z-3811832` terminó `FAIL` (108 Playwright PASS, 3 FAIL) por responsive de inventario, contraste axe y rendimiento de `/api/products`; son hallazgos fuera de QA-04 y no se modificaron esos módulos.
 
 ## Rubric QA-04
 
@@ -18,12 +18,11 @@
 10. **BLOCKED — No-regresiones/global:** `qa:full` sigue FAIL por tres fallos no relacionados con hydration/login: botones de acciones de `/inventario` fuera del viewport en mobile dentro de tabla ancha; dos contrastes axe serious 4.42:1 (`.dashboard-alert-count`, `.dashboard-reservation-count`); p95 de `/api/products` con fixture 10k ~19.4 s frente al umbral 1500 ms (los cuatro samples siguientes fueron ~0.44–0.56 s). Se preservan para sus módulos propietarios.
 11. **PASS — Checks:** `npm test` 79/79; typecheck y lint PASS. E2E funcionales protegidos PASS; QA full se ejecutó y los tres resultados no aprobados permanecen explícitos.
 12. **PASS — ZIP:** `qa/reports/lucem-audit-20261113-221630.zip`, SHA-256 `f39f386048ceb345d65fc8ad14eabc0a630df7f58c0bb18328c7a2f660bd8fc3`, 18,897,176 bytes; `unzip -t` PASS, 281 entradas, cero valores de secreto runtime, sin storageState ni traces.
-13. **PENDING — Git:** falta commit QA-04 acotado y fast-forward a `feature/lucem-ui-redesign-v1`. Se preservan los cambios locales existentes.
+13. **PASS — Git:** Planner `2c4192d`, Generator `4916a35` y Evaluator `ed9d084` publicados por fast-forward en `feature/lucem-ui-redesign-v1`; la actualización de este reporte también se publicará como fast-forward. Sin merge a main ni force push; cambios locales ajenos excluidos.
 
 ## Abiertos
 
 - [ ] F-QA04-10 · major · criterio #10 — Full QA sigue FAIL por responsive de inventario, contrastes axe y el p95 del API de productos; quedan fuera de este diagnóstico.
-- [ ] F-QA04-13 · major · criterio #13 — Commit de QA-04 acotado y fast-forward a la rama feature indicada.
 
 ## Resueltos (verificados este pass)
 
@@ -31,3 +30,4 @@
 - [x] F-QA04-ABORT-GIRO — Redirect de onboarding validado y captura QA preparada con el estado de sesión requerido.
 - [x] F-QA04-ABORT-LOGIN — Fetch RSC cancelado correlacionado con GET hermano exitoso y UI correcta; cancelación esperada.
 - [x] F-QA04-LOGIN-QUERY — Exposición de credenciales por submit nativo prehidratación corregida y comprobada con regresión.
+- [x] F-QA04-13 — Commits QA-04 publicados mediante fast-forward en la rama solicitada.
