@@ -8,6 +8,6 @@ export function qaServerEnvironment(env: Record<string, string | undefined>): No
     ...env,
     QA_SERVER_PORT: port,
     CLOUDFLARE_QUICK_TUNNEL_ENABLED: syntheticCloudflareHeaders ? 'true' : 'false',
-    NEXT_DIST_DIR: '.next-qa',
+    NEXT_DIST_DIR: env.QA_SERVER_MODE === 'production' ? '.next-qa-production' : env.QA_SERVER_MODE === 'development-fresh' ? '.next-qa-04-dev' : '.next-qa',
   } as unknown as NodeJS.ProcessEnv;
 }

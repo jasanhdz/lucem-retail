@@ -6,7 +6,7 @@ const count = 10_000;
 const prefix = 'qa-lab-perf';
 function productId(index: number) { return `${prefix}-product-${String(index + 1).padStart(5, '0')}`; }
 
-async function main() {
+export async function prepareQaPerformanceFixture() {
   const env = await qaChildEnv(); Object.assign(process.env, env);
   const url = env.QA_DATABASE_URL!; const db = new PrismaClient({ datasources: { db: { url } } });
   try {
@@ -46,6 +46,6 @@ async function main() {
     ]);
     if (products !== count || variants !== count) throw new Error(`QA perf fixture counts mismatch: ${products} products / ${variants} variants.`);
     process.stdout.write(`Prepared isolated QA performance dataset: ${products} products, ${variants} variants.\n`);
+    return { products, variants };
   } finally { await db.$disconnect(); }
 }
-main().catch((error) => { process.stderr.write(`BLOCKED: QA performance fixture unavailable: ${error instanceof Error ? error.message : 'unknown error'}\n`); process.exitCode = 1; });

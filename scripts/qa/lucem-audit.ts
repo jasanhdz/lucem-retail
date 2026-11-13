@@ -116,11 +116,13 @@ function findingForCommand(command: ReturnType<typeof captureCommand>): Finding 
 }
 async function browserFindings(reportDir: string): Promise<Finding[]> {
   const findings: Finding[] = [];
+  let loginRedirectEvidence: { finalRoute?: string; finalHeading?: string; failedRequests?: Array<{ url?: string; method?: string; resourceType?: string; errorText?: string; classification?: string; successfulSiblingRequests?: number; initiatorStack?: Array<{ url?: string }> }> } | undefined;
+  try { loginRedirectEvidence = JSON.parse(await readFile(path.join(reportDir, 'hydration/login-success-cdp.json'), 'utf8')); } catch { /* login redirect diagnosis not run */ }
   const eventDir = path.join(reportDir, 'browser-events');
   let eventFiles: string[] = [];
   try { eventFiles = (await readdir(eventDir)).filter((file) => file.endsWith('.json')); } catch { /* no browser mode */ }
   for (const file of eventFiles) {
-    let record: { title?: string; events?: Array<{ type: string; url?: string; route?: string; message?: string; status?: number; expected?: boolean }> };
+    let record: { title?: string; events?: Array<{ type: string; url?: string; route?: string; message?: string; status?: number; expected?: boolean; method?: string; resourceType?: string }> };
     try { record = JSON.parse(await readFile(path.join(eventDir, file), 'utf8')); } catch { continue; }
     for (const [index, event] of (record.events ?? []).entries()) {
       if (event.expected || event.type === 'visual-baseline-not-approved') {
@@ -131,7 +133,9 @@ async function browserFindings(reportDir: string): Promise<Finding[]> {
       if (!supported) continue;
         const poolLog = await readFile(path.join(reportDir, 'authenticated-qa-observation.log'), 'utf8').catch(() => '');
         const poolExhausted = event.type === 'http-5xx' && /P2024|connection pool/i.test(poolLog);
-        findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.route ?? event.url ?? 'unknown', role: 'observed browser context', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence: [`browser-events/${file}`, ...(poolExhausted ? ['authenticated-qa-observation.log'] : [])], source: 'playwright', confidence: 'high', status: 'CONFIRMED', classification: poolExhausted ? 'ENVIRONMENT_FAILURE' : 'UNDETERMINED', recommendation: poolExhausted ? 'Observed alongside Prisma P2024 pool timeouts; repeat the observation with bounded concurrency before attributing this response to application behavior.' : 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
+        const expectedLoginCancellation = event.type === 'request-failed' && /ERR_ABORTED/.test(event.message ?? '') && event.method === 'GET' && event.resourceType === 'fetch' && event.route === '/login' && event.url?.endsWith('/negocios') && loginRedirectEvidence?.finalRoute === '/negocios' && loginRedirectEvidence.finalHeading === 'Elige tu negocio' && loginRedirectEvidence.failedRequests?.some((request) => request.url?.endsWith('/negocios') && request.method === 'GET' && request.resourceType === 'Fetch' && request.errorText === 'net::ERR_ABORTED' && request.classification === 'EXPECTED_CANCELLATION_AFTER_SUCCESSFUL_REDIRECT' && (request.successfulSiblingRequests ?? 0) > 0 && request.initiatorStack?.some((frame) => frame.url?.includes('fetch-server-response')));
+        const evidence = [`browser-events/${file}`, ...(poolExhausted ? ['authenticated-qa-observation.log'] : []), ...(expectedLoginCancellation ? ['hydration/login-success-cdp.json'] : [])];
+        findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.route ?? event.url ?? 'unknown', role: 'observed browser context', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence, source: 'playwright', confidence: 'high', status: expectedLoginCancellation ? 'FALSE_POSITIVE' : poolExhausted ? 'NEEDS_MANUAL_REVIEW' : 'CONFIRMED', classification: poolExhausted ? 'ENVIRONMENT_FAILURE' : expectedLoginCancellation ? 'EXPECTED_CANCELLATION' : 'UNDETERMINED', recommendation: poolExhausted ? 'Observed alongside Prisma P2024 pool timeouts; repeat the observation with bounded concurrency before attributing this response to application behavior.' : expectedLoginCancellation ? 'CDP correlated this canceled Next RSC request with a second successful GET to the same route and a correct rendered business-selection page; retained as an expected superseded router request.' : 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
     }
   }
   for (const filename of ['axe-findings.json', 'authenticated-axe-findings.json']) try {
@@ -228,7 +232,7 @@ async function main() {
   await writeReports(reportDir, routes, controls, findings, { runId: id, profile: options.full ? 'full' : options.quick ? 'quick' : 'selected', blocked, metadata: { revision: gitFiles(['rev-parse', 'HEAD'])[0] ?? 'unknown' } });
   for (const check of checks) await writeFile(path.join(reportDir, `${check.id}.log`), sanitize(`${check.status}: ${check.reason}\n${check.evidence.join('\n')}`, findSecrets()));
 
-    const runCommands: Array<{ label: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
+  const runCommands: Array<{ label: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
   const tags = [options.visual && '@qa-observe', options.accessibility && '@qa-axe', options.performance && '@qa-performance'].filter(Boolean) as string[];
   const publicObservationSelected = !options.module || options.module === 'auth';
   if (tags.length && publicObservationSelected) {
@@ -299,8 +303,8 @@ async function main() {
       process.stderr.write(`BLOCKED: ${message}\n`);
     }
   }
-  const databaseObservationTags = publicObservationSelected ? [] : [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[];
-  const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance', options.full && '@qa-db-hydration'].filter(Boolean) as string[] : databaseObservationTags;
+  const databaseObservationTags = publicObservationSelected ? [] : [options.visual && '@qa-db-visual', options.visual && '@qa-db-hydration-cdp', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[];
+  const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.visual && '@qa-db-hydration-cdp', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance', options.full && '@qa-db-hydration'].filter(Boolean) as string[] : databaseObservationTags;
   if (authenticatedObservationTags.length) {
     if (qaReady && qaRuntimeEnv) {
       const secret = randomBytes(48).toString('base64url');
@@ -314,14 +318,7 @@ async function main() {
         qaReady = false;
       } else {
         qaRuntimeEnv = observationEnv;
-      if (options.performance && (!options.module || options.module === 'products')) {
-        const fixture = captureCommand('qa-performance-fixture', 'npx', ['tsx', 'scripts/qa/perf-fixture.ts'], qaRuntimeEnv, reportDir);
-        checks.push({ id: fixture.id, status: fixture.status, reason: fixture.reason, durationMs: fixture.durationMs, evidence: fixture.evidence });
-        await writeFile(path.join(reportDir, `${fixture.id}.log`), fixture.output);
-        if (fixture.status === 'PASS') qaRuntimeEnv.QA_PERF_FIXTURE_READY = '1';
-        else { blocked.push(fixture.reason); const failure = findingForCommand(fixture); if (failure) findings.push(failure); }
-      }
-      runCommands.push({ label: 'authenticated-qa-observation', args: ['playwright', 'test', '--config=playwright.qa.config.ts', '--grep', authenticatedObservationTags.join('|')], env: qaRuntimeEnv });
+        runCommands.push({ label: 'authenticated-qa-observation', args: ['playwright', 'test', '--config=playwright.qa.config.ts', '--grep', authenticatedObservationTags.join('|')], env: observationEnv });
       }
     } else if (process.env.QA_DATABASE_URL) {
       try {
@@ -332,13 +329,6 @@ async function main() {
         if (prepared.status === 'PASS') {
           qaReady = true;
           qaRuntimeEnv = env;
-          if (options.performance && (!options.module || options.module === 'products')) {
-            const fixture = captureCommand('qa-performance-fixture', 'npx', ['tsx', 'scripts/qa/perf-fixture.ts'], env, reportDir);
-            checks.push({ id: fixture.id, status: fixture.status, reason: fixture.reason, durationMs: fixture.durationMs, evidence: fixture.evidence, classification: fixture.classification });
-            await writeFile(path.join(reportDir, `${fixture.id}.log`), fixture.output);
-            if (fixture.status === 'PASS') env.QA_PERF_FIXTURE_READY = '1';
-            else { blocked.push(fixture.reason); const failure = findingForCommand(fixture); if (failure) findings.push(failure); }
-          }
           runCommands.push({ label: 'authenticated-qa-observation', args: ['playwright', 'test', '--config=playwright.qa.config.ts', '--grep', authenticatedObservationTags.join('|')], env });
         } else { blocked.push(prepared.reason); const failure = findingForCommand(prepared); if (failure) findings.push(failure); }
       } catch (error) { blocked.push(error instanceof Error ? error.message : 'QA identity preflight failed.'); }

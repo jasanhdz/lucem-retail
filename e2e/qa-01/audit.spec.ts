@@ -1,10 +1,12 @@
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { qaConfig } from '../../qa/config';
 import { sanitize } from '../../scripts/qa/core';
+import { prepareQaPerformanceFixture } from '../../scripts/qa/perf-fixture';
 
 type BrowserEvent = { type: string; url?: string; route?: string; message?: string; status?: number; expected?: boolean; method?: string; resourceType?: string; navigationRequest?: boolean };
 type HydrationStyleRecord = { route: string; viewport: string; responseStatus: number | null; ssrInputs: Array<{ id: string | null; type: string | null; style: string | null }>; hydratedInputs: Array<{ id: string; type: string; style: string | null }>; styleMutations: Array<{ id: string; type: string; oldStyle: string | null; style: string | null }>; hydrationWarnings: string[] };
@@ -105,11 +107,11 @@ testRoute('login exposes native invalid-email and visible-password states @qa-ob
   await email.fill('not-an-email'); await page.getByRole('button', { name: /Iniciar sesión/ }).click();
   expect(await email.evaluate((element) => !(element as HTMLInputElement).validity.valid)).toBe(true);
   const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01'); const stateDir = path.join(root, 'screenshots', 'login', 'states'); await mkdir(stateDir, { recursive: true });
-  await page.screenshot({ path: path.join(stateDir, 'invalid-email.png'), fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: path.join(stateDir, 'invalid-email.png'), fullPage: true, animations: 'disabled', caret: 'initial' });
   await email.fill(''); await password.fill('');
   await page.getByRole('button', { name: 'Mostrar contraseña' }).click();
   await expect(password).toHaveAttribute('type', 'text');
-  await page.screenshot({ path: path.join(stateDir, 'password-visible.png'), fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: path.join(stateDir, 'password-visible.png'), fullPage: true, animations: 'disabled', caret: 'initial' });
 });
 
 testRoute('public screens render at desktop, tablet and mobile sizes @qa-observe @qa-visual', async ({ page, observed }, testInfo) => {
@@ -124,7 +126,7 @@ testRoute('public screens render at desktop, tablet and mobile sizes @qa-observe
       const metrics = await responsiveMetrics(page);
       const folder = path.join(root, 'screenshots', screen.id); await mkdir(folder, { recursive: true });
       const file = path.join(folder, `${viewport.id}-${viewport.width}x${viewport.height}.png`);
-      const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled' });
+      const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled', caret: 'initial' });
       const baseline = path.resolve('qa/visual-baselines', screen.id, `${viewport.id}.png`);
       if (existsSync(baseline)) {
         const expected = await readFile(baseline);
@@ -151,7 +153,7 @@ testRoute('public screens pass configured axe rules @qa-axe', async ({ page, obs
     results.push({ route: screen.path, violations: axe.violations.map((violation) => ({ id: violation.id, impact: violation.impact, description: violation.description, helpUrl: violation.helpUrl, nodes: violation.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) })) });
     if (axe.violations.length) {
       const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01'); await mkdir(path.join(root, 'screenshots', 'accessibility'), { recursive: true });
-      await page.screenshot({ path: path.join(root, 'screenshots', 'accessibility', `${screen.id}-violations.png`), fullPage: true, animations: 'disabled' });
+      await page.screenshot({ path: path.join(root, 'screenshots', 'accessibility', `${screen.id}-violations.png`), fullPage: true, animations: 'disabled', caret: 'initial' });
     }
   }
   const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01'); await mkdir(path.join(root, 'accessibility'), { recursive: true });
@@ -198,11 +200,239 @@ testRoute('valid seeded admin can authenticate and reach business selection @qa-
   await page.getByLabel('Contraseña', { exact: true }).fill(password!);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await expect(page).toHaveURL(/\/negocios(?:$|\?)/, { timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Elige tu negocio' })).toBeVisible();
+  await page.waitForLoadState('networkidle', { timeout: 10_000 });
   await persistEvents(observed, testInfo);
+});
+
+testRoute('QA-04 login submit stays safe while client scripts are delayed @qa-functional @module-auth @qa04-cdp-auth-redirect', async ({ page }, testInfo) => {
+  testRoute.setTimeout(45_000);
+  const session = await page.context().newCDPSession(page);
+  await Promise.all([session.send('Network.enable'), session.send('Runtime.enable')]);
+  const events: Array<Record<string, unknown>> = [];
+  let actionId = 'load-login-html';
+  let delayedScripts = 0;
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 16);
+  const stackFrames = (stack?: { callFrames?: Array<{ functionName?: string; url?: string; lineNumber?: number }> }) => (stack?.callFrames ?? []).slice(0, 8).map((frame) => ({ functionName: frame.functionName ?? '', url: redactedUrl(frame.url ?? ''), lineNumber: frame.lineNumber ?? 0 }));
+  session.on('Network.requestWillBeSent', (event) => {
+    const url = new URL(event.request.url);
+    const credentialQueryKeys = ['email', 'password'].filter((key) => url.searchParams.has(key));
+    events.push({ occurrenceId: `OCC-${hash(`${testInfo.testId}|${actionId}|${event.requestId}`)}`, signatureId: `SIG-${hash(`${event.request.method}|${url.pathname}|${credentialQueryKeys.join(',')}`)}`, actionId, timestamp: new Date().toISOString(), type: 'request-started', requestId: event.requestId, url: redactedUrl(event.request.url), method: event.request.method, resourceType: event.type, initiator: event.initiator.type, initiatorStack: stackFrames(event.initiator.stack), documentUrl: redactedUrl(event.documentURL), credentialQueryKeys });
+  });
+  session.on('Network.loadingFailed', (event) => events.push({ occurrenceId: `OCC-${hash(`${testInfo.testId}|${actionId}|${event.requestId}`)}`, signatureId: `SIG-${hash(`${event.errorText}|${event.requestId}`)}`, actionId, timestamp: new Date().toISOString(), type: 'request-failed', requestId: event.requestId, errorText: event.errorText, canceled: event.canceled, blockedReason: event.blockedReason ?? null }));
+  session.on('Runtime.consoleAPICalled', (event) => {
+    if (event.type !== 'error') return;
+    const message = event.args.map((argument) => argument.value ?? argument.description ?? '').filter(Boolean).join(' ');
+    events.push({ occurrenceId: `OCC-${hash(`${testInfo.testId}|${actionId}|${message}`)}`, signatureId: `SIG-${hash(`console-error|${message}`)}`, actionId, timestamp: new Date().toISOString(), type: 'console-error', route: pageRoute(page), message, stack: stackFrames(event.stackTrace) });
+  });
+  await page.route('**/_next/static/**/*.js', async (route) => {
+    delayedScripts += 1;
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route.continue();
+  });
+  await page.goto('/login', { waitUntil: 'commit' });
+  const email = page.getByLabel('Correo electrónico');
+  const password = page.getByLabel('Contraseña', { exact: true });
+  await expect(email).toBeVisible();
+  await email.fill('qa-04-prehydration@invalid.test');
+  await password.fill('qa-04-nonsecret-sentinel');
+  const submit = page.getByRole('button', { name: 'Iniciar sesión' });
+  const submitEnabledBeforeHydration = await submit.isEnabled();
+  actionId = 'submit-login';
+  if (submitEnabledBeforeHydration) await submit.click();
+  else await password.press('Enter');
+  await page.waitForTimeout(500);
+  const report = { testId: testInfo.testId, testTitle: testInfo.title, fixture: 'synthetic non-authenticating credentials; no business/session writes', delayedScripts, submitEnabledBeforeHydration, finalRoute: pageRoute(page), credentialQueryExposures: events.filter((event) => Array.isArray(event.credentialQueryKeys) && event.credentialQueryKeys.length > 0).map((event) => ({ method: event.method, url: event.url, credentialQueryKeys: event.credentialQueryKeys, actionId: event.actionId })), events };
+  const serialized = sanitize(JSON.stringify(report, null, 2), [process.env.QA_DATABASE_URL].filter((value): value is string => Boolean(value)));
+  const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
+  await mkdir(path.join(root, 'hydration'), { recursive: true });
+  await writeFile(path.join(root, 'hydration', 'login-redirect-cdp.json'), serialized);
+  await testInfo.attach('qa04-login-redirect-cdp.json', { body: serialized, contentType: 'application/json' });
+  await session.detach();
+  expect(submitEnabledBeforeHydration, 'login submit control must remain inert before React attaches the handler').toBe(false);
+  expect(report.credentialQueryExposures, 'credential inputs must never appear in a navigation URL').toEqual([]);
+});
+
+testRoute('QA-04 CDP correlates hydrated login redirect outcome @qa-functional @module-auth @qa04-cdp-auth-redirect', async ({ page }, testInfo) => {
+  const password = process.env.E2E_ADMIN_PASSWORD;
+  if (!password) test.skip(true, 'E2E_ADMIN_PASSWORD is required for isolated QA auth fixtures.');
+  const session = await page.context().newCDPSession(page);
+  await Promise.all([session.send('Network.enable'), session.send('Runtime.enable')]);
+  const requests = new Map<string, Record<string, unknown>>();
+  const events: Array<Record<string, unknown>> = [];
+  let actionId = 'navigate-login';
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 16);
+  const stackFrames = (stack?: { callFrames?: Array<{ functionName?: string; url?: string; lineNumber?: number }> }) => (stack?.callFrames ?? []).slice(0, 8).map((frame) => ({ functionName: frame.functionName ?? '', url: redactedUrl(frame.url ?? ''), lineNumber: frame.lineNumber ?? 0 }));
+  session.on('Network.requestWillBeSent', (event) => {
+    const parsed = new URL(event.request.url);
+    requests.set(event.requestId, { requestId: event.requestId, url: redactedUrl(event.request.url), method: event.request.method, resourceType: event.type, initiator: event.initiator.type, initiatorStack: stackFrames(event.initiator.stack), documentUrl: redactedUrl(event.documentURL), credentialQueryKeys: ['email', 'password'].filter((key) => parsed.searchParams.has(key)) });
+  });
+  session.on('Network.responseReceived', (event) => { const request = requests.get(event.requestId); if (request) request.status = event.response.status; });
+  session.on('Network.loadingFailed', (event) => events.push({ occurrenceId: `OCC-${hash(`${testInfo.testId}|${actionId}|${event.requestId}`)}`, signatureId: `SIG-${hash(`${event.errorText}|${requests.get(event.requestId)?.url ?? ''}`)}`, actionId, timestamp: new Date().toISOString(), type: 'request-failed', requestId: event.requestId, ...(requests.get(event.requestId) ?? {}), errorText: event.errorText, canceled: event.canceled, blockedReason: event.blockedReason ?? null }));
+  session.on('Runtime.consoleAPICalled', (event) => {
+    if (event.type !== 'error') return;
+    const message = event.args.map((argument) => argument.value ?? argument.description ?? '').filter(Boolean).join(' ');
+    events.push({ occurrenceId: `OCC-${hash(`${testInfo.testId}|${actionId}|${message}`)}`, signatureId: `SIG-${hash(`console-error|${message}`)}`, actionId, timestamp: new Date().toISOString(), type: 'console-error', route: pageRoute(page), message, stack: stackFrames(event.stackTrace) });
+  });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle', { timeout: 15_000 });
+  const submit = page.getByRole('button', { name: 'Iniciar sesión' });
+  await expect(submit).toBeEnabled();
+  await page.getByLabel('Correo electrónico').fill('dev-test-01-admin@invalid.test');
+  await page.getByLabel('Contraseña', { exact: true }).fill(password!);
+  actionId = 'submit-login-after-hydration';
+  await submit.click();
+  await expect(page).toHaveURL(/\/negocios(?:$|\?)/, { timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Elige tu negocio' })).toBeVisible();
+  await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
+  const failedRequests = events.filter((event) => event.type === 'request-failed');
+  const finalHeading = await page.getByRole('heading', { name: 'Elige tu negocio' }).innerText();
+  const finalRoute = pageRoute(page);
+  const classifiedFailures = failedRequests.map((event) => {
+    const successfulSiblingRequests = [...requests.values()].filter((request) => request.requestId !== event.requestId && request.url === event.url && request.method === event.method && request.status === 200).length;
+    const nextRouterRefresh = event.errorText === 'net::ERR_ABORTED' && event.canceled === true && event.resourceType === 'Fetch' && event.method === 'GET' && String(event.url).endsWith('/negocios') && Array.isArray(event.initiatorStack) && event.initiatorStack.some((frame: { url?: string }) => frame.url?.includes('fetch-server-response')) && successfulSiblingRequests >= 1 && finalRoute === '/negocios' && Boolean(finalHeading);
+    return { ...event, successfulSiblingRequests, classification: nextRouterRefresh ? 'EXPECTED_CANCELLATION_AFTER_SUCCESSFUL_REDIRECT' : 'UNDETERMINED' };
+  });
+  const report = { testId: testInfo.testId, testTitle: testInfo.title, actionId, finalRoute, finalHeading, requests: [...requests.values()], failedRequests: classifiedFailures, events };
+  const serialized = sanitize(JSON.stringify(report, null, 2), [process.env.QA_DATABASE_URL, process.env.E2E_ADMIN_PASSWORD].filter((value): value is string => Boolean(value)));
+  const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
+  await mkdir(path.join(root, 'hydration'), { recursive: true });
+  await writeFile(path.join(root, 'hydration', 'login-success-cdp.json'), serialized);
+  await testInfo.attach('qa04-login-success-cdp.json', { body: serialized, contentType: 'application/json' });
+  await session.detach();
 });
 
 testRoute.describe('isolated authenticated QA fixture', () => {
   testRoute.use({ storageState: path.resolve('playwright/.auth/admin-centro.json') });
+
+  testRoute('QA-04 missing onboarding draft redirects to its valid create step @qa-db-hydration-cdp', async ({ page }, testInfo) => {
+    const session = await page.context().newCDPSession(page);
+    await Promise.all([session.send('Network.enable'), session.send('Page.enable')]);
+    const requests = new Map<string, { url: string; method: string; resourceType?: string; initiator?: string; documentUrl?: string }>();
+    const failed: Array<Record<string, unknown>> = [];
+    session.on('Network.requestWillBeSent', (event) => requests.set(event.requestId, { url: redactedUrl(event.request.url), method: event.request.method, resourceType: event.type, initiator: event.initiator.type, documentUrl: redactedUrl(event.documentURL) }));
+    session.on('Network.loadingFailed', (event) => failed.push({ ...(requests.get(event.requestId) ?? {}), errorText: event.errorText, canceled: event.canceled, blockedReason: event.blockedReason ?? null }));
+    await page.goto('/negocios/giro', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/negocios\/crear$/, { timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Crea un negocio' })).toBeVisible();
+    const record = { testId: testInfo.testId, testTitle: testInfo.title, requestedRoute: '/negocios/giro', finalRoute: pageRoute(page), finalHeading: await page.getByRole('heading', { name: 'Crea un negocio' }).innerText(), failedRequests: failed };
+    const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
+    const serialized = sanitize(JSON.stringify(record, null, 2), [process.env.QA_DATABASE_URL, process.env.E2E_ADMIN_PASSWORD].filter((value): value is string => Boolean(value)));
+    await mkdir(path.join(root, 'hydration'), { recursive: true });
+    await writeFile(path.join(root, 'hydration', `onboarding-route-guard-${testInfo.repeatEachIndex}.json`), serialized);
+    await testInfo.attach(`qa04-onboarding-route-guard-${testInfo.repeatEachIndex}.json`, { body: serialized, contentType: 'application/json' });
+    await session.detach();
+  });
+
+  testRoute('QA-04 CDP-only observer checks hydration after visual navigation settles @qa-db-hydration-cdp', async ({ page }, testInfo) => {
+    testRoute.setTimeout(240_000);
+    const installMutationProbe = process.env.QA04_ADD_INIT_SCRIPT === '1';
+    const waitForNetworkIdle = process.env.QA04_WAIT_NETWORK_IDLE !== '0';
+    await page.addInitScript(() => {
+      if (location.pathname === '/negocios/giro' && !sessionStorage.getItem('lucem_onboarding_draft')) sessionStorage.setItem('lucem_onboarding_draft', JSON.stringify({ name: 'QA diagnostic business', branchName: 'QA diagnostic branch', country: 'MX', currency: 'MXN', timezone: 'America/Mexico_City', description: 'Synthetic isolated route prerequisite' }));
+    });
+    if (installMutationProbe) await page.addInitScript(() => {
+      const changes: Array<{ id: string; oldStyle: string | null; style: string | null }> = [];
+      Object.defineProperty(window, '__qa04StyleChanges', { value: changes, configurable: false });
+      new MutationObserver((entries) => {
+        for (const entry of entries) if (entry.type === 'attributes' && entry.attributeName === 'style' && entry.target instanceof HTMLInputElement) changes.push({ id: entry.target.id, oldStyle: entry.oldValue, style: entry.target.getAttribute('style') });
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+      const snapshot = () => [...document.querySelectorAll<HTMLInputElement>('input')].map((input) => ({ id: input.id, style: input.getAttribute('style') }));
+      document.addEventListener('DOMContentLoaded', () => Object.defineProperty(window, '__qa04DomAtDOMContentLoaded', { value: snapshot(), configurable: true }), { once: true });
+    });
+    const session = await page.context().newCDPSession(page);
+    await Promise.all([session.send('Runtime.enable'), session.send('Network.enable'), session.send('Page.enable')]);
+    const events: Array<Record<string, unknown>> = [];
+    const requests = new Map<string, { url: string; method: string; resourceType?: string; initiator?: string; initiatorStack?: Array<{ functionName: string; url: string; lineNumber: number }>; frameId?: string; documentUrl?: string; status?: number }>();
+    let action = { id: 'setup', route: 'unknown', viewport: 'unknown' };
+    const hash = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 16);
+    const frames = (stack?: { callFrames?: Array<{ functionName?: string; url?: string; lineNumber?: number }> }) => (stack?.callFrames ?? []).slice(0, 8).map((frame) => ({ functionName: frame.functionName ?? '', url: redactedUrl(frame.url ?? ''), lineNumber: frame.lineNumber ?? 0 }));
+    const record = (type: string, payload: Record<string, unknown>) => {
+      const message = String(payload.message ?? payload.errorText ?? '');
+      const signature = hash(`${type}|${action.route}|${message.replace(/\s+/g, ' ').trim()}`);
+      const ordinal = events.filter((item) => item.signatureId === signature && item.actionId === action.id).length;
+      events.push({ occurrenceId: `OCC-${hash(`${signature}|${action.id}|${ordinal}`)}`, signatureId: `SIG-${signature}`, testId: testInfo.testId, testTitle: testInfo.title, repeatEachIndex: testInfo.repeatEachIndex, actionId: action.id, timestamp: new Date().toISOString(), route: action.route, viewport: action.viewport, instrumentationMode: installMutationProbe ? 'CDP+DOM-mutation-probe+sessionStorage-fixture' : 'CDP+sessionStorage-fixture', source: 'CDP-no-page-listeners', type, ...payload });
+    };
+    session.on('Runtime.consoleAPICalled', (event) => {
+      if (event.type !== 'error') return;
+      const message = event.args.map((argument) => argument.value ?? argument.description ?? '').filter(Boolean).join(' ');
+      record('console-error', { message, stack: frames(event.stackTrace) });
+    });
+    session.on('Runtime.exceptionThrown', (event) => record('page-error', { message: `${event.exceptionDetails.text} ${event.exceptionDetails.exception?.description ?? ''}`.trim(), url: redactedUrl(event.exceptionDetails.url ?? ''), lineNumber: event.exceptionDetails.lineNumber, stack: frames(event.exceptionDetails.stackTrace) }));
+    session.on('Network.requestWillBeSent', (event) => {
+      const request = { url: redactedUrl(event.request.url), method: event.request.method, resourceType: event.type, initiator: event.initiator.type, initiatorStack: frames(event.initiator.stack), frameId: event.frameId, documentUrl: redactedUrl(event.documentURL) };
+      requests.set(event.requestId, request);
+      if (event.type === 'Document' || event.initiator.type === 'script') record('request-started', { requestId: event.requestId, ...request });
+    });
+    session.on('Network.responseReceived', (event) => {
+      const request = requests.get(event.requestId);
+      if (!request) return;
+      request.status = event.response.status;
+      request.resourceType = event.type;
+    });
+    session.on('Network.loadingFailed', (event) => {
+      const request = requests.get(event.requestId);
+      record('request-failed', { requestId: event.requestId, ...(request ?? {}), errorText: event.errorText, canceled: event.canceled, blockedReason: event.blockedReason ?? null });
+      requests.delete(event.requestId);
+    });
+
+    const baseURL = String(testInfo.project.use.baseURL ?? 'http://127.0.0.1:3113');
+    const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
+    const records: Array<Record<string, unknown>> = [];
+    const narrowScreens = new Set(['products', 'product-create', 'inventory', 'kardex', 'reservations']);
+    const screens = modulePages(qaConfig.authenticatedPages);
+    const captureInputs = async () => page.locator('input').evaluateAll((inputs) => inputs.map((input) => ({ id: input.id, type: input.getAttribute('type'), ariaLabel: input.getAttribute('aria-label'), placeholder: input.getAttribute('placeholder'), style: input.getAttribute('style') })));
+    for (const screen of screens) for (const viewport of [...qaConfig.viewports, ...(narrowScreens.has(screen.id) ? [{ id: 'mobile-narrow', width: 320, height: 568 }] : [])]) {
+      action = { id: `ACT-${hash(`${testInfo.testId}|${testInfo.repeatEachIndex}|${screen.path}|${viewport.id}`)}`, route: screen.path, viewport: viewport.id };
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      const startedAt = new Date().toISOString();
+      const url = new URL(screen.path, baseURL).href;
+      if (process.env.QA04_PREFLIGHT_REQUEST === '1') await page.request.get(url);
+      const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const html = response ? await response.text() : '';
+      const ssrInputs = [...html.matchAll(/<input\b[^>]*>/gi)].map(([tag]) => ({ id: /\bid=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\bid=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null, type: /\btype=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\btype=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null, style: /\bstyle=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\bstyle=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null }));
+      const domAtDOMContentLoaded = await captureInputs();
+      await page.evaluate(() => document.fonts.ready);
+      const networkIdleReached = waitForNetworkIdle ? await page.waitForLoadState('networkidle', { timeout: 15_000 }).then(() => true).catch(() => false) : false;
+      const metrics = await responsiveMetrics(page);
+      const domAfterReadiness = await captureInputs();
+      const earlyInputs = installMutationProbe ? await page.evaluate(() => (window as Window & { __qa04DomAtDOMContentLoaded?: Array<{ id: string; style: string | null }> }).__qa04DomAtDOMContentLoaded ?? []) : [];
+      const styleMutations = installMutationProbe ? await page.evaluate(() => (window as Window & { __qa04StyleChanges?: Array<{ id: string; oldStyle: string | null; style: string | null }> }).__qa04StyleChanges ?? []) : [];
+      const screenshotPath = path.join(root, 'screenshots', 'hydration-cdp', installMutationProbe ? 'with-init-script' : 'no-init-script', screen.id, `${viewport.id}-${viewport.width}x${viewport.height}.png`);
+      await mkdir(path.dirname(screenshotPath), { recursive: true });
+      const screenshotStartedAt = new Date().toISOString();
+      await page.screenshot({ path: screenshotPath, fullPage: true, animations: 'disabled', caret: process.env.QA04_SCREENSHOT_CARET === 'hide' ? 'hide' : 'initial' });
+      const screenshotFinishedAt = new Date().toISOString();
+      records.push({ actionId: action.id, route: screen.path, finalRoute: pageRoute(page), viewport, startedAt, networkIdleReached, screenshotStartedAt, screenshotFinishedAt, responseStatus: response?.status() ?? null, ssrInputs, domAtDOMContentLoaded, earlyInputs, domAfterReadiness, styleMutations, metrics, screenshot: path.relative(root, screenshotPath) });
+    }
+    const browserVersion = (await session.send('Browser.getVersion')).product;
+    const hydrationWarnings = events.filter((event) => event.type === 'console-error' && /hydrated but some attributes/.test(String(event.message ?? '')));
+    const groups = new Map<string, { signatureId: string; type: string; occurrenceIds: string[]; routes: Set<string>; viewports: Set<string>; classification: string; confidence: string }>();
+    for (const event of events) {
+      const signatureId = String(event.signatureId ?? 'SIG-UNKNOWN');
+      const group = groups.get(signatureId) ?? { signatureId, type: String(event.type), occurrenceIds: [], routes: new Set<string>(), viewports: new Set<string>(), classification: 'UNDETERMINED', confidence: 'low' };
+      group.occurrenceIds.push(String(event.occurrenceId));
+      group.routes.add(String(event.route ?? 'unknown'));
+      group.viewports.add(String(event.viewport ?? 'unknown'));
+      if (event.type === 'console-error' && /hydrated but some attributes/.test(String(event.message ?? '')) && process.env.QA04_SCREENSHOT_CARET === 'hide') {
+        const pageRecord = records.find((record) => record.actionId === event.actionId);
+        const duringScreenshot = pageRecord && String(pageRecord.screenshotStartedAt) <= String(event.timestamp) && String(event.timestamp) <= String(pageRecord.screenshotFinishedAt);
+        if (duringScreenshot) { group.classification = 'TEST_INSTRUMENTATION'; group.confidence = 'high'; }
+      }
+      groups.set(signatureId, group);
+    }
+    const groupedOccurrences = [...groups.values()].map((group) => ({ ...group, occurrenceCount: group.occurrenceIds.length, routes: [...group.routes].sort(), viewports: [...group.viewports].sort() }));
+    const report = { runId: path.basename(root), testId: testInfo.testId, testTitle: testInfo.title, repeatEachIndex: testInfo.repeatEachIndex, browserVersion, screenshotCaret: process.env.QA04_SCREENSHOT_CARET === 'hide' ? 'hide (controlled reproduction only)' : 'initial (does not alter inline caret styles)', fixture: 'synthetic sessionStorage onboarding draft for /negocios/giro', instrumentation: { cdpOnly: true, pageListeners: false, fixtureInitScript: 'sessionStorage only for the /negocios/giro route precondition', domMutationProbe: installMutationProbe, apiRequestPreflight: process.env.QA04_PREFLIGHT_REQUEST === '1', waitForNetworkIdle }, pages: records, eventGroups: groupedOccurrences, events };
+    const secrets = [process.env.QA_DATABASE_URL, process.env.QA_POSTGRES_PASSWORD, process.env.E2E_ADMIN_PASSWORD, process.env.E2E_SELLER_PASSWORD, process.env.E2E_INVENTORY_PASSWORD].filter((value): value is string => Boolean(value));
+    const serialized = sanitize(JSON.stringify(report, null, 2), secrets);
+    await mkdir(path.join(root, 'hydration'), { recursive: true });
+    const variant = installMutationProbe ? 'with-init-script' : 'no-init-script';
+    await writeFile(path.join(root, 'hydration', `cdp-observer-${variant}-${testInfo.repeatEachIndex}.json`), serialized);
+    await testInfo.attach(`qa04-cdp-observer-${variant}-${testInfo.repeatEachIndex}.json`, { body: serialized, contentType: 'application/json' });
+    await session.detach();
+    expect(records.length).toBeGreaterThan(0);
+    if (process.env.QA04_ALLOW_HYDRATION_WARNINGS !== '1') expect(hydrationWarnings, 'hydration warnings after screenshot-safe, settled navigation').toEqual([]);
+  });
 
   testRoute('QA-03 captures authenticated SSR and hydration style deltas @qa-db-hydration', async ({ page, browser, observed }, testInfo) => {
     testRoute.setTimeout(240_000);
@@ -217,6 +447,7 @@ testRoute.describe('isolated authenticated QA fixture', () => {
     });
     await page.addInitScript(() => {
       const changes: Array<{ id: string; type: string; oldStyle: string | null; style: string | null }> = [];
+      if (location.pathname === '/negocios/giro' && !sessionStorage.getItem('lucem_onboarding_draft')) sessionStorage.setItem('lucem_onboarding_draft', JSON.stringify({ name: 'QA diagnostic business', branchName: 'QA diagnostic branch', country: 'MX', currency: 'MXN', timezone: 'America/Mexico_City', description: 'Synthetic isolated route prerequisite' }));
       Object.defineProperty(window, '__qa03StyleChanges', { value: changes, configurable: false });
       new MutationObserver((entries) => {
         for (const entry of entries) {
@@ -297,7 +528,17 @@ testRoute.describe('isolated authenticated QA fixture', () => {
     for (const screen of screens) for (const viewport of [...qaConfig.viewports, ...(narrowScreens.has(screen.id) ? [narrowViewport] : [])]) {
       observedViewports.set(viewport.id, viewport);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      if (screen.id === 'business-giro') {
+        await page.addInitScript(() => {
+          if (location.pathname === '/negocios/giro' && !sessionStorage.getItem('lucem_onboarding_draft')) sessionStorage.setItem('lucem_onboarding_draft', JSON.stringify({ name: 'QA visual business', branchName: 'QA visual branch', country: 'MX', currency: 'MXN', timezone: 'America/Mexico_City', description: 'Owned by the read-only QA visual scenario' }));
+        });
+      }
       await openPage(page, screen.path, observed);
+      const networkIdleReached = await page.waitForLoadState('networkidle', { timeout: 15_000 }).then(() => true).catch(() => false);
+      testInfo.annotations.push({ type: 'readiness', description: `${screen.path} ${viewport.id}: networkidle ${networkIdleReached ? 'reached' : 'not reached within 15000ms'}` });
+      if (screen.id === 'business-giro') {
+        await expect(page.getByRole('button', { name: /Finalizar configuración/ })).toBeEnabled();
+      }
       const measurement = await responsiveMetrics(page);
       if (screen.id === 'products' && viewport.width <= 768) {
         await expect(page.getByRole('group', { name: 'Filtros rápidos' })).toHaveAttribute('tabindex', '0');
@@ -307,7 +548,8 @@ testRoute.describe('isolated authenticated QA fixture', () => {
       }
       const folder = path.join(root, 'screenshots', screen.id); await mkdir(folder, { recursive: true });
       const file = path.join(folder, `${viewport.id}-${viewport.width}x${viewport.height}.png`);
-      const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled' });
+      // Playwright's default caret:'hide' temporarily mutates input.style during capture while hydration may still be running.
+      const image = await page.screenshot({ path: file, fullPage: true, animations: 'disabled', caret: 'initial' });
       const baseline = path.resolve('qa/visual-baselines', screen.id, `${viewport.id}.png`);
       if (existsSync(baseline)) expect(image, `visual baseline ${screen.id}/${viewport.id}`).toMatchSnapshot(`${screen.id}/${viewport.id}.png`, { threshold: 0.18, maxDiffPixelRatio: 0.02 });
       else observed.push({ type: 'visual-baseline-not-approved', message: `${screen.id}/${viewport.id}; no approved baseline` });
@@ -336,7 +578,7 @@ testRoute.describe('isolated authenticated QA fixture', () => {
       results.push({ route: screen.path, violations: axe.violations.map((violation) => ({ id: violation.id, impact: violation.impact, description: violation.description, helpUrl: violation.helpUrl, nodes: violation.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) })) });
       if (axe.violations.length) {
         const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01'); await mkdir(path.join(root, 'screenshots', 'accessibility'), { recursive: true });
-        await page.screenshot({ path: path.join(root, 'screenshots', 'accessibility', `${screen.id}-violations.png`), fullPage: true, animations: 'disabled' });
+        await page.screenshot({ path: path.join(root, 'screenshots', 'accessibility', `${screen.id}-violations.png`), fullPage: true, animations: 'disabled', caret: 'initial' });
       }
     }
     const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01'); await mkdir(path.join(root, 'accessibility'), { recursive: true });
@@ -349,7 +591,11 @@ testRoute.describe('isolated authenticated QA fixture', () => {
 
   testRoute('catalog and dashboard APIs are measured against bounded samples @qa-db-performance', async ({ page }, testInfo) => {
     const includeProducts = !process.env.QA_MODULE || process.env.QA_MODULE === 'products';
-    if (includeProducts && process.env.QA_PERF_FIXTURE_READY !== '1') test.skip(true, 'BLOCKED: 10k-product QA performance fixture was not prepared.');
+    testRoute.setTimeout(180_000);
+    if (includeProducts) {
+      const fixture = await prepareQaPerformanceFixture();
+      testInfo.annotations.push({ type: 'qa-performance-fixture', description: `${fixture.products} products / ${fixture.variants} variants prepared inside the owner-scoped test before timing.` });
+    }
     const routes = process.env.QA_MODULE === 'products' ? ['/api/products?page=1&limit=48'] : process.env.QA_MODULE === 'dashboard' ? ['/api/dashboard'] : ['/api/products?page=1&limit=48', '/api/dashboard'];
     const samples: Array<{ path: string; status: number; durationMs: number }> = [];
     for (const route of routes) {
