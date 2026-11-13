@@ -23,7 +23,7 @@
 ## Abiertos
 
 - [ ] F-QA04-10 · major · criterio #10 — Full QA sigue FAIL por responsive de inventario, contrastes axe y el p95 del API de productos; quedan fuera de este diagnóstico.
-- [ ] F-QA04-13 · major · criterio #13 — Publicar sólo los commits QA-04 por fast-forward.
+- [ ] F-QA04-13 · major · criterio #13 — Commit de QA-04 acotado y fast-forward a la rama feature indicada.
 
 ## Resueltos (verificados este pass)
 
