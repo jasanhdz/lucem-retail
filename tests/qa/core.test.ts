@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { applyControlCoverage, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, sanitize, validateFeatures, validateRouteExclusions, verifyConnectedDatabase, verifyQaTarget } from '../../scripts/qa/core';
+import { applyControlCoverage, applyEvidenceExecution, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, sanitize, validateFeatures, validateRouteExclusions, verifyConnectedDatabase, verifyQaTarget } from '../../scripts/qa/core';
 import type { Feature } from '../../qa/features/registry';
 
 const temporary: string[] = [];
@@ -31,13 +31,13 @@ describe('QA-01 route and feature discovery', () => {
     expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_MAPPED');
     expect(routes.find((route) => route.path === '/fixture-module/*parts?')?.dynamicSegments).toEqual(['parts']);
     const controls = applyControlCoverage(await discoverControls(root, routes), []);
-    expect(controls.some((control) => control.tag === 'button' && control.status === 'UNCOVERED')).toBe(true);
+    expect(controls.some((control) => control.tag === 'button' && control.status === 'NOT_REGISTERED')).toBe(true);
     expect(controls.find((control) => control.key.endsWith('|button|exportar'))?.sourceLocations).toEqual([{ source: 'app/fixture-module/[id]/page.tsx', line: 1 }]);
     expect(makeCoverageFindings(routes, controls).some((finding) => finding.category === 'coverage')).toBe(true);
     const feature: Feature = { id: 'QA-FIXTURE-EXPORT', title: 'Export fixture', area: 'fixture', description: 'Extension check', targets: [{ route: '/fixture-module/:id', kind: 'page' }], roles: ['ADMIN'], criticality: 'major', requiredStates: ['ready', 'exported'], tests: ['e2e/fixture.spec.ts'], controls: ['/fixture-module/:id|button|exportar'], tags: ['fixture'], profile: ['full'], status: 'NOT_EXECUTED', implemented: true, screenshots: [], invariants: [], stitchReferences: [] };
     const registered = applyControlCoverage(await discoverControls(root, routes), [feature]);
     expect(validateFeatures(routes, [feature], root, controls)).toEqual([]);
-    expect(registered.find((control) => control.tag === 'button')?.status).toBe('NOT_EXECUTED');
+    expect(registered.find((control) => control.tag === 'button')?.status).toBe('NOT_REGISTERED');
     expect(routes.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_MAPPED'); // registry linkage affects a fresh inventory, not the old result
     const refreshed = await discoverRoutes(root, [feature]);
     expect(refreshed.find((route) => route.path === '/fixture-module/:id')?.coverageStatus).toBe('NOT_EXECUTED');
@@ -75,6 +75,25 @@ describe('QA-01 route and feature discovery', () => {
     const passed = featureStateCoverage([feature], new Map([['QA-STATE-FEATURE:EMPTY-STATE', 'PASS']]));
     expect(passed.find((state) => state.state === 'empty')?.status).toBe('PASS');
     expect(validateFeatures([{ id: 'login', path: '/login', kind: 'page', module: 'auth', methods: ['GET'], source: 'app/login/page.tsx', dynamicSegments: [], lastValidatedAt: new Date().toISOString(), fixtureStatus: 'not-dynamic', excluded: false, auth: 'public', roles: [], featureIds: [], tests: [], coverageStatus: 'UNCOVERED' }], [feature], process.cwd()).some((error) => error.includes('references missing test e2e/state.spec.ts'))).toBe(true);
+  });
+
+  it('validates declared assertion text inside the exact named test body', async () => {
+    const root = await tempRoot(); await mkdir(path.join(root, 'e2e'), { recursive: true });
+    const file = 'e2e/evidence.spec.ts';
+    await writeFile(path.join(root, file), `testRoute('real behavior', async () => { expect(result.status()).toBe(200); });`);
+    const feature: Feature = { id: 'QA-EVIDENCE', title: 'Evidence', area: 'qa', description: 'assertion evidence', targets: [{ route: '/x', kind: 'page' }], roles: ['ADMIN'], criticality: 'minor', requiredStates: ['loaded'], tests: [file], evidenceCases: { loaded: { file, title: 'real behavior', assertions: ['expect(result.status()).toBe(200);'] } }, stateTests: { loaded: ['loaded'] }, tags: ['qa'], profile: ['quick'], status: 'NOT_EXECUTED', implemented: true, screenshots: [], invariants: [], stitchReferences: [] };
+    expect(validateFeatures([], [feature], root).some((error) => error.includes('assertion missing'))).toBe(false);
+    feature.evidenceCases!.loaded.assertions = ['expect(result.status()).toBe(500);'];
+    expect(validateFeatures([], [feature], root).some((error) => error.includes('assertion missing'))).toBe(true);
+  });
+
+  it('distinguishes absent, unexecuted, passed and failed control evidence', () => {
+    const control = { id: 'c', key: '/x|button|save', route: '/x', source: 'x', line: 1, sourceLocations: [], tag: 'button', label: 'Save', coveredBy: [], status: 'UNCOVERED' as const };
+    const feature: Feature = { id: 'QA-CONTROL', title: 'Control', area: 'qa', description: 'control', targets: [{ route: '/x', kind: 'page' }], roles: ['ADMIN'], criticality: 'minor', requiredStates: ['ready'], tests: ['e2e/c.spec.ts'], evidenceCases: { save: { file: 'e2e/c.spec.ts', title: 'save', assertions: ['expect(true).toBe(true);'] } }, controls: [control.key], controlCases: { [control.key]: ['save'] }, tags: ['qa'], profile: ['quick'], status: 'NOT_EXECUTED', implemented: true, screenshots: [], invariants: [], stitchReferences: [] };
+    expect(applyControlCoverage([control], []).at(0)?.status).toBe('NOT_REGISTERED');
+    expect(applyControlCoverage([control], [feature]).at(0)?.status).toBe('REGISTERED_UNTESTED');
+    expect(applyEvidenceExecution([control], [feature], new Map([['QA-CONTROL:save', 'PASS']])).at(0)?.status).toBe('VERIFIED');
+    expect(applyEvidenceExecution([control], [feature], new Map([['QA-CONTROL:save', 'FAIL']])).at(0)?.status).toBe('FAIL');
   });
 });
 

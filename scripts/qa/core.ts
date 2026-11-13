@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import ts from 'typescript';
@@ -11,7 +11,8 @@ export type RouteRecord = {
   excluded: boolean; exclusionReason?: string; auth: 'public' | 'protected' | 'unknown'; roles: string[];
   featureIds: string[]; tests: string[]; coverageStatus: CoverageStatus;
 };
-export type ControlRecord = { id: string; key: string; route: string; source: string; line: number; sourceLocations: Array<{ source: string; line: number }>; tag: string; label: string; coveredBy: string[]; status: CoverageStatus };
+export type ControlCoverageStatus = 'NOT_REGISTERED' | 'REGISTERED_UNTESTED' | 'VERIFIED' | 'FAIL' | 'BLOCKED';
+export type ControlRecord = { id: string; key: string; route: string; source: string; line: number; sourceLocations: Array<{ source: string; line: number }>; tag: string; label: string; coveredBy: string[]; status: CoverageStatus | ControlCoverageStatus };
 export type FeatureStateRecord = { featureId: string; featureTitle: string; area: string; state: string; testIds: string[]; status: CoverageStatus };
 export type FindingClassification = 'PRODUCT_DEFECT' | 'TEST_DEFECT' | 'FIXTURE_CONTAMINATION' | 'ENVIRONMENT_FAILURE' | 'COVERAGE_GAP' | 'SUSPECTED' | 'UNDETERMINED';
 export type PlaywrightTestResult = { id: string; title: string; suite: string; file: string; line?: number; project: string; status: 'PASS' | 'FAIL' | 'NOT_EXECUTED'; classification?: FindingClassification; durationMs?: number; reason?: string; evidence: string[] };
@@ -203,9 +204,27 @@ export function validateFeatures(routes: RouteRecord[], definitions: Feature[] =
     for (const [testId, testFile] of Object.entries(feature.testCases ?? {})) {
       if (!testId.trim() || !feature.tests.includes(testFile)) errors.push(`Feature ${feature.id} test case ${testId} must reference one of its registered test files.`);
     }
+    for (const [caseId, evidence] of Object.entries(feature.evidenceCases ?? {})) {
+      if (!caseId.trim() || !feature.tests.includes(evidence.file) || !evidence.title.trim() || !evidence.assertions.length) { errors.push(`Feature ${feature.id} has incomplete evidence case ${caseId}.`); continue; }
+      try {
+        const text = readFileSync(path.join(root, evidence.file), 'utf8');
+        const source = ts.createSourceFile(evidence.file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+        const calls: ts.CallExpression[] = [];
+        const visit = (node: ts.Node) => { if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && ['test', 'testRoute'].includes(node.expression.text) && node.arguments.length >= 2 && ts.isStringLiteral(node.arguments[0]) && node.arguments[0].text === evidence.title && ts.isArrowFunction(node.arguments[1])) calls.push(node); ts.forEachChild(node, visit); };
+        visit(source);
+        const body = calls.map((call) => call.arguments[1].getText(source)).join('\n');
+        if (!body) errors.push(`Feature ${feature.id} evidence case ${caseId} title not found: ${evidence.title}.`);
+        else for (const assertion of evidence.assertions) if (!body.includes(assertion)) errors.push(`Feature ${feature.id} evidence case ${caseId} assertion missing from test body: ${assertion}`);
+      } catch { errors.push(`Feature ${feature.id} evidence case ${caseId} test source unavailable.`); }
+    }
+    for (const [state, caseIds] of Object.entries(feature.stateTests ?? {})) for (const caseId of caseIds) if (!feature.evidenceCases?.[caseId]) errors.push(`Feature ${feature.id} state ${state} references unknown evidence case ${caseId}.`);
+    for (const [key, caseIds] of Object.entries(feature.controlCases ?? {})) {
+      if (!feature.controls?.includes(key)) errors.push(`Feature ${feature.id} control case references unregistered control ${key}.`);
+      for (const caseId of caseIds) if (!feature.evidenceCases?.[caseId]) errors.push(`Feature ${feature.id} control ${key} references unknown evidence case ${caseId}.`);
+    }
     for (const [state, testIds] of Object.entries(feature.stateTests ?? {})) {
       if (!feature.requiredStates.includes(state)) errors.push(`Feature ${feature.id} registers unknown state ${state}.`);
-      for (const testId of testIds) if (!feature.testCases?.[testId]) errors.push(`Feature ${feature.id} state ${state} references unknown test case ${testId}.`);
+      for (const testId of testIds) if (!feature.testCases?.[testId] && !feature.evidenceCases?.[testId]) errors.push(`Feature ${feature.id} state ${state} references unknown test case ${testId}.`);
     }
     for (const target of feature.targets) {
       const route = available.get(`${target.kind}:${target.route}`);
@@ -234,15 +253,27 @@ export async function validateRouteExclusions(routes: RouteRecord[], root = proc
 }
 export function applyControlCoverage(controls: ControlRecord[], definitions: Feature[] = features): ControlRecord[] {
   return controls.map((control) => {
-    const owners = definitions.filter((feature) => feature.implemented && feature.tests.length && feature.targets.some((target) => target.kind === 'page' && target.route === control.route) && feature.controls?.includes(control.key));
-    return { ...control, coveredBy: owners.map((feature) => feature.id), status: owners.length ? 'NOT_EXECUTED' : 'UNCOVERED' };
+    const registrations = definitions.flatMap((feature) => Object.entries(feature.controlCases ?? {}).filter(([key]) => key === control.key).map(([key, caseIds]) => ({ feature, key, caseIds })));
+    const owners = registrations.filter(({ feature }) => feature.targets.some((target) => target.kind === 'page' && target.route === control.route));
+    const registered = owners.length > 0;
+    return { ...control, coveredBy: owners.map(({ feature }) => feature.id), status: !registered ? 'NOT_REGISTERED' : 'REGISTERED_UNTESTED' };
+  });
+}
+
+export function applyEvidenceExecution(controls: ControlRecord[], definitions: Feature[], execution: Map<string, CoverageStatus>): ControlRecord[] {
+  return controls.map((control) => {
+    const mappings = definitions.flatMap((feature) => Object.entries(feature.controlCases ?? {}).filter(([key]) => key === control.key).flatMap(([, caseIds]) => caseIds.map((caseId) => ({ feature, caseId }))));
+    if (!mappings.length) return { ...control, coveredBy: [], status: 'NOT_REGISTERED' };
+    const results = mappings.map(({ feature, caseId }) => execution.get(`${feature.id}:${caseId}`) ?? 'NOT_EXECUTED');
+    const status = results.includes('FAIL') ? 'FAIL' : results.includes('BLOCKED') ? 'BLOCKED' : results.every((result) => result === 'PASS') ? 'VERIFIED' : 'REGISTERED_UNTESTED';
+    return { ...control, coveredBy: [...new Set(mappings.map(({ feature }) => feature.id))], status };
   });
 }
 export function makeCoverageFindings(routes: RouteRecord[], controls: ControlRecord[]): Finding[] {
   const findings: Finding[] = [];
   for (const route of routes) if (route.coverageStatus === 'NOT_MAPPED' || route.coverageStatus === 'UNCOVERED') findings.push({ id: `QA-COV-${route.id}`, category: 'coverage', severity: ['/pos', '/api/sales'].includes(route.path) ? 'critical' : 'major', module: route.module, feature: 'UNREGISTERED_ROUTE', route: route.path, role: route.auth, device: 'all', scenario: 'Discovered route coverage', steps: [`Inspect ${route.source}`], expected: 'Feature registry entry and executable test', actual: route.coverageStatus === 'NOT_MAPPED' ? 'Route has no registry mapping' : 'Mapped route has no executable coverage', evidence: [route.source], source: 'static', confidence: 'high', status: 'CONFIRMED', classification: 'COVERAGE_GAP', recommendation: 'Register this route and add an observable behavior test.' });
   for (const route of routes) if (route.fixtureStatus === 'FIXTURE_PENDING') findings.push({ id: `QA-FIXTURE-${route.id}`, category: 'coverage', severity: 'major', module: route.module, feature: route.featureIds.join(',') || 'DYNAMIC-ROUTE', route: route.path, role: route.auth, device: 'all', scenario: 'Resolve dynamic route with a real QA fixture', steps: [`Create or select a namespaced lucem_qa fixture for ${route.path}`], expected: 'Dynamic segment is exercised using a fixture owned by the run', actual: 'No fixture reference is declared', evidence: [route.source], source: 'static', confidence: 'high', status: 'NEEDS_MANUAL_REVIEW', classification: 'COVERAGE_GAP', recommendation: 'Add a fixture reference and test that resolves the route without a literal placeholder URL.' });
-  for (const control of controls) if (control.status === 'UNCOVERED') findings.push({ id: `QA-SURF-${control.id}`, category: 'coverage', severity: ['button', 'form', 'action'].includes(control.tag) ? 'major' : 'minor', module: control.route.split('/')[1] || 'home', feature: 'UNREGISTERED_CONTROL', route: control.route, role: 'unknown', device: 'all', scenario: `${control.tag}: ${control.label}`, steps: control.sourceLocations.map(({ source, line }) => `Inspect ${source}:${line}`), expected: 'Declared behavior test for interactive control', actual: 'Control surface is not associated with a feature', evidence: control.sourceLocations.map(({ source }) => source), source: 'static', confidence: 'medium', status: 'CONFIRMED', classification: 'COVERAGE_GAP', recommendation: 'Register the action/control in qa/features/registry.ts and add a test.' });
+  for (const control of controls) if (!['PASS', 'VERIFIED'].includes(control.status)) findings.push({ id: `QA-SURF-${control.id}`, category: 'coverage', severity: ['button', 'form', 'action'].includes(control.tag) ? 'major' : 'minor', module: control.route.split('/')[1] || 'home', feature: control.status === 'NOT_REGISTERED' || control.status === 'UNCOVERED' ? 'UNREGISTERED_CONTROL' : 'UNVERIFIED_CONTROL', route: control.route, role: 'unknown', device: 'all', scenario: `${control.tag}: ${control.label}`, steps: control.sourceLocations.map(({ source, line }) => `Inspect ${source}:${line}`), expected: 'Declared behavior test with executed assertion evidence', actual: `Control coverage status is ${control.status}`, evidence: control.sourceLocations.map(({ source }) => source), source: 'static', confidence: 'medium', status: 'CONFIRMED', classification: 'COVERAGE_GAP', recommendation: control.status === 'NOT_REGISTERED' || control.status === 'UNCOVERED' ? 'Register the action/control in qa/features/registry.ts and add a test.' : 'Execute the registered control case and retain its assertion evidence.' });
   return findings;
 }
 export function featureStateCoverage(definitions: Feature[] = features, execution: Map<string, CoverageStatus> = new Map()): FeatureStateRecord[] {
@@ -259,11 +290,11 @@ export function featureStateCoverage(definitions: Feature[] = features, executio
   }));
 }
 export function makeFeatureStateFindings(states: FeatureStateRecord[]): Finding[] {
-  return states.filter((state) => state.status === 'UNCOVERED').map((state) => ({
+  return states.filter((state) => !['PASS', 'NOT_IMPLEMENTED'].includes(state.status)).map((state) => ({
     id: `QA-STATE-${sha12(`${state.featureId}:${state.state}`)}`, category: 'coverage', severity: 'major', module: state.area, feature: state.featureId,
     route: 'feature-registry', role: 'declared-role', device: 'all', scenario: `Required state ${state.state}`, steps: [`Locate ${state.featureId} state declaration`],
-    expected: 'Required UI/business state maps to an identified test case and observable assertion', actual: 'State is listed but no test-case mapping is registered',
-    evidence: ['qa/features/registry.ts'], source: 'static', confidence: 'high', status: 'CONFIRMED', classification: 'COVERAGE_GAP', recommendation: `Add a stable testCases ID and map ${state.state} in stateTests.`,
+    expected: 'Required UI/business state maps to an identified test case and observable assertion', actual: `State coverage status is ${state.status}${state.testIds.length ? `; registered cases: ${state.testIds.join(', ')}` : '; no test case is registered'}`,
+    evidence: ['qa/features/registry.ts'], source: 'static', confidence: 'high', status: 'CONFIRMED', classification: 'COVERAGE_GAP', recommendation: state.testIds.length ? `Execute the registered case(s) and retain evidence for ${state.state}.` : `Add an evidence case and map ${state.state} in stateTests.`,
   }));
 }
 

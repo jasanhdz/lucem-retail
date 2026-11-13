@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -6,22 +6,29 @@ import path from 'node:path';
 import { qaConfig } from '../../qa/config';
 import { sanitize } from '../../scripts/qa/core';
 
-type BrowserEvent = { type: string; url?: string; message?: string; status?: number; expected?: boolean };
+type BrowserEvent = { type: string; url?: string; route?: string; message?: string; status?: number; expected?: boolean; method?: string; resourceType?: string; navigationRequest?: boolean };
+type HydrationStyleRecord = { route: string; viewport: string; responseStatus: number | null; ssrInputs: Array<{ id: string | null; type: string | null; style: string | null }>; hydratedInputs: Array<{ id: string; type: string; style: string | null }>; styleMutations: Array<{ id: string; type: string; oldStyle: string | null; style: string | null }>; hydrationWarnings: string[] };
 function modulePages<T extends { area: string }>(pages: T[]) {
   const area = process.env.QA_MODULE;
   return area ? pages.filter((page) => page.area === area) : pages;
 }
 function redactedUrl(raw: string) { try { const parsed = new URL(raw); return `${parsed.origin}${parsed.pathname}`; } catch { return '[invalid-url]'; } }
+function pageRoute(page: Page) { try { return new URL(page.url()).pathname; } catch { return 'unknown'; } }
 function attachBrowserObservers(page: Page) {
   const events: BrowserEvent[] = [];
-  page.on('console', (message) => { if (message.type() === 'error') events.push({ type: 'console-error', message: message.text().slice(0, 5000) }); });
-  page.on('pageerror', (error) => events.push({ type: 'page-error', message: error.message.slice(0, 500) }));
-  page.on('requestfailed', (request) => events.push({ type: 'request-failed', url: redactedUrl(request.url()), message: request.failure()?.errorText?.slice(0, 300) }));
+  page.on('console', (message) => { if (message.type() === 'error') events.push({ type: 'console-error', route: pageRoute(page), message: message.text().slice(0, 5000) }); });
+  page.on('pageerror', (error) => events.push({ type: 'page-error', route: pageRoute(page), message: error.message.slice(0, 500) }));
+  page.on('requestfailed', (request) => {
+    const message = request.failure()?.errorText?.slice(0, 300);
+    const navigationRequest = request.isNavigationRequest();
+    const expectedNavigationAbort = navigationRequest && /net::ERR_ABORTED/i.test(message ?? '');
+    events.push({ type: 'request-failed', url: redactedUrl(request.url()), route: pageRoute(page), method: request.method(), resourceType: request.resourceType(), navigationRequest, message, expected: expectedNavigationAbort });
+  });
   page.on('response', (response) => {
     if (response.status() >= 400) {
       const url = redactedUrl(response.url());
       const expected = response.status() === 401 && url.endsWith('/api/auth/login');
-      events.push({ type: response.status() >= 500 ? 'http-5xx' : 'http-4xx', url, status: response.status(), expected });
+      events.push({ type: response.status() >= 500 ? 'http-5xx' : 'http-4xx', url, route: pageRoute(page), status: response.status(), expected });
     }
   });
   return events;
@@ -196,6 +203,87 @@ testRoute('valid seeded admin can authenticate and reach business selection @qa-
 
 testRoute.describe('isolated authenticated QA fixture', () => {
   testRoute.use({ storageState: path.resolve('playwright/.auth/admin-centro.json') });
+
+  testRoute('QA-03 captures authenticated SSR and hydration style deltas @qa-db-hydration', async ({ page, browser, observed }, testInfo) => {
+    testRoute.setTimeout(240_000);
+    const records: HydrationStyleRecord[] = [];
+    const warningMap = new Map<string, string[]>();
+    let currentRoute = 'unknown';
+    page.on('console', (message) => {
+      if (message.type() !== 'error' || !message.text().includes('hydrated but some attributes')) return;
+      const warnings = warningMap.get(currentRoute) ?? [];
+      warnings.push(message.text());
+      warningMap.set(currentRoute, warnings);
+    });
+    await page.addInitScript(() => {
+      const changes: Array<{ id: string; type: string; oldStyle: string | null; style: string | null }> = [];
+      Object.defineProperty(window, '__qa03StyleChanges', { value: changes, configurable: false });
+      new MutationObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.type !== 'attributes' || entry.attributeName !== 'style' || !(entry.target instanceof HTMLInputElement)) continue;
+          changes.push({ id: entry.target.id, type: entry.target.type, oldStyle: entry.oldValue, style: entry.target.getAttribute('style') });
+        }
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+    });
+    const capture = async (targetPage: Page, route: string, viewport: string) => {
+      currentRoute = route;
+      const previousWarnings = warningMap.get(route)?.length ?? 0;
+      const url = new URL(route, 'http://127.0.0.1:3113').href;
+      const ssr = await targetPage.request.get(url);
+      const html = await ssr.text();
+      const ssrInputs = [...html.matchAll(/<input\b[^>]*>/gi)].map(([tag]) => ({
+        id: /\bid=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\bid=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null,
+        type: /\btype=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\btype=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null,
+        style: /\bstyle=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[1] ?? /\bstyle=(?:"([^"]*)"|'([^']*)')/i.exec(tag)?.[2] ?? null,
+      }));
+      await targetPage.evaluate(() => (window as Window & { __qa03StyleChanges?: unknown[] }).__qa03StyleChanges?.splice(0));
+      const response = await targetPage.goto(url, { waitUntil: 'domcontentloaded' });
+      await targetPage.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
+      await expect(targetPage.locator('body')).toBeVisible();
+      const [hydratedInputs, styleMutations] = await targetPage.evaluate(() => {
+        const probeWindow = window as Window & { __qa03StyleChanges?: HydrationStyleRecord['styleMutations'] };
+        return [
+          [...document.querySelectorAll<HTMLInputElement>('input')].map((input) => ({ id: input.id, type: input.type, style: input.getAttribute('style') })),
+          [...(probeWindow.__qa03StyleChanges ?? [])],
+        ];
+      });
+      records.push({ route, viewport, responseStatus: response?.status() ?? null, ssrInputs, hydratedInputs, styleMutations, hydrationWarnings: (warningMap.get(route) ?? []).slice(previousWarnings) });
+    };
+    for (const screen of qaConfig.authenticatedPages) for (const viewport of qaConfig.viewports) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await capture(page, screen.path, viewport.id);
+    }
+    const anonymousContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const anonymousPage = await anonymousContext.newPage();
+    const anonymousEvents = attachBrowserObservers(anonymousPage);
+    anonymousPage.on('console', (message) => {
+      if (message.type() !== 'error' || !message.text().includes('hydrated but some attributes')) return;
+      const warnings = warningMap.get('/login') ?? [];
+      warnings.push(message.text());
+      warningMap.set('/login', warnings);
+    });
+    await anonymousPage.addInitScript(() => {
+      const changes: Array<{ id: string; type: string; oldStyle: string | null; style: string | null }> = [];
+      Object.defineProperty(window, '__qa03StyleChanges', { value: changes, configurable: false });
+      new MutationObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.type !== 'attributes' || entry.attributeName !== 'style' || !(entry.target instanceof HTMLInputElement)) continue;
+          changes.push({ id: entry.target.id, type: entry.target.type, oldStyle: entry.oldValue, style: entry.target.getAttribute('style') });
+        }
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+    });
+    try { await anonymousPage.setViewportSize({ width: 1440, height: 900 }); await capture(anonymousPage, '/login', 'desktop'); observed.push(...anonymousEvents); }
+    finally { await anonymousContext.close(); }
+    const root = path.resolve(process.env.QA_REPORT_DIR || 'test-results/qa-01');
+    await mkdir(path.join(root, 'hydration'), { recursive: true });
+    const secrets = [process.env.QA_DATABASE_URL, process.env.E2E_ADMIN_PASSWORD].filter((value): value is string => Boolean(value));
+    const report = { browserVersion: browser.version(), context: 'Playwright Chromium QA context; no extension is configured by the QA Playwright project', occurrences: records.flatMap((record) => record.hydrationWarnings.map((warning) => ({ route: record.route, warning }))), records };
+    const serialized = sanitize(JSON.stringify(report, null, 2), secrets);
+    await writeFile(path.join(root, 'hydration', 'hydration-probe.json'), serialized);
+    await testInfo.attach('qa03-hydration-probe.json', { body: serialized, contentType: 'application/json' });
+    await persistEvents(observed, testInfo);
+    expect(records).toHaveLength(qaConfig.authenticatedPages.length * qaConfig.viewports.length + 1);
+  });
 
   testRoute('registered workspace pages render at all required viewports @qa-db-visual', async ({ page, observed }, testInfo) => {
     testRoute.setTimeout(120_000);

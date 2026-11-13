@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { features, type CoverageStatus } from '../../qa/features/registry';
 import { qaConfig } from '../../qa/config';
-import { applyControlCoverage, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, makeFeatureStateFindings, sanitize, validateFeatures, validateRouteExclusions, writeReports, type Finding, type FindingClassification, type PlaywrightTestResult, type RunResult, type TestRunComparison } from './core';
+import { applyControlCoverage, applyEvidenceExecution, discoverControls, discoverRoutes, featureStateCoverage, makeCoverageFindings, makeFeatureStateFindings, sanitize, validateFeatures, validateRouteExclusions, writeReports, type Finding, type FindingClassification, type PlaywrightTestResult, type RunResult, type TestRunComparison } from './core';
 import { qaChildEnv } from './database';
 import { exportSanitizedZip } from './evidence';
 import { classifyCommandFailure, classifyTestFailure, compareIsolatedAndFullTests, parsePlaywrightResults } from './test-results';
@@ -120,7 +120,7 @@ async function browserFindings(reportDir: string): Promise<Finding[]> {
   let eventFiles: string[] = [];
   try { eventFiles = (await readdir(eventDir)).filter((file) => file.endsWith('.json')); } catch { /* no browser mode */ }
   for (const file of eventFiles) {
-    let record: { title?: string; events?: Array<{ type: string; url?: string; message?: string; status?: number; expected?: boolean }> };
+    let record: { title?: string; events?: Array<{ type: string; url?: string; route?: string; message?: string; status?: number; expected?: boolean }> };
     try { record = JSON.parse(await readFile(path.join(eventDir, file), 'utf8')); } catch { continue; }
     for (const [index, event] of (record.events ?? []).entries()) {
       if (event.expected || event.type === 'visual-baseline-not-approved') {
@@ -129,7 +129,9 @@ async function browserFindings(reportDir: string): Promise<Finding[]> {
       }
       const supported = ['console-error', 'page-error', 'request-failed', 'http-4xx', 'http-5xx'].includes(event.type);
       if (!supported) continue;
-      findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.url ?? 'unknown', role: 'anonymous', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence: [`browser-events/${file}`], source: 'playwright', confidence: 'high', status: 'CONFIRMED', classification: event.type === 'http-5xx' ? 'PRODUCT_DEFECT' : 'UNDETERMINED', recommendation: 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
+        const poolLog = await readFile(path.join(reportDir, 'authenticated-qa-observation.log'), 'utf8').catch(() => '');
+        const poolExhausted = event.type === 'http-5xx' && /P2024|connection pool/i.test(poolLog);
+        findings.push({ id: `QA-BROWSER-${shaSlug(`${file}-${index}-${event.type}`)}`, category: event.type.startsWith('http') || event.type === 'request-failed' ? 'network' : 'browser', severity: event.type === 'page-error' || event.type === 'http-5xx' ? 'major' : 'minor', module: 'browser', feature: record.title ?? path.basename(file), route: event.route ?? event.url ?? 'unknown', role: 'observed browser context', device: 'observed viewport', scenario: event.type, steps: [record.title ?? 'Run browser observation'], expected: 'No unexpected console/runtime/network failure', actual: `${event.type}${event.status ? ` HTTP ${event.status}` : ''}${event.message ? `: ${event.message}` : ''}`, evidence: [`browser-events/${file}`, ...(poolExhausted ? ['authenticated-qa-observation.log'] : [])], source: 'playwright', confidence: 'high', status: 'CONFIRMED', classification: poolExhausted ? 'ENVIRONMENT_FAILURE' : 'UNDETERMINED', recommendation: poolExhausted ? 'Observed alongside Prisma P2024 pool timeouts; repeat the observation with bounded concurrency before attributing this response to application behavior.' : 'Reproduce with the referenced route and inspect the sanitized browser event log.' });
     }
   }
   for (const filename of ['axe-findings.json', 'authenticated-axe-findings.json']) try {
@@ -220,7 +222,6 @@ async function main() {
   if (options.changed) { routes = filterByChanged(routes, changed); controls = filterByChanged(controls, changed); }
   const registryChanges = options.changed && changed.has('qa/features/registry.ts') ? changedFeatureIds() : new Set<string>();
   const selectedFeatureSet = options.changed ? features.filter((feature) => registryChanges.has(feature.id) || feature.tests.some((test) => changed.has(test)) || feature.targets.some((target) => allRoutes.some((route) => route.path === target.route && changed.has(route.source))) || allControls.some((control) => changed.has(control.source) && (control.coveredBy.includes(feature.id) || feature.targets.some((target) => target.kind === 'page' && target.route === control.route)))) : moduleFeatures(options.module);
-  if (options.coverage || options.changed || (!options.functional && !options.visual && !options.accessibility && !options.performance && !options.packageOnly)) findings.push(...makeCoverageFindings(routes, controls));
   for (const feature of selectedFeatureSet) checks.push({ id: feature.id, status: feature.status === 'PASS' ? 'NOT_EXECUTED' : feature.status, reason: feature.tests.length ? `Registered tests: ${feature.tests.join(', ')} (run status is recorded separately).` : 'No executable test association registered.', evidence: feature.tests });
   if (registryErrors.length) blocked.push(`Feature registry has ${registryErrors.length} validation error(s).`);
 
@@ -299,7 +300,7 @@ async function main() {
     }
   }
   const databaseObservationTags = publicObservationSelected ? [] : [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[];
-  const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance'].filter(Boolean) as string[] : databaseObservationTags;
+  const authenticatedObservationTags = !options.module ? [options.visual && '@qa-db-visual', options.accessibility && '@qa-db-axe', options.performance && '@qa-db-performance', options.full && '@qa-db-hydration'].filter(Boolean) as string[] : databaseObservationTags;
   if (authenticatedObservationTags.length) {
     if (qaReady && qaRuntimeEnv) {
       const secret = randomBytes(48).toString('base64url');
@@ -393,14 +394,16 @@ async function main() {
     if (results.includes('BLOCKED')) return { ...route, coverageStatus: 'BLOCKED' };
     return route;
   });
-  controls = controls.map((control) => {
-    if (!control.coveredBy.length) return control;
-    const tests = [...new Set(features.filter((feature) => control.coveredBy.includes(feature.id)).flatMap((feature) => feature.tests))];
-    const results = features.filter((feature) => control.coveredBy.includes(feature.id)).map((feature) => featureResults.get(feature.id) ?? 'NOT_EXECUTED');
-    const status = results.length && results.every((result) => result === 'PASS') ? 'PASS' : results.includes('FAIL') ? 'FAIL' : 'NOT_EXECUTED';
-    return { ...control, status };
-  });
+  const caseExecution = new Map<string, CoverageStatus>();
+  for (const feature of features) for (const [caseId, evidence] of Object.entries(feature.evidenceCases ?? {})) {
+    const matches = playwrightTests.filter((result) => result.file === evidence.file && (result.title === evidence.title || result.title.endsWith(` › ${evidence.title}`)));
+    const status: CoverageStatus = matches.some((result) => result.status === 'FAIL') ? 'FAIL' : matches.length > 0 && matches.every((result) => result.status === 'PASS') ? 'PASS' : !matches.length && executedFeatureTests.get(evidence.file) === 'BLOCKED' ? 'BLOCKED' : 'NOT_EXECUTED';
+    caseExecution.set(`${feature.id}:${caseId}`, status);
+    executedStateTests.set(`${feature.id}:${caseId}`, status);
+  }
+  controls = applyEvidenceExecution(controls, features, caseExecution);
   const finalStateCoverage = featureStateCoverage(selectedFeatureSet, executedStateTests);
+  if (options.coverage || options.changed || (!options.functional && !options.visual && !options.accessibility && !options.performance && !options.packageOnly)) findings.push(...makeCoverageFindings(routes, controls));
   findings.push(...makeFeatureStateFindings(finalStateCoverage));
   findings.push(...await browserFindings(reportDir));
   if ((options.visual || options.full) && findings.some((finding) => finding.category === 'visual' && finding.status === 'NEEDS_MANUAL_REVIEW')) checks.push({ id: 'approved-visual-baselines', status: 'NOT_EXECUTED', reason: 'No approved screenshot baselines were found; captured images are available for review.', evidence: ['SCREENSHOT-MANIFEST.json', 'stitch-comparison.html'] });
